@@ -908,8 +908,33 @@ func (f *FunctionExpr) VisitExpression(visitor ExpressionVisitor, context interf
 }
 
 func (f *FunctionExpr) IsEquivalent(e OutputExpression) bool {
-	// TODO: Implement proper equivalence checking
+	if fn, ok := e.(*FunctionExpr); ok {
+		if len(f.Params) != len(fn.Params) || len(f.Statements) != len(fn.Statements) {
+			return false
+		}
+		for i := range f.Params {
+			if f.Params[i].Name != fn.Params[i].Name {
+				return false
+			}
+		}
+		// TODO: Compare statements properly
+		return true
+	}
 	return false
+}
+
+// IsEquivalentToStmt checks if this FunctionExpr is equivalent to a DeclareFunctionStmt
+func (f *FunctionExpr) IsEquivalentToStmt(stmt *DeclareFunctionStmt) bool {
+	if len(f.Params) != len(stmt.Params) || len(f.Statements) != len(stmt.Statements) {
+		return false
+	}
+	for i := range f.Params {
+		if f.Params[i].Name != stmt.Params[i].Name {
+			return false
+		}
+	}
+	// TODO: Compare statements properly
+	return true
 }
 
 func (f *FunctionExpr) IsConstant() bool {
@@ -922,6 +947,19 @@ func (f *FunctionExpr) Clone() OutputExpression {
 		params[i] = &FnParam{Name: p.Name, Type: p.Type}
 	}
 	return NewFunctionExpr(params, f.Statements, f.Type, f.SourceSpan, f.Name)
+}
+
+// ToDeclStmt converts a FunctionExpr to a DeclareFunctionStmt
+func (f *FunctionExpr) ToDeclStmt(name string, modifiers StmtModifier) *DeclareFunctionStmt {
+	return NewDeclareFunctionStmt(
+		name,
+		f.Params,
+		f.Statements,
+		f.Type,
+		modifiers,
+		f.SourceSpan,
+		nil,
+	)
 }
 
 type UnaryOperatorExpr struct {
