@@ -25,7 +25,7 @@
 //   - view: View compilation and template processing
 //   - r3_identifiers: Ivy instruction identifiers
 //   - ml_parser: HTML/XML template parsing
-//   - expressionparser: Expression parsing for bindings and events
+//   - expression_parser: Expression parsing for bindings and events
 //   - i18n: Internationalization support
 //   - schema: Element schema registry for validation
 //

@@ -1,7 +1,7 @@
 package view
 
 import (
-	"ngc-go/packages/compiler/src/expressionparser"
+	"ngc-go/packages/compiler/src/expression_parser"
 	"ngc-go/packages/compiler/src/render3"
 )
 
@@ -199,7 +199,7 @@ type BoundTarget interface {
 	//
 	// This is only defined for `AST` expressions that read or write to a property of an
 	// `ImplicitReceiver`.
-	GetExpressionTarget(expr expressionparser.AST) TemplateEntity
+	GetExpressionTarget(expr expression_parser.AST) TemplateEntity
 
 	// GetDefinitionNodeOfSymbol returns, given a particular `Reference` or `Variable`, the `ScopedNode` which created it.
 	//

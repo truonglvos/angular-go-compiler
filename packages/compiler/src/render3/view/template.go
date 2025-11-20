@@ -1,7 +1,7 @@
 package view
 
 import (
-	"ngc-go/packages/compiler/src/expressionparser"
+	"ngc-go/packages/compiler/src/expression_parser"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/render3"
 	viewi18n "ngc-go/packages/compiler/src/render3/view/i18n"
@@ -327,8 +327,8 @@ var elementRegistry = schema.NewDomElementSchemaRegistry()
 
 // MakeBindingParser constructs a `BindingParser` with a default configuration.
 func MakeBindingParser(selectorlessEnabled bool) *templateparser.BindingParser {
-	lexer := expressionparser.NewLexer()
-	parser := expressionparser.NewParser(lexer, selectorlessEnabled)
+	lexer := expression_parser.NewLexer()
+	parser := expression_parser.NewParser(lexer, selectorlessEnabled)
 	return templateparser.NewBindingParser(parser, elementRegistry, []*util.ParseError{})
 }
 

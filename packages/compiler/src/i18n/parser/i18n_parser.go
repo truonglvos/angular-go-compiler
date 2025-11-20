@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"ngc-go/packages/compiler/src/expressionparser"
+	"ngc-go/packages/compiler/src/expression_parser"
 	"ngc-go/packages/compiler/src/i18n"
 	"ngc-go/packages/compiler/src/i18n/serializers"
 	"ngc-go/packages/compiler/src/ml_parser"
@@ -30,7 +30,7 @@ func CreateI18nMessageFactory(
 	retainEmptyTokens bool,
 	preserveExpressionWhitespace bool,
 ) I18nMessageFactory {
-	expParser := expressionparser.NewParser(expressionparser.NewLexer(), false)
+	expParser := expression_parser.NewParser(expression_parser.NewLexer(), false)
 	visitor := NewI18nVisitor(
 		expParser,
 		containerBlocks,
@@ -71,7 +71,7 @@ func NoopVisitNodeFn(html ml_parser.Node, i18n i18n.Node) i18n.Node {
 
 // I18nVisitor implements ml_parser.Visitor to convert HTML nodes to i18n nodes
 type I18nVisitor struct {
-	expressionParser             *expressionparser.Parser
+	expressionParser             *expression_parser.Parser
 	containerBlocks              map[string]bool
 	retainEmptyTokens            bool
 	preserveExpressionWhitespace bool
@@ -84,7 +84,7 @@ func (v *I18nVisitor) Visit(node ml_parser.Node, context interface{}) interface{
 
 // NewI18nVisitor creates a new I18nVisitor
 func NewI18nVisitor(
-	expressionParser *expressionparser.Parser,
+	expressionParser *expression_parser.Parser,
 	containerBlocks map[string]bool,
 	retainEmptyTokens bool,
 	preserveExpressionWhitespace bool,
@@ -546,7 +546,7 @@ func (v *I18nVisitor) normalizeExpression(token ml_parser.Token) string {
 	}
 	expression := parts[1]
 	expr := v.expressionParser.ParseBinding(expression, token.SourceSpan(), token.SourceSpan().Start.Offset)
-	return expressionparser.Serialize(expr)
+	return expression_parser.Serialize(expr)
 }
 
 // reusePreviousSourceSpans re-uses the source-spans from previousI18n metadata for the nodes

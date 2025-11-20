@@ -2,7 +2,7 @@ package render3
 
 import (
 	"ngc-go/packages/compiler/src/core"
-	"ngc-go/packages/compiler/src/expressionparser"
+	"ngc-go/packages/compiler/src/expression_parser"
 	"ngc-go/packages/compiler/src/util"
 )
 
@@ -65,13 +65,13 @@ func (t *Text) Visit(visitor Visitor) interface{} {
 
 // BoundText represents a bound text node
 type BoundText struct {
-	Value      expressionparser.AST
+	Value      expression_parser.AST
 	sourceSpan *util.ParseSourceSpan
 	I18n       I18nMeta
 }
 
 // NewBoundText creates a new BoundText node
-func NewBoundText(value expressionparser.AST, sourceSpan *util.ParseSourceSpan, i18nMeta I18nMeta) *BoundText {
+func NewBoundText(value expression_parser.AST, sourceSpan *util.ParseSourceSpan, i18nMeta I18nMeta) *BoundText {
 	return &BoundText{
 		Value:      value,
 		sourceSpan: sourceSpan,
@@ -124,9 +124,9 @@ func (ta *TextAttribute) Visit(visitor Visitor) interface{} {
 // BoundAttribute represents a bound attribute
 type BoundAttribute struct {
 	Name            string
-	Type            expressionparser.BindingType
+	Type            expression_parser.BindingType
 	SecurityContext core.SecurityContext
-	Value           expressionparser.AST
+	Value           expression_parser.AST
 	Unit            *string
 	sourceSpan      *util.ParseSourceSpan
 	KeySpan         *util.ParseSourceSpan
@@ -137,9 +137,9 @@ type BoundAttribute struct {
 // NewBoundAttribute creates a new BoundAttribute
 func NewBoundAttribute(
 	name string,
-	bindingType expressionparser.BindingType,
+	bindingType expression_parser.BindingType,
 	securityContext core.SecurityContext,
-	value expressionparser.AST,
+	value expression_parser.AST,
 	unit *string,
 	sourceSpan *util.ParseSourceSpan,
 	keySpan *util.ParseSourceSpan,
@@ -160,7 +160,7 @@ func NewBoundAttribute(
 }
 
 // FromBoundElementProperty creates a BoundAttribute from a BoundElementProperty
-func FromBoundElementProperty(prop *expressionparser.BoundElementProperty, i18nMeta I18nMeta) *BoundAttribute {
+func FromBoundElementProperty(prop *expression_parser.BoundElementProperty, i18nMeta I18nMeta) *BoundAttribute {
 	if prop.KeySpan == nil {
 		panic("Unexpected state: keySpan must be defined for bound attributes")
 	}
@@ -190,8 +190,8 @@ func (ba *BoundAttribute) Visit(visitor Visitor) interface{} {
 // BoundEvent represents a bound event
 type BoundEvent struct {
 	Name        string
-	Type        expressionparser.ParsedEventType
-	Handler     expressionparser.AST
+	Type        expression_parser.ParsedEventType
+	Handler     expression_parser.AST
 	Target      *string
 	Phase       *string
 	sourceSpan  *util.ParseSourceSpan
@@ -202,8 +202,8 @@ type BoundEvent struct {
 // NewBoundEvent creates a new BoundEvent
 func NewBoundEvent(
 	name string,
-	eventType expressionparser.ParsedEventType,
-	handler expressionparser.AST,
+	eventType expression_parser.ParsedEventType,
+	handler expression_parser.AST,
 	target *string,
 	phase *string,
 	sourceSpan *util.ParseSourceSpan,
@@ -223,13 +223,13 @@ func NewBoundEvent(
 }
 
 // FromParsedEvent creates a BoundEvent from a ParsedEvent
-func FromParsedEvent(event *expressionparser.ParsedEvent) *BoundEvent {
+func FromParsedEvent(event *expression_parser.ParsedEvent) *BoundEvent {
 	var target *string
 	var phase *string
 
-	if event.Type == expressionparser.ParsedEventTypeRegular {
+	if event.Type == expression_parser.ParsedEventTypeRegular {
 		target = event.TargetOrPhase
-	} else if event.Type == expressionparser.ParsedEventTypeLegacyAnimation {
+	} else if event.Type == expression_parser.ParsedEventTypeLegacyAnimation {
 		phase = event.TargetOrPhase
 	}
 
@@ -358,12 +358,12 @@ func (dt *DeferredTrigger) Visit(visitor Visitor) interface{} {
 // BoundDeferredTrigger represents a bound deferred trigger
 type BoundDeferredTrigger struct {
 	*DeferredTrigger
-	Value expressionparser.AST
+	Value expression_parser.AST
 }
 
 // NewBoundDeferredTrigger creates a new BoundDeferredTrigger
 func NewBoundDeferredTrigger(
-	value expressionparser.AST,
+	value expression_parser.AST,
 	sourceSpan *util.ParseSourceSpan,
 	prefetchSpan *util.ParseSourceSpan,
 	whenSourceSpan *util.ParseSourceSpan,
@@ -502,13 +502,13 @@ func NewInteractionDeferredTrigger(
 type ViewportDeferredTrigger struct {
 	*DeferredTrigger
 	Reference *string
-	Options   *expressionparser.LiteralMap
+	Options   *expression_parser.LiteralMap
 }
 
 // NewViewportDeferredTrigger creates a new ViewportDeferredTrigger
 func NewViewportDeferredTrigger(
 	reference *string,
-	options *expressionparser.LiteralMap,
+	options *expression_parser.LiteralMap,
 	nameSpan *util.ParseSourceSpan,
 	sourceSpan *util.ParseSourceSpan,
 	prefetchSpan *util.ParseSourceSpan,
@@ -818,14 +818,14 @@ func (db *DeferredBlock) visitTriggers(keys []string, triggers *DeferredBlockTri
 // SwitchBlock represents a switch block
 type SwitchBlock struct {
 	*BlockNode
-	Expression    expressionparser.AST
+	Expression    expression_parser.AST
 	Cases         []*SwitchBlockCase
 	UnknownBlocks []*UnknownBlock
 }
 
 // NewSwitchBlock creates a new SwitchBlock
 func NewSwitchBlock(
-	expression expressionparser.AST,
+	expression expression_parser.AST,
 	cases []*SwitchBlockCase,
 	unknownBlocks []*UnknownBlock,
 	sourceSpan *util.ParseSourceSpan,
@@ -849,14 +849,14 @@ func (sb *SwitchBlock) Visit(visitor Visitor) interface{} {
 // SwitchBlockCase represents a switch block case
 type SwitchBlockCase struct {
 	*BlockNode
-	Expression expressionparser.AST
+	Expression expression_parser.AST
 	Children   []Node
 	I18n       I18nMeta
 }
 
 // NewSwitchBlockCase creates a new SwitchBlockCase
 func NewSwitchBlockCase(
-	expression expressionparser.AST,
+	expression expression_parser.AST,
 	children []Node,
 	sourceSpan *util.ParseSourceSpan,
 	startSourceSpan *util.ParseSourceSpan,
@@ -881,8 +881,8 @@ func (sbc *SwitchBlockCase) Visit(visitor Visitor) interface{} {
 type ForLoopBlock struct {
 	*BlockNode
 	Item             *Variable
-	Expression       *expressionparser.ASTWithSource
-	TrackBy          *expressionparser.ASTWithSource
+	Expression       *expression_parser.ASTWithSource
+	TrackBy          *expression_parser.ASTWithSource
 	TrackKeywordSpan *util.ParseSourceSpan
 	ContextVariables []*Variable
 	Children         []Node
@@ -894,8 +894,8 @@ type ForLoopBlock struct {
 // NewForLoopBlock creates a new ForLoopBlock
 func NewForLoopBlock(
 	item *Variable,
-	expression *expressionparser.ASTWithSource,
-	trackBy *expressionparser.ASTWithSource,
+	expression *expression_parser.ASTWithSource,
+	trackBy *expression_parser.ASTWithSource,
 	trackKeywordSpan *util.ParseSourceSpan,
 	contextVariables []*Variable,
 	children []Node,
@@ -982,7 +982,7 @@ func (ib *IfBlock) Visit(visitor Visitor) interface{} {
 // IfBlockBranch represents a branch of an if block
 type IfBlockBranch struct {
 	*BlockNode
-	Expression      expressionparser.AST
+	Expression      expression_parser.AST
 	Children        []Node
 	ExpressionAlias *Variable
 	I18n            I18nMeta
@@ -990,7 +990,7 @@ type IfBlockBranch struct {
 
 // NewIfBlockBranch creates a new IfBlockBranch
 func NewIfBlockBranch(
-	expression expressionparser.AST,
+	expression expression_parser.AST,
 	children []Node,
 	expressionAlias *Variable,
 	sourceSpan *util.ParseSourceSpan,
@@ -1046,7 +1046,7 @@ func (ub *UnknownBlock) Visit(visitor Visitor) interface{} {
 // LetDeclaration represents a let declaration
 type LetDeclaration struct {
 	Name       string
-	Value      expressionparser.AST
+	Value      expression_parser.AST
 	sourceSpan *util.ParseSourceSpan
 	NameSpan   *util.ParseSourceSpan
 	ValueSpan  *util.ParseSourceSpan
@@ -1055,7 +1055,7 @@ type LetDeclaration struct {
 // NewLetDeclaration creates a new LetDeclaration
 func NewLetDeclaration(
 	name string,
-	value expressionparser.AST,
+	value expression_parser.AST,
 	sourceSpan *util.ParseSourceSpan,
 	nameSpan *util.ParseSourceSpan,
 	valueSpan *util.ParseSourceSpan,
