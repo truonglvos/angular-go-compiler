@@ -1,4 +1,4 @@
-package pipeline_compilation
+package compilation
 
 import (
 	"ngc-go/packages/compiler/output"
