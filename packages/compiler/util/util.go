@@ -141,5 +141,6 @@ func Stringify(token interface{}) string {
 type Console interface {
 	Log(message string)
 	Warn(message string)
+	Error(message string)
 }
 
