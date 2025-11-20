@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -280,7 +280,7 @@ func generateVariablesInScopeForView(
 		newOps = append(newOps, ops_shared.NewVariableOp(
 			view.Job.AllocateXrefId(),
 			scope.ViewContextVariable,
-			ir_expression.NewNextContextExpr(),
+			expression.NewNextContextExpr(),
 			ir.VariableFlagsNone,
 		))
 	}
@@ -288,7 +288,7 @@ func generateVariablesInScopeForView(
 	// Add variables for all context variables available in this scope's view.
 	scopeView := view.Job.Views[scope.View]
 	for name, value := range scopeView.ContextVariables {
-		context := ir_expression.NewContextExpr(scope.View)
+		context := expression.NewContextExpr(scope.View)
 		// We either read the context, or, if the variable is CTX_REF, use the context directly.
 		var variable output.OutputExpression
 		if value == ir_variable.CTX_REF {
@@ -321,7 +321,7 @@ func generateVariablesInScopeForView(
 		newOps = append(newOps, ops_shared.NewVariableOp(
 			view.Job.AllocateXrefId(),
 			ref.Variable,
-			ir_expression.NewReferenceExpr(ref.TargetId, ref.TargetSlot, ref.Offset),
+			expression.NewReferenceExpr(ref.TargetId, ref.TargetSlot, ref.Offset),
 			ir.VariableFlagsNone,
 		))
 	}
@@ -331,7 +331,7 @@ func generateVariablesInScopeForView(
 			newOps = append(newOps, ops_shared.NewVariableOp(
 				view.Job.AllocateXrefId(),
 				decl.Variable,
-				ir_expression.NewContextLetReferenceExpr(decl.TargetId, decl.TargetSlot),
+				expression.NewContextLetReferenceExpr(decl.TargetId, decl.TargetSlot),
 				ir.VariableFlagsNone,
 			))
 		}

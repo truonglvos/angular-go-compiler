@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
@@ -23,10 +23,10 @@ func transformDollarEvent(opsList *ir_operation.OpList) {
 	for op := opsList.Head(); op != nil; op = op.Next() {
 		kind := op.GetKind()
 		if kind == ir.OpKindListener || kind == ir.OpKindTwoWayListener || kind == ir.OpKindAnimationListener {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-					if lexicalRead, ok := expr.(*ir_expression.LexicalReadExpr); ok && lexicalRead.Name == "$event" {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+					if lexicalRead, ok := expr.(*expression.LexicalReadExpr); ok && lexicalRead.Name == "$event" {
 						// Two-way listeners always consume `$event` so they omit this field.
 						if listenerOp, ok := op.(*ops_create.ListenerOp); ok && (kind == ir.OpKindListener || kind == ir.OpKindAnimationListener) {
 							listenerOp.ConsumesDollarEvent = true
@@ -37,7 +37,7 @@ func transformDollarEvent(opsList *ir_operation.OpList) {
 					}
 					return expr
 				},
-				ir_expression.VisitorContextFlagInChildOperation,
+				expression.VisitorContextFlagInChildOperation,
 			)
 		}
 	}

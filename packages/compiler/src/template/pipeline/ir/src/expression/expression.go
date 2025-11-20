@@ -1,4 +1,4 @@
-package ir_expression
+package expression
 
 import (
 	"fmt"

@@ -14,7 +14,7 @@ import (
 	view_i18n "ngc-go/packages/compiler/src/render3/view/i18n"
 	"ngc-go/packages/compiler/src/schema"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -552,7 +552,7 @@ func ingestIfBlock(unit *pipeline_compilation.ViewCompilationUnit, ifBlock *rend
 			panic(fmt.Sprintf("Unexpected conditional create op type: %T", conditionalCreateOp))
 		}
 
-		conditionalCaseExpr := ir_expression.NewConditionalCaseExpr(
+		conditionalCaseExpr := expression.NewConditionalCaseExpr(
 			caseExpr,
 			conditionalCreateOp.GetXref(),
 			handle,
@@ -645,7 +645,7 @@ func ingestSwitchBlock(unit *pipeline_compilation.ViewCompilationUnit, switchBlo
 			panic(fmt.Sprintf("Unexpected conditional create op type: %T", conditionalCreateOp))
 		}
 
-		conditionalCaseExpr := ir_expression.NewConditionalCaseExpr(
+		conditionalCaseExpr := expression.NewConditionalCaseExpr(
 			caseExpr,
 			conditionalCreateOp.GetXref(),
 			handle,
@@ -1212,11 +1212,11 @@ func getComputedForLoopVariableExpression(
 ) output.OutputExpression {
 	switch variable.Value {
 	case "$index":
-		return ir_expression.NewLexicalReadExpr(indexName)
+		return expression.NewLexicalReadExpr(indexName)
 	case "$count":
-		return ir_expression.NewLexicalReadExpr(countName)
+		return expression.NewLexicalReadExpr(countName)
 	case "$first":
-		indexExpr := ir_expression.NewLexicalReadExpr(indexName)
+		indexExpr := expression.NewLexicalReadExpr(indexName)
 		zeroExpr := output.NewLiteralExpr(0, nil, nil)
 		return output.NewBinaryOperatorExpr(
 			output.BinaryOperatorIdentical,
@@ -1226,8 +1226,8 @@ func getComputedForLoopVariableExpression(
 			nil,
 		)
 	case "$last":
-		indexExpr := ir_expression.NewLexicalReadExpr(indexName)
-		countExpr := ir_expression.NewLexicalReadExpr(countName)
+		indexExpr := expression.NewLexicalReadExpr(indexName)
+		countExpr := expression.NewLexicalReadExpr(countName)
 		oneExpr := output.NewLiteralExpr(1, nil, nil)
 		countMinusOne := output.NewBinaryOperatorExpr(
 			output.BinaryOperatorMinus,
@@ -1244,7 +1244,7 @@ func getComputedForLoopVariableExpression(
 			nil,
 		)
 	case "$even":
-		indexExpr := ir_expression.NewLexicalReadExpr(indexName)
+		indexExpr := expression.NewLexicalReadExpr(indexName)
 		twoExpr := output.NewLiteralExpr(2, nil, nil)
 		zeroExpr := output.NewLiteralExpr(0, nil, nil)
 		moduloExpr := output.NewBinaryOperatorExpr(
@@ -1262,7 +1262,7 @@ func getComputedForLoopVariableExpression(
 			nil,
 		)
 	case "$odd":
-		indexExpr := ir_expression.NewLexicalReadExpr(indexName)
+		indexExpr := expression.NewLexicalReadExpr(indexName)
 		twoExpr := output.NewLiteralExpr(2, nil, nil)
 		zeroExpr := output.NewLiteralExpr(0, nil, nil)
 		moduloExpr := output.NewBinaryOperatorExpr(
@@ -1480,8 +1480,8 @@ func makeTwoWayListenerHandlerOps(
 	}
 
 	handlerExpr := convertAst(handler, unit.GetJob(), handlerSpan)
-	eventReference := ir_expression.NewLexicalReadExpr("$event")
-	twoWaySetExpr := ir_expression.NewTwoWayBindingSetExpr(handlerExpr, eventReference)
+	eventReference := expression.NewLexicalReadExpr("$event")
+	twoWaySetExpr := expression.NewTwoWayBindingSetExpr(handlerExpr, eventReference)
 
 	handlerOps = append(handlerOps, ops_shared.NewStatementOp(
 		output.NewExpressionStatement(twoWaySetExpr, nil, nil),
@@ -1998,7 +1998,7 @@ func convertAst(
 		isImplicitReceiver = isImplicitReceiver && !isThisReceiver
 
 		if isImplicitReceiver {
-			return ir_expression.NewLexicalReadExpr(propRead.Name)
+			return expression.NewLexicalReadExpr(propRead.Name)
 		} else {
 			return output.NewReadPropExpr(
 				convertAst(propRead.Receiver, job, baseSourceSpan),
@@ -2074,7 +2074,7 @@ func convertAst(
 	// Handle ThisReceiver
 	if thisReceiver, ok := ast.(*expression_parser.ThisReceiver); ok {
 		_ = thisReceiver
-		return ir_expression.NewContextExpr(job.GetRoot().GetXref())
+		return expression.NewContextExpr(job.GetRoot().GetXref())
 	}
 
 	// Handle KeyedRead
@@ -2142,7 +2142,7 @@ func convertAst(
 		for _, arg := range pipe.Args {
 			args = append(args, convertAst(arg, job, baseSourceSpan))
 		}
-		return ir_expression.NewPipeBindingExpr(
+		return expression.NewPipeBindingExpr(
 			job.AllocateXrefId(),
 			ir.NewSlotHandle(),
 			pipe.Name,
@@ -2152,7 +2152,7 @@ func convertAst(
 
 	// Handle SafeKeyedRead
 	if safeKeyedRead, ok := ast.(*expression_parser.SafeKeyedRead); ok {
-		return ir_expression.NewSafeKeyedReadExpr(
+		return expression.NewSafeKeyedReadExpr(
 			convertAst(safeKeyedRead.Receiver, job, baseSourceSpan),
 			convertAst(safeKeyedRead.Key, job, baseSourceSpan),
 			convertSourceSpan(safeKeyedRead.Span(), baseSourceSpan),
@@ -2161,7 +2161,7 @@ func convertAst(
 
 	// Handle SafePropertyRead
 	if safePropRead, ok := ast.(*expression_parser.SafePropertyRead); ok {
-		return ir_expression.NewSafePropertyReadExpr(
+		return expression.NewSafePropertyReadExpr(
 			convertAst(safePropRead.Receiver, job, baseSourceSpan),
 			safePropRead.Name,
 		)
@@ -2173,7 +2173,7 @@ func convertAst(
 		for i, arg := range safeCall.Args {
 			args[i] = convertAst(arg, job, baseSourceSpan)
 		}
-		return ir_expression.NewSafeInvokeFunctionExpr(
+		return expression.NewSafeInvokeFunctionExpr(
 			convertAst(safeCall.Receiver, job, baseSourceSpan),
 			args,
 		)
@@ -2181,7 +2181,7 @@ func convertAst(
 
 	// Handle EmptyExpr
 	if emptyExpr, ok := ast.(*expression_parser.EmptyExpr); ok {
-		return ir_expression.NewEmptyExpr(convertSourceSpan(emptyExpr.Span(), baseSourceSpan))
+		return expression.NewEmptyExpr(convertSourceSpan(emptyExpr.Span(), baseSourceSpan))
 	}
 
 	// Handle PrefixNot

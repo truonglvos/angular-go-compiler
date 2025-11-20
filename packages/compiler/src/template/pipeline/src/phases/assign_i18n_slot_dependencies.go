@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
@@ -82,7 +82,7 @@ func AssignI18nSlotDependencies(job *pipeline.CompilationJob) {
 						}
 					} else if updateOp.GetKind() == ir.OpKindStatement || updateOp.GetKind() == ir.OpKindVariable {
 						// Some expressions may consume slots as well (e.g. `storeLet`).
-						ir_expression.VisitExpressionsInOp(updateOp, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
+						expression.VisitExpressionsInOp(updateOp, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
 							if !hasDifferentTarget && ir_traits.HasDependsOnSlotContextTrait(expr) {
 								if depExpr, ok := expr.(interface {
 									GetDependsOnSlotContextTrait() *ir_traits.DependsOnSlotContextOpTrait

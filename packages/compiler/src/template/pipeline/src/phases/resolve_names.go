@@ -5,7 +5,7 @@ import (
 
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -92,18 +92,18 @@ func processLexicalScopeResolveName(
 			continue
 		}
 
-		ir_expression.TransformExpressionsInOp(
+		expression.TransformExpressionsInOp(
 			op,
-			func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-				if lexicalRead, ok := expr.(*ir_expression.LexicalReadExpr); ok {
+			func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+				if lexicalRead, ok := expr.(*expression.LexicalReadExpr); ok {
 					// `expr` is a read of a name within the lexical scope of this view.
 					// Either that name is defined within the current view, or it represents a property from the
 					// main component context.
 					if xref, exists := localDefinitions[lexicalRead.Name]; exists {
-						return ir_expression.NewReadVariableExpr(xref)
+						return expression.NewReadVariableExpr(xref)
 					} else if xref, exists := scope[lexicalRead.Name]; exists {
 						// This was a defined variable in the current scope.
-						return ir_expression.NewReadVariableExpr(xref)
+						return expression.NewReadVariableExpr(xref)
 					} else {
 						// Reading from the component context.
 						// Get ComponentCompilationJob by casting unit to ViewCompilationUnit
@@ -113,9 +113,9 @@ func processLexicalScopeResolveName(
 						}
 						componentJob := viewUnit.Job
 						rootXref := componentJob.Root.Xref
-						return output.NewReadPropExpr(ir_expression.NewContextExpr(rootXref), lexicalRead.Name, nil, nil)
+						return output.NewReadPropExpr(expression.NewContextExpr(rootXref), lexicalRead.Name, nil, nil)
 					}
-				} else if restoreView, ok := expr.(*ir_expression.RestoreViewExpr); ok {
+				} else if restoreView, ok := expr.(*expression.RestoreViewExpr); ok {
 					// `ir.RestoreViewExpr` happens in listener functions and restores a saved view from the
 					// parent creation list. We expect to find that we captured the `savedView` previously, and
 					// that it matches the expected view to be restored.
@@ -123,20 +123,20 @@ func processLexicalScopeResolveName(
 						if savedView == nil || savedView.View != viewXref {
 							panic(fmt.Sprintf("AssertionError: no saved view %d from view %d", viewXref, unit.GetXref()))
 						}
-						restoreView.View = ir_expression.NewReadVariableExpr(savedView.Variable)
+						restoreView.View = expression.NewReadVariableExpr(savedView.Variable)
 						return restoreView
 					}
 				}
 				return expr
 			},
-			ir_expression.VisitorContextFlagNone,
+			expression.VisitorContextFlagNone,
 		)
 	}
 
 	// Verify no lexical reads remain
 	for op := opsList.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-		ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-			if lexicalRead, ok := expr.(*ir_expression.LexicalReadExpr); ok {
+		expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+			if lexicalRead, ok := expr.(*expression.LexicalReadExpr); ok {
 				panic(fmt.Sprintf("AssertionError: no lexical reads should remain, but found read of %s", lexicalRead.Name))
 			}
 		})

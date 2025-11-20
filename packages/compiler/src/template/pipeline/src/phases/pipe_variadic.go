@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -14,8 +14,8 @@ import (
 func CreateVariadicPipes(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-				pipeBinding, ok := expr.(*ir_expression.PipeBindingExpr)
+			expression.TransformExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+				pipeBinding, ok := expr.(*expression.PipeBindingExpr)
 				if !ok {
 					return expr
 				}
@@ -31,14 +31,14 @@ func CreateVariadicPipes(job *pipeline.CompilationJob) {
 					argsArray[i] = arg
 				}
 				argsLiteral := output.NewLiteralArrayExpr(argsArray, nil, nil)
-				return ir_expression.NewPipeBindingVariadicExpr(
+				return expression.NewPipeBindingVariadicExpr(
 					pipeBinding.Target,
 					pipeBinding.TargetSlot,
 					pipeBinding.Name,
 					argsLiteral,
 					len(pipeBinding.Args),
 				)
-			}, ir_expression.VisitorContextFlagNone)
+			}, expression.VisitorContextFlagNone)
 		}
 	}
 }

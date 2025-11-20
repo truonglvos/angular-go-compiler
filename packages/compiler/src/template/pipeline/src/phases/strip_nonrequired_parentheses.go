@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -31,7 +31,7 @@ func StripNonrequiredParentheses(job *pipeline.CompilationJob) {
 	requiredParens := make(map[*output.ParenthesizedExpr]bool)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
+			expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
 				if binaryOp, ok := expr.(*output.BinaryOperatorExpr); ok {
 					switch binaryOp.Operator {
 					case output.BinaryOperatorExponentiation:
@@ -47,7 +47,7 @@ func StripNonrequiredParentheses(job *pipeline.CompilationJob) {
 			})
 		}
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
+			expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
 				if binaryOp, ok := expr.(*output.BinaryOperatorExpr); ok {
 					switch binaryOp.Operator {
 					case output.BinaryOperatorExponentiation:
@@ -65,9 +65,9 @@ func StripNonrequiredParentheses(job *pipeline.CompilationJob) {
 	// Remove any non-required parentheses.
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
 					if parenExpr, ok := expr.(*output.ParenthesizedExpr); ok {
 						if requiredParens[parenExpr] {
 							return expr
@@ -76,13 +76,13 @@ func StripNonrequiredParentheses(job *pipeline.CompilationJob) {
 					}
 					return expr
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
 					if parenExpr, ok := expr.(*output.ParenthesizedExpr); ok {
 						if requiredParens[parenExpr] {
 							return expr
@@ -91,7 +91,7 @@ func StripNonrequiredParentheses(job *pipeline.CompilationJob) {
 					}
 					return expr
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 	}

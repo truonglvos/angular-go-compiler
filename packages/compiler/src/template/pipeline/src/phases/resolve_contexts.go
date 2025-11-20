@@ -5,7 +5,7 @@ import (
 
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -40,7 +40,7 @@ func processLexicalScope(
 		case ir.OpKindVariable:
 			if varOp, ok := op.(*ops_shared.VariableOp); ok {
 				if contextVar, ok := varOp.Variable.(*ir_variable.ContextVariable); ok {
-					scope[contextVar.View] = ir_expression.NewReadVariableExpr(varOp.Xref)
+					scope[contextVar.View] = expression.NewReadVariableExpr(varOp.Xref)
 				}
 			}
 		case ir.OpKindAnimation, ir.OpKindAnimationListener, ir.OpKindListener, ir.OpKindTwoWayListener:
@@ -74,10 +74,10 @@ func processLexicalScope(
 	}
 
 	for op := opsList.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-		ir_expression.TransformExpressionsInOp(
+		expression.TransformExpressionsInOp(
 			op,
-			func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-				if contextExpr, ok := expr.(*ir_expression.ContextExpr); ok {
+			func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+				if contextExpr, ok := expr.(*expression.ContextExpr); ok {
 					if ctxExpr, exists := scope[contextExpr.View]; exists {
 						return ctxExpr
 					}
@@ -85,7 +85,7 @@ func processLexicalScope(
 				}
 				return expr
 			},
-			ir_expression.VisitorContextFlagNone,
+			expression.VisitorContextFlagNone,
 		)
 	}
 }

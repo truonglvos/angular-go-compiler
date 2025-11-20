@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	r3_identifiers "ngc-go/packages/compiler/src/render3/r3_identifiers"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -47,7 +47,7 @@ func OptimizeTrackFns(job *pipeline.CompilationJob) {
 				if !ok {
 					continue
 				}
-				contextExpr, ok := readProp.Receiver.(*ir_expression.ContextExpr)
+				contextExpr, ok := readProp.Receiver.(*expression.ContextExpr)
 				if !ok {
 					continue
 				}
@@ -71,20 +71,20 @@ func OptimizeTrackFns(job *pipeline.CompilationJob) {
 				// The track function could not be optimized.
 				// Replace context reads with a special IR expression, since context reads in a track
 				// function are emitted specially.
-				repeaterOp.Track = ir_expression.TransformExpressionsInExpression(
+				repeaterOp.Track = expression.TransformExpressionsInExpression(
 					repeaterOp.Track,
-					func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-						if _, ok := expr.(*ir_expression.PipeBindingExpr); ok {
+					func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+						if _, ok := expr.(*expression.PipeBindingExpr); ok {
 							panic("Illegal State: Pipes are not allowed in this context")
-						} else if _, ok := expr.(*ir_expression.PipeBindingVariadicExpr); ok {
+						} else if _, ok := expr.(*expression.PipeBindingVariadicExpr); ok {
 							panic("Illegal State: Pipes are not allowed in this context")
-						} else if contextExpr, ok := expr.(*ir_expression.ContextExpr); ok {
+						} else if contextExpr, ok := expr.(*expression.ContextExpr); ok {
 							repeaterOp.UsesComponentInstance = true
-							return ir_expression.NewTrackContextExpr(contextExpr.View)
+							return expression.NewTrackContextExpr(contextExpr.View)
 						}
 						return expr
 					},
-					ir_expression.VisitorContextFlagNone,
+					expression.VisitorContextFlagNone,
 				)
 
 				// Also create an OpList for the tracking expression since it may need
@@ -116,7 +116,7 @@ func isTrackByFunctionCall(
 		return false
 	}
 
-	contextExpr, ok := readProp.Receiver.(*ir_expression.ContextExpr)
+	contextExpr, ok := readProp.Receiver.(*expression.ContextExpr)
 	if !ok || contextExpr.View != rootView {
 		return false
 	}

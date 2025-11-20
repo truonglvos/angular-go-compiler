@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -28,7 +28,7 @@ func SaveAndRestoreView(job *pipeline.ComponentCompilationJob) {
 		savedViewVarOp := ops_shared.NewVariableOp(
 			job.AllocateXrefId(),
 			savedViewVar,
-			ir_expression.NewGetCurrentViewExpr(),
+			expression.NewGetCurrentViewExpr(),
 			ir.VariableFlagsNone,
 		)
 		viewUnit.Create.InsertBefore(savedViewVarOp, viewUnit.Create.Head())
@@ -58,10 +58,10 @@ func SaveAndRestoreView(job *pipeline.ComponentCompilationJob) {
 				}
 
 				if handlerOps != nil {
-					ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-						if _, ok := expr.(*ir_expression.ReferenceExpr); ok {
+					expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+						if _, ok := expr.(*expression.ReferenceExpr); ok {
 							needsRestoreView = true
-						} else if _, ok := expr.(*ir_expression.ContextLetReferenceExpr); ok {
+						} else if _, ok := expr.(*expression.ContextLetReferenceExpr); ok {
 							needsRestoreView = true
 						}
 					})
@@ -102,7 +102,7 @@ func addSaveRestoreViewOperationToListener(
 	restoreViewVarOp := ops_shared.NewVariableOp(
 		unit.Job.AllocateXrefId(),
 		contextVar,
-		ir_expression.NewRestoreViewExpr(unit.Xref),
+		expression.NewRestoreViewExpr(unit.Xref),
 		ir.VariableFlagsNone,
 	)
 	handlerOps.InsertBefore(restoreViewVarOp, handlerOps.Head())
@@ -114,7 +114,7 @@ func addSaveRestoreViewOperationToListener(
 		if handlerOp.GetKind() == ir.OpKindStatement {
 			if stmtOp, ok := handlerOp.(*ops_shared.StatementOp); ok {
 				if returnStmt, ok := stmtOp.Statement.(*output.ReturnStatement); ok {
-					returnStmt.Value = ir_expression.NewResetViewExpr(returnStmt.Value)
+					returnStmt.Value = expression.NewResetViewExpr(returnStmt.Value)
 				}
 			}
 		}

@@ -7,7 +7,7 @@ import (
 	"ngc-go/packages/compiler/src/core"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
@@ -144,7 +144,7 @@ func ParseExtractedStyles(job *pipeline.CompilationJob) {
 					continue
 				}
 				if extractedAttrOp.BindingKind == ir.BindingKindAttribute &&
-					ir_expression.IsStringLiteral(extractedAttrOp.Expression) {
+					expression.IsStringLiteral(extractedAttrOp.Expression) {
 					target := elements[extractedAttrOp.Target]
 
 					if target != nil {

@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	r3_identifiers "ngc-go/packages/compiler/src/render3/r3_identifiers"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -60,7 +60,7 @@ func ensureNoIrForDebug(job *pipeline.CompilationJob) {
 
 func reifyCreateOperations(unit pipeline.CompilationUnit, ops *ir_operations.OpList) {
 	for op := ops.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-		ir_expression.TransformExpressionsInOp(op, reifyIrExpression, ir_expression.VisitorContextFlagNone)
+		expression.TransformExpressionsInOp(op, reifyIrExpression, expression.VisitorContextFlagNone)
 
 		switch op.GetKind() {
 		case ir.OpKindText:
@@ -885,7 +885,7 @@ func reifyCreateOperations(unit pipeline.CompilationUnit, ops *ir_operations.OpL
 // reifyUpdateOperations reifies update operations
 func reifyUpdateOperations(unit pipeline.CompilationUnit, ops *ir_operations.OpList) {
 	for op := ops.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-		ir_expression.TransformExpressionsInOp(op, reifyIrExpression, ir_expression.VisitorContextFlagNone)
+		expression.TransformExpressionsInOp(op, reifyIrExpression, expression.VisitorContextFlagNone)
 
 		switch op.GetKind() {
 		case ir.OpKindAdvance:
@@ -1173,24 +1173,24 @@ func reifyControl(op *ops_update.ControlOp) ir_operations.UpdateOp {
 }
 
 // reifyIrExpression reifies IR expressions
-func reifyIrExpression(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-	if !ir_expression.IsIrExpression(expr) {
+func reifyIrExpression(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+	if !expression.IsIrExpression(expr) {
 		return expr
 	}
 
 	switch irExpr := expr.(type) {
-	case *ir_expression.NextContextExpr:
+	case *expression.NextContextExpr:
 		return pipeline_instruction.NextContext(irExpr.Steps)
-	case *ir_expression.ReferenceExpr:
+	case *expression.ReferenceExpr:
 		if irExpr.TargetSlot == nil || irExpr.TargetSlot.Slot == nil {
 			panic("expected targetSlot to be assigned")
 		}
 		return pipeline_instruction.Reference(*irExpr.TargetSlot.Slot + 1 + irExpr.Offset)
-	case *ir_expression.LexicalReadExpr:
+	case *expression.LexicalReadExpr:
 		panic(fmt.Sprintf("AssertionError: unresolved LexicalRead of %s", irExpr.Name))
-	case *ir_expression.TwoWayBindingSetExpr:
+	case *expression.TwoWayBindingSetExpr:
 		panic("AssertionError: unresolved TwoWayBindingSet")
-	case *ir_expression.RestoreViewExpr:
+	case *expression.RestoreViewExpr:
 		if _, ok := irExpr.View.(int); ok {
 			panic("AssertionError: unresolved RestoreView")
 		}
@@ -1198,26 +1198,26 @@ func reifyIrExpression(expr output.OutputExpression, flags ir_expression.Visitor
 			return pipeline_instruction.RestoreView(viewExpr)
 		}
 		panic(fmt.Sprintf("invalid view type: %T", irExpr.View))
-	case *ir_expression.ResetViewExpr:
+	case *expression.ResetViewExpr:
 		return pipeline_instruction.ResetView(irExpr.Expr)
-	case *ir_expression.GetCurrentViewExpr:
+	case *expression.GetCurrentViewExpr:
 		return pipeline_instruction.GetCurrentView()
-	case *ir_expression.ReadVariableExpr:
+	case *expression.ReadVariableExpr:
 		if irExpr.Name == nil {
 			panic(fmt.Sprintf("Read of unnamed variable %d", irExpr.Xref))
 		}
 		return output.NewReadVarExpr(*irExpr.Name, nil, nil)
-	case *ir_expression.ReadTemporaryExpr:
+	case *expression.ReadTemporaryExpr:
 		if irExpr.Name == nil {
 			panic(fmt.Sprintf("Read of unnamed temporary %d", irExpr.Xref))
 		}
 		return output.NewReadVarExpr(*irExpr.Name, nil, nil)
-	case *ir_expression.AssignTemporaryExpr:
+	case *expression.AssignTemporaryExpr:
 		if irExpr.Name == nil {
 			panic(fmt.Sprintf("Assign of unnamed temporary %d", irExpr.Xref))
 		}
 		return output.NewReadVarExpr(*irExpr.Name, nil, nil).Set(irExpr.Expr)
-	case *ir_expression.PureFunctionExpr:
+	case *expression.PureFunctionExpr:
 		if irExpr.Fn == nil {
 			panic("AssertionError: expected PureFunctions to have been extracted")
 		}
@@ -1225,9 +1225,9 @@ func reifyIrExpression(expr output.OutputExpression, flags ir_expression.Visitor
 			panic("expected varOffset to be set")
 		}
 		return pipeline_instruction.PureFunction(*irExpr.VarOffset, irExpr.Fn, irExpr.Args)
-	case *ir_expression.PureFunctionParameterExpr:
+	case *expression.PureFunctionParameterExpr:
 		panic("AssertionError: expected PureFunctionParameterExpr to have been extracted")
-	case *ir_expression.PipeBindingExpr:
+	case *expression.PipeBindingExpr:
 		if irExpr.TargetSlot == nil || irExpr.TargetSlot.Slot == nil {
 			panic("expected targetSlot to be assigned")
 		}
@@ -1235,7 +1235,7 @@ func reifyIrExpression(expr output.OutputExpression, flags ir_expression.Visitor
 			panic("expected varOffset to be set")
 		}
 		return pipeline_instruction.PipeBind(*irExpr.TargetSlot.Slot, *irExpr.VarOffset, irExpr.Args)
-	case *ir_expression.PipeBindingVariadicExpr:
+	case *expression.PipeBindingVariadicExpr:
 		if irExpr.TargetSlot == nil || irExpr.TargetSlot.Slot == nil {
 			panic("expected targetSlot to be assigned")
 		}
@@ -1243,19 +1243,19 @@ func reifyIrExpression(expr output.OutputExpression, flags ir_expression.Visitor
 			panic("expected varOffset to be set")
 		}
 		return pipeline_instruction.PipeBindV(*irExpr.TargetSlot.Slot, *irExpr.VarOffset, irExpr.Args)
-	case *ir_expression.SlotLiteralExpr:
+	case *expression.SlotLiteralExpr:
 		if irExpr.Slot == nil || irExpr.Slot.Slot == nil {
 			panic("expected slot to be assigned")
 		}
 		return output.NewLiteralExpr(*irExpr.Slot.Slot, nil, nil)
-	case *ir_expression.ContextLetReferenceExpr:
+	case *expression.ContextLetReferenceExpr:
 		if irExpr.TargetSlot == nil || irExpr.TargetSlot.Slot == nil {
 			panic("expected targetSlot to be assigned")
 		}
 		return pipeline_instruction.ReadContextLet(*irExpr.TargetSlot.Slot)
-	case *ir_expression.StoreLetExpr:
+	case *expression.StoreLetExpr:
 		return pipeline_instruction.StoreLet(irExpr.Value, irExpr.SourceSpan)
-	case *ir_expression.TrackContextExpr:
+	case *expression.TrackContextExpr:
 		return output.NewReadVarExpr("this", nil, nil)
 	default:
 		panic(fmt.Sprintf("AssertionError: Unsupported reification of ir.Expression kind: %T", expr))

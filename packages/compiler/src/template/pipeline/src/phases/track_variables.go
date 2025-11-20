@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -24,10 +24,10 @@ func GenerateTrackVariables(job *pipeline.CompilationJob) {
 				continue
 			}
 
-			repeaterOp.Track = ir_expression.TransformExpressionsInExpression(
+			repeaterOp.Track = expression.TransformExpressionsInExpression(
 				repeaterOp.Track,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-					if lexicalRead, ok := expr.(*ir_expression.LexicalReadExpr); ok {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+					if lexicalRead, ok := expr.(*expression.LexicalReadExpr); ok {
 						// Check if this is $index
 						if repeaterOp.VarNames.DollarIndex != nil {
 							if _, exists := repeaterOp.VarNames.DollarIndex[lexicalRead.Name]; exists {
@@ -43,7 +43,7 @@ func GenerateTrackVariables(job *pipeline.CompilationJob) {
 					}
 					return expr
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 	}

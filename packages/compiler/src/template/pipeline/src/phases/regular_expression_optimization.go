@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -15,9 +15,9 @@ import (
 func OptimizeRegularExpressions(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
 					regexExpr, ok := expr.(*output.RegularExpressionLiteralExpr)
 					if !ok {
 						return expr
@@ -28,13 +28,13 @@ func OptimizeRegularExpressions(job *pipeline.CompilationJob) {
 					}
 					return job.Pool.GetSharedConstant(&RegularExpressionConstant{}, regexExpr)
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
 					regexExpr, ok := expr.(*output.RegularExpressionLiteralExpr)
 					if !ok {
 						return expr
@@ -45,7 +45,7 @@ func OptimizeRegularExpressions(job *pipeline.CompilationJob) {
 					}
 					return job.Pool.GetSharedConstant(&RegularExpressionConstant{}, regexExpr)
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 	}

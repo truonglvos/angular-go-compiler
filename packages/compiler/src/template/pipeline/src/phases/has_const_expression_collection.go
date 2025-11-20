@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -15,31 +15,31 @@ import (
 func CollectConstExpressions(job *pipeline.ComponentCompilationJob) {
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-					constCollected, ok := expr.(*ir_expression.ConstCollectedExpr)
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+					constCollected, ok := expr.(*expression.ConstCollectedExpr)
 					if !ok {
 						return expr
 					}
 					constIndex := job.AddConst(constCollected.Expr, nil)
 					return output.NewLiteralExpr(int(constIndex), nil, nil)
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-					constCollected, ok := expr.(*ir_expression.ConstCollectedExpr)
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+					constCollected, ok := expr.(*expression.ConstCollectedExpr)
 					if !ok {
 						return expr
 					}
 					constIndex := job.AddConst(constCollected.Expr, nil)
 					return output.NewLiteralExpr(int(constIndex), nil, nil)
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 	}

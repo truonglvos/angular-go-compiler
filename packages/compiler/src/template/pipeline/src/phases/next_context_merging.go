@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -58,20 +58,20 @@ func mergeNextContextsInOps(opsList *ir_operation.OpList) {
 			continue
 		}
 
-		nextCtxExpr, ok := exprStmt.Expr.(*ir_expression.NextContextExpr)
+		nextCtxExpr, ok := exprStmt.Expr.(*expression.NextContextExpr)
 		if !ok {
 			continue
 		}
 
 		mergeSteps := nextCtxExpr.Steps
 
-		// Try to merge this `ir_expression.NextContextExpr`.
+		// Try to merge this `expression.NextContextExpr`.
 		tryToMerge := true
 		for candidate := op.Next(); candidate != nil && candidate.GetKind() != ir.OpKindListEnd && tryToMerge; candidate = candidate.Next() {
-			ir_expression.VisitExpressionsInOp(
+			expression.VisitExpressionsInOp(
 				candidate,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-					if !ir_expression.IsIrExpression(expr) {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+					if !expression.IsIrExpression(expr) {
 						return
 					}
 
@@ -80,25 +80,25 @@ func mergeNextContextsInOps(opsList *ir_operation.OpList) {
 						return
 					}
 
-					if flags&ir_expression.VisitorContextFlagInChildOperation != 0 {
+					if flags&expression.VisitorContextFlagInChildOperation != 0 {
 						// We cannot merge into child operations.
 						return
 					}
 
-					if nextCtx, ok := expr.(*ir_expression.NextContextExpr); ok {
+					if nextCtx, ok := expr.(*expression.NextContextExpr); ok {
 						// Merge the previous `ir.NextContextExpr` into this one.
 						nextCtx.Steps += mergeSteps
 						opsList.Remove(op)
 						tryToMerge = false
-					} else if getCurrentView, ok := expr.(*ir_expression.GetCurrentViewExpr); ok {
+					} else if getCurrentView, ok := expr.(*expression.GetCurrentViewExpr); ok {
 						// Can't merge past a dependency on the context.
 						tryToMerge = false
 						_ = getCurrentView
-					} else if ref, ok := expr.(*ir_expression.ReferenceExpr); ok {
+					} else if ref, ok := expr.(*expression.ReferenceExpr); ok {
 						// Can't merge past a dependency on the context.
 						tryToMerge = false
 						_ = ref
-					} else if ctxLetRef, ok := expr.(*ir_expression.ContextLetReferenceExpr); ok {
+					} else if ctxLetRef, ok := expr.(*expression.ContextLetReferenceExpr); ok {
 						// Can't merge past a dependency on the context.
 						tryToMerge = false
 						_ = ctxLetRef

@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -25,7 +25,7 @@ func ConfigureDeferInstructions(job *pipeline_compilation.ComponentCompilationJo
 
 			if deferOp.PlaceholderMinimumTime != nil {
 				configArray := pipeline_convension.LiteralOrArrayLiteral([]interface{}{*deferOp.PlaceholderMinimumTime})
-				deferOp.PlaceholderConfig = ir_expression.NewConstCollectedExpr(configArray)
+				deferOp.PlaceholderConfig = expression.NewConstCollectedExpr(configArray)
 			}
 			if deferOp.LoadingMinimumTime != nil || deferOp.LoadingAfterTime != nil {
 				configValues := make([]interface{}, 0, 2)
@@ -40,7 +40,7 @@ func ConfigureDeferInstructions(job *pipeline_compilation.ComponentCompilationJo
 					configValues = append(configValues, nil)
 				}
 				configArray := pipeline_convension.LiteralOrArrayLiteral(configValues)
-				deferOp.LoadingConfig = ir_expression.NewConstCollectedExpr(configArray)
+				deferOp.LoadingConfig = expression.NewConstCollectedExpr(configArray)
 			}
 		}
 	}

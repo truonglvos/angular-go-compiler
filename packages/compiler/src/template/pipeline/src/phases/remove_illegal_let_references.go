@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -35,7 +35,7 @@ func RemoveIllegalLetReferences(job *pipeline.CompilationJob) {
 				continue
 			}
 
-			_, ok = variableOp.Initializer.(*ir_expression.StoreLetExpr)
+			_, ok = variableOp.Initializer.(*expression.StoreLetExpr)
 			if !ok {
 				continue
 			}
@@ -45,15 +45,15 @@ func RemoveIllegalLetReferences(job *pipeline.CompilationJob) {
 			// Walk backwards through the update list and replace any LexicalReadExpr with this name
 			current := op
 			for current != nil && current.GetKind() != ir.OpKindListEnd {
-				ir_expression.TransformExpressionsInOp(
+				expression.TransformExpressionsInOp(
 					current,
-					func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-						if lexicalRead, ok := expr.(*ir_expression.LexicalReadExpr); ok && lexicalRead.Name == name {
+					func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+						if lexicalRead, ok := expr.(*expression.LexicalReadExpr); ok && lexicalRead.Name == name {
 							return output.NewLiteralExpr(nil, nil, nil) // undefined
 						}
 						return expr
 					},
-					ir_expression.VisitorContextFlagNone,
+					expression.VisitorContextFlagNone,
 				)
 				current = current.GetPrev()
 			}

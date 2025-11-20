@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/core"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
@@ -258,7 +258,7 @@ func (e *ElementAttributes) Add(
 			panic("Attribute, i18n attribute, & style element attributes must have a value")
 		}
 		if trustedValueFn != nil {
-			if !ir_expression.IsStringLiteral(value) {
+			if !expression.IsStringLiteral(value) {
 				panic("AssertionError: extracted attribute value should be string literal")
 			}
 			literalExpr, ok := value.(*output.LiteralExpr)

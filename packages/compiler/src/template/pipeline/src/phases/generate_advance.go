@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"ngc-go/packages/compiler/src/output"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
@@ -49,7 +49,7 @@ func GenerateAdvance(job *pipeline.CompilationJob) {
 					consumer = depOp.GetDependsOnSlotContextTrait()
 				}
 			} else {
-				ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
+				expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
 					if consumer == nil && ir_traits.HasDependsOnSlotContextTrait(expr) {
 						if depExpr, ok := expr.(interface {
 							GetDependsOnSlotContextTrait() *ir_traits.DependsOnSlotContextOpTrait

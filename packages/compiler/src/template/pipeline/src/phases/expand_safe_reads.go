@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -23,16 +23,16 @@ func ExpandSafeReads(job *pipeline.CompilationJob) {
 	ctx := &SafeTransformContext{Job: job}
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
+			expression.TransformExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
 				return safeTransform(expr, ctx)
-			}, ir_expression.VisitorContextFlagNone)
-			ir_expression.TransformExpressionsInOp(op, ternaryTransform, ir_expression.VisitorContextFlagNone)
+			}, expression.VisitorContextFlagNone)
+			expression.TransformExpressionsInOp(op, ternaryTransform, expression.VisitorContextFlagNone)
 		}
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
+			expression.TransformExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
 				return safeTransform(expr, ctx)
-			}, ir_expression.VisitorContextFlagNone)
-			ir_expression.TransformExpressionsInOp(op, ternaryTransform, ir_expression.VisitorContextFlagNone)
+			}, expression.VisitorContextFlagNone)
+			expression.TransformExpressionsInOp(op, ternaryTransform, expression.VisitorContextFlagNone)
 		}
 	}
 }
@@ -54,7 +54,7 @@ func needsTemporaryInSafeAccess(e output.OutputExpression) bool {
 		return needsTemporaryInSafeAccess(expr.Condition) || needsTemporaryInSafeAccess(expr.TrueCase)
 	case *output.NotExpr:
 		return needsTemporaryInSafeAccess(expr.Condition)
-	case *ir_expression.AssignTemporaryExpr:
+	case *expression.AssignTemporaryExpr:
 		return needsTemporaryInSafeAccess(expr.Expr)
 	case *output.ReadPropExpr:
 		return needsTemporaryInSafeAccess(expr.Receiver)
@@ -68,9 +68,9 @@ func needsTemporaryInSafeAccess(e output.OutputExpression) bool {
 		return true
 	case *output.LiteralMapExpr:
 		return true
-	case *ir_expression.SafeInvokeFunctionExpr:
+	case *expression.SafeInvokeFunctionExpr:
 		return true
-	case *ir_expression.PipeBindingExpr:
+	case *expression.PipeBindingExpr:
 		return true
 	default:
 		return false
@@ -83,15 +83,15 @@ func temporariesIn(e output.OutputExpression) map[ir_operation.XrefId]bool {
 	// TODO: Although it's not currently supported by the transform helper, we should be able to
 	// short-circuit exploring the tree to do less work. In particular, we don't have to penetrate
 	// into the subexpressions of temporary assignments.
-	ir_expression.TransformExpressionsInExpression(
+	expression.TransformExpressionsInExpression(
 		e,
-		func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-			if assignTmp, ok := expr.(*ir_expression.AssignTemporaryExpr); ok {
+		func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+			if assignTmp, ok := expr.(*expression.AssignTemporaryExpr); ok {
 				temporaries[assignTmp.Xref] = true
 			}
 			return expr
 		},
-		ir_expression.VisitorContextFlagNone,
+		expression.VisitorContextFlagNone,
 	)
 	return temporaries
 }
@@ -104,23 +104,23 @@ func eliminateTemporaryAssignments(
 ) output.OutputExpression {
 	// TODO: We can be more efficient than the transform helper here. We don't need to visit any
 	// descendents of temporary assignments.
-	return ir_expression.TransformExpressionsInExpression(
+	return expression.TransformExpressionsInExpression(
 		e,
-		func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-			if assignTmp, ok := expr.(*ir_expression.AssignTemporaryExpr); ok && tmps[assignTmp.Xref] {
-				read := ir_expression.NewReadTemporaryExpr(assignTmp.Xref)
+		func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+			if assignTmp, ok := expr.(*expression.AssignTemporaryExpr); ok && tmps[assignTmp.Xref] {
+				read := expression.NewReadTemporaryExpr(assignTmp.Xref)
 				// `TemplateDefinitionBuilder` has the (accidental?) behavior of generating assignments of
 				// temporary variables to themselves. This happens because some subexpression that the
 				// temporary refers to, possibly through nested temporaries, has a function call. We copy that
 				// behavior here.
 				if ctx.Job.Compatibility == ir.CompatibilityModeTemplateDefinitionBuilder {
-					return ir_expression.NewAssignTemporaryExpr(read, read.Xref)
+					return expression.NewAssignTemporaryExpr(read, read.Xref)
 				}
 				return read
 			}
 			return expr
 		},
-		ir_expression.VisitorContextFlagNone,
+		expression.VisitorContextFlagNone,
 	)
 }
 
@@ -131,12 +131,12 @@ func safeTernaryWithTemporary(
 	guard output.OutputExpression,
 	body func(output.OutputExpression) output.OutputExpression,
 	ctx *SafeTransformContext,
-) *ir_expression.SafeTernaryExpr {
+) *expression.SafeTernaryExpr {
 	var result [2]output.OutputExpression
 	if needsTemporaryInSafeAccess(guard) {
 		xref := ctx.Job.AllocateXrefId()
-		result[0] = ir_expression.NewAssignTemporaryExpr(guard, xref)
-		result[1] = ir_expression.NewReadTemporaryExpr(xref)
+		result[0] = expression.NewAssignTemporaryExpr(guard, xref)
+		result[1] = expression.NewReadTemporaryExpr(xref)
 	} else {
 		result[0] = guard
 		result[1] = guard.Clone()
@@ -146,14 +146,14 @@ func safeTernaryWithTemporary(
 		// by transforming it from an assignment into a read on the expression side.
 		result[1] = eliminateTemporaryAssignments(result[1], temporariesIn(result[0]), ctx)
 	}
-	return ir_expression.NewSafeTernaryExpr(result[0], body(result[1]))
+	return expression.NewSafeTernaryExpr(result[0], body(result[1]))
 }
 
 // isSafeAccessExpression checks if an expression is a safe access expression
 func isSafeAccessExpression(e output.OutputExpression) bool {
-	_, ok1 := e.(*ir_expression.SafePropertyReadExpr)
-	_, ok2 := e.(*ir_expression.SafeKeyedReadExpr)
-	_, ok3 := e.(*ir_expression.SafeInvokeFunctionExpr)
+	_, ok1 := e.(*expression.SafePropertyReadExpr)
+	_, ok2 := e.(*expression.SafeKeyedReadExpr)
+	_, ok3 := e.(*expression.SafeInvokeFunctionExpr)
 	return ok1 || ok2 || ok3
 }
 
@@ -171,17 +171,17 @@ func isAccessExpression(e output.OutputExpression) bool {
 }
 
 // deepestSafeTernary finds the deepest SafeTernaryExpr in an access expression
-func deepestSafeTernary(e output.OutputExpression) *ir_expression.SafeTernaryExpr {
+func deepestSafeTernary(e output.OutputExpression) *expression.SafeTernaryExpr {
 	if !isAccessExpression(e) {
 		return nil
 	}
 	var receiver output.OutputExpression
 	switch expr := e.(type) {
-	case *ir_expression.SafePropertyReadExpr:
+	case *expression.SafePropertyReadExpr:
 		receiver = expr.Receiver
-	case *ir_expression.SafeKeyedReadExpr:
+	case *expression.SafeKeyedReadExpr:
 		receiver = expr.Receiver
-	case *ir_expression.SafeInvokeFunctionExpr:
+	case *expression.SafeInvokeFunctionExpr:
 		receiver = expr.Receiver
 	case *output.ReadPropExpr:
 		receiver = expr.Receiver
@@ -192,10 +192,10 @@ func deepestSafeTernary(e output.OutputExpression) *ir_expression.SafeTernaryExp
 	default:
 		return nil
 	}
-	if st, ok := receiver.(*ir_expression.SafeTernaryExpr); ok {
+	if st, ok := receiver.(*expression.SafeTernaryExpr); ok {
 		deepest := st
 		for {
-			if stExpr, ok := deepest.Expr.(*ir_expression.SafeTernaryExpr); ok {
+			if stExpr, ok := deepest.Expr.(*expression.SafeTernaryExpr); ok {
 				deepest = stExpr
 			} else {
 				break
@@ -231,17 +231,17 @@ func safeTransform(e output.OutputExpression, ctx *SafeTransformContext) output.
 			// dst.expr = dst.expr.key(e.index)
 			dst.Expr = output.NewReadKeyExpr(dst.Expr, expr.Index, nil, nil)
 			return getReceiver(expr)
-		case *ir_expression.SafeInvokeFunctionExpr:
+		case *expression.SafeInvokeFunctionExpr:
 			dst.Expr = safeTernaryWithTemporary(dst.Expr, func(r output.OutputExpression) output.OutputExpression {
 				return output.NewInvokeFunctionExpr(r, expr.Args, nil, nil, false)
 			}, ctx)
 			return getReceiver(expr)
-		case *ir_expression.SafePropertyReadExpr:
+		case *expression.SafePropertyReadExpr:
 			dst.Expr = safeTernaryWithTemporary(dst.Expr, func(r output.OutputExpression) output.OutputExpression {
 				return output.NewReadPropExpr(r, expr.Name, nil, nil)
 			}, ctx)
 			return getReceiver(expr)
-		case *ir_expression.SafeKeyedReadExpr:
+		case *expression.SafeKeyedReadExpr:
 			dst.Expr = safeTernaryWithTemporary(dst.Expr, func(r output.OutputExpression) output.OutputExpression {
 				return output.NewReadKeyExpr(r, expr.Index, nil, nil)
 			}, ctx)
@@ -249,15 +249,15 @@ func safeTransform(e output.OutputExpression, ctx *SafeTransformContext) output.
 		}
 	} else {
 		switch expr := e.(type) {
-		case *ir_expression.SafeInvokeFunctionExpr:
+		case *expression.SafeInvokeFunctionExpr:
 			return safeTernaryWithTemporary(expr.Receiver, func(r output.OutputExpression) output.OutputExpression {
 				return output.NewInvokeFunctionExpr(r, expr.Args, nil, nil, false)
 			}, ctx)
-		case *ir_expression.SafePropertyReadExpr:
+		case *expression.SafePropertyReadExpr:
 			return safeTernaryWithTemporary(expr.Receiver, func(r output.OutputExpression) output.OutputExpression {
 				return output.NewReadPropExpr(r, expr.Name, nil, nil)
 			}, ctx)
-		case *ir_expression.SafeKeyedReadExpr:
+		case *expression.SafeKeyedReadExpr:
 			return safeTernaryWithTemporary(expr.Receiver, func(r output.OutputExpression) output.OutputExpression {
 				return output.NewReadKeyExpr(r, expr.Index, nil, nil)
 			}, ctx)
@@ -270,11 +270,11 @@ func safeTransform(e output.OutputExpression, ctx *SafeTransformContext) output.
 // getReceiver extracts the receiver from an access expression
 func getReceiver(e output.OutputExpression) output.OutputExpression {
 	switch expr := e.(type) {
-	case *ir_expression.SafePropertyReadExpr:
+	case *expression.SafePropertyReadExpr:
 		return expr.Receiver
-	case *ir_expression.SafeKeyedReadExpr:
+	case *expression.SafeKeyedReadExpr:
 		return expr.Receiver
-	case *ir_expression.SafeInvokeFunctionExpr:
+	case *expression.SafeInvokeFunctionExpr:
 		return expr.Receiver
 	case *output.ReadPropExpr:
 		return expr.Receiver
@@ -289,8 +289,8 @@ func getReceiver(e output.OutputExpression) output.OutputExpression {
 }
 
 // ternaryTransform transforms SafeTernaryExpr into a ConditionalExpr
-func ternaryTransform(e output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-	safeTernary, ok := e.(*ir_expression.SafeTernaryExpr)
+func ternaryTransform(e output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+	safeTernary, ok := e.(*expression.SafeTernaryExpr)
 	if !ok {
 		return e
 	}

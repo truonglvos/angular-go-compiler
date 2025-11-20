@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
@@ -23,18 +23,18 @@ func CreatePipes(job *pipeline.CompilationJob) {
 
 func processPipeBindingsInView(unit pipeline.CompilationUnit) {
 	for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-		ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-			if !ir_expression.IsIrExpression(expr) {
+		expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+			if !expression.IsIrExpression(expr) {
 				return
 			}
 
 			// Check if it's a PipeBindingExpr
-			pipeBinding, ok := expr.(*ir_expression.PipeBindingExpr)
+			pipeBinding, ok := expr.(*expression.PipeBindingExpr)
 			if !ok {
 				return
 			}
 
-			if flags&ir_expression.VisitorContextFlagInChildOperation != 0 {
+			if flags&expression.VisitorContextFlagInChildOperation != 0 {
 				panic("AssertionError: pipe bindings should not appear in child expressions")
 			}
 
@@ -65,7 +65,7 @@ func processPipeBindingsInView(unit pipeline.CompilationUnit) {
 func addPipeToCreationBlock(
 	unit pipeline.CompilationUnit,
 	afterTargetXref ir_operation.XrefId,
-	binding *ir_expression.PipeBindingExpr,
+	binding *expression.PipeBindingExpr,
 ) {
 	// Find the appropriate point to insert the Pipe creation operation.
 	// We're looking for `afterTargetXref` (and also want to insert after any other pipe operations

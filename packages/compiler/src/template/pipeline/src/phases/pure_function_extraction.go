@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -15,8 +15,8 @@ import (
 func ExtractPureFunctions(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-				pureFuncExpr, ok := expr.(*ir_expression.PureFunctionExpr)
+			expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+				pureFuncExpr, ok := expr.(*expression.PureFunctionExpr)
 				if !ok || pureFuncExpr.Body == nil {
 					return
 				}
@@ -27,8 +27,8 @@ func ExtractPureFunctions(job *pipeline.CompilationJob) {
 			})
 		}
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-				pureFuncExpr, ok := expr.(*ir_expression.PureFunctionExpr)
+			expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+				pureFuncExpr, ok := expr.(*expression.PureFunctionExpr)
 				if !ok || pureFuncExpr.Body == nil {
 					return
 				}
@@ -50,7 +50,7 @@ type PureFunctionConstant struct {
 // KeyOf generates a key for a pure function expression
 func (p *PureFunctionConstant) KeyOf(expr output.OutputExpression) string {
 	// Check if it's a PureFunctionParameterExpr and return param(index) format
-	if paramExpr, ok := expr.(*ir_expression.PureFunctionParameterExpr); ok {
+	if paramExpr, ok := expr.(*expression.PureFunctionParameterExpr); ok {
 		return fmt.Sprintf("param(%d)", paramExpr.Index)
 	}
 	// Otherwise, use the generic key function
@@ -67,16 +67,16 @@ func (p *PureFunctionConstant) ToSharedConstantDeclaration(declName string, keyE
 	}
 
 	// Transform PureFunctionParameterExpr to ReadVarExpr
-	returnExpr := ir_expression.TransformExpressionsInExpression(
+	returnExpr := expression.TransformExpressionsInExpression(
 		keyExpr,
-		func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-			if paramExpr, ok := expr.(*ir_expression.PureFunctionParameterExpr); ok {
+		func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+			if paramExpr, ok := expr.(*expression.PureFunctionParameterExpr); ok {
 				paramName := fmt.Sprintf("a%d", paramExpr.Index)
 				return output.NewReadVarExpr(paramName, nil, nil)
 			}
 			return expr
 		},
-		ir_expression.VisitorContextFlagNone,
+		expression.VisitorContextFlagNone,
 	)
 
 	arrowFn := output.NewArrowFunctionExpr(fnParams, returnExpr, nil, nil)

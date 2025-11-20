@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
@@ -27,16 +27,16 @@ func OptimizeStoreLet(job *pipeline.CompilationJob) {
 				}
 			}
 
-			ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-				if contextLetRef, ok := expr.(*ir_expression.ContextLetReferenceExpr); ok {
+			expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+				if contextLetRef, ok := expr.(*expression.ContextLetReferenceExpr); ok {
 					letUsedExternally[contextLetRef.Target] = true
 				}
 			})
 		}
 
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-				if contextLetRef, ok := expr.(*ir_expression.ContextLetReferenceExpr); ok {
+			expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+				if contextLetRef, ok := expr.(*expression.ContextLetReferenceExpr); ok {
 					letUsedExternally[contextLetRef.Target] = true
 				}
 			})
@@ -45,10 +45,10 @@ func OptimizeStoreLet(job *pipeline.CompilationJob) {
 
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-					storeLetExpr, ok := expr.(*ir_expression.StoreLetExpr)
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+					storeLetExpr, ok := expr.(*expression.StoreLetExpr)
 					if !ok {
 						return expr
 					}
@@ -67,27 +67,27 @@ func OptimizeStoreLet(job *pipeline.CompilationJob) {
 					}
 					return expr
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 	}
 }
 
 // hasPipe determines if a `storeLet` expression contains a pipe.
-func hasPipe(root *ir_expression.StoreLetExpr) bool {
+func hasPipe(root *expression.StoreLetExpr) bool {
 	result := false
 
-	ir_expression.TransformExpressionsInExpression(
+	expression.TransformExpressionsInExpression(
 		root,
-		func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-			if _, ok := expr.(*ir_expression.PipeBindingExpr); ok {
+		func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+			if _, ok := expr.(*expression.PipeBindingExpr); ok {
 				result = true
-			} else if _, ok := expr.(*ir_expression.PipeBindingVariadicExpr); ok {
+			} else if _, ok := expr.(*expression.PipeBindingVariadicExpr); ok {
 				result = true
 			}
 			return expr
 		},
-		ir_expression.VisitorContextFlagNone,
+		expression.VisitorContextFlagNone,
 	)
 
 	return result

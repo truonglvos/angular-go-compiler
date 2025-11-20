@@ -5,7 +5,7 @@ import (
 
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -42,12 +42,12 @@ func generateTemporaries(opsList *ir_operation.OpList) []*ops_shared.StatementOp
 	// name and produce a `DeclareVarStmt` to the beginning of the block.
 	for op := opsList.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 		// Identify the final time each temp var is read.
-		finalReads := make(map[ir_operation.XrefId]*ir_expression.ReadTemporaryExpr)
-		ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-			if flags&ir_expression.VisitorContextFlagInChildOperation != 0 {
+		finalReads := make(map[ir_operation.XrefId]*expression.ReadTemporaryExpr)
+		expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+			if flags&expression.VisitorContextFlagInChildOperation != 0 {
 				return
 			}
-			if readTemp, ok := expr.(*ir_expression.ReadTemporaryExpr); ok {
+			if readTemp, ok := expr.(*expression.ReadTemporaryExpr); ok {
 				finalReads[readTemp.Xref] = readTemp
 			}
 		})
@@ -59,11 +59,11 @@ func generateTemporaries(opsList *ir_operation.OpList) []*ops_shared.StatementOp
 		released := make(map[ir_operation.XrefId]bool)
 		defs := make(map[ir_operation.XrefId]string)
 
-		ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-			if flags&ir_expression.VisitorContextFlagInChildOperation != 0 {
+		expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+			if flags&expression.VisitorContextFlagInChildOperation != 0 {
 				return
 			}
-			if assignTemp, ok := expr.(*ir_expression.AssignTemporaryExpr); ok {
+			if assignTemp, ok := expr.(*expression.AssignTemporaryExpr); ok {
 				if !assigned[assignTemp.Xref] {
 					assigned[assignTemp.Xref] = true
 					// TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`.
@@ -72,7 +72,7 @@ func generateTemporaries(opsList *ir_operation.OpList) []*ops_shared.StatementOp
 					count++
 				}
 				assignName(defs, assignTemp)
-			} else if readTemp, ok := expr.(*ir_expression.ReadTemporaryExpr); ok {
+			} else if readTemp, ok := expr.(*expression.ReadTemporaryExpr); ok {
 				if finalReads[readTemp.Xref] == readTemp {
 					released[readTemp.Xref] = true
 					count--
@@ -132,10 +132,10 @@ func assignName(names map[ir_operation.XrefId]string, expr interface{}) {
 	var xref ir_operation.XrefId
 	var namePtr **string
 
-	if assignTemp, ok := expr.(*ir_expression.AssignTemporaryExpr); ok {
+	if assignTemp, ok := expr.(*expression.AssignTemporaryExpr); ok {
 		xref = assignTemp.Xref
 		namePtr = &assignTemp.Name
-	} else if readTemp, ok := expr.(*ir_expression.ReadTemporaryExpr); ok {
+	} else if readTemp, ok := expr.(*expression.ReadTemporaryExpr); ok {
 		xref = readTemp.Xref
 		namePtr = &readTemp.Name
 	} else {

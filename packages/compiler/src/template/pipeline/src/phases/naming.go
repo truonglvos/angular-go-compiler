@@ -7,7 +7,7 @@ import (
 
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
@@ -91,8 +91,8 @@ func addNamesToView(
 	// Having named all variables declared in the view, now we can push those names into the
 	// `ir.ReadVariableExpr` expressions which represent reads of those variables.
 	for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-		ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-			if readVar, ok := expr.(*ir_expression.ReadVariableExpr); ok {
+		expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+			if readVar, ok := expr.(*expression.ReadVariableExpr); ok {
 				if readVar.Name == nil {
 					if name, exists := varNames[readVar.Xref]; exists {
 						readVar.Name = &name
@@ -105,8 +105,8 @@ func addNamesToView(
 	}
 
 	for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-		ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-			if readVar, ok := expr.(*ir_expression.ReadVariableExpr); ok {
+		expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+			if readVar, ok := expr.(*expression.ReadVariableExpr); ok {
 				if readVar.Name == nil {
 					if name, exists := varNames[readVar.Xref]; exists {
 						readVar.Name = &name

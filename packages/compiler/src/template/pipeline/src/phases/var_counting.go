@@ -5,7 +5,7 @@ import (
 
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
@@ -37,8 +37,8 @@ func CountVariables(job *pipeline_compilation.CompilationJob) {
 		// might be conditional (e.g. `pipeBinding` inside of a ternary), and we don't want to interfere
 		// with indices for top-level binding slots (e.g. `property`).
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-				if !ir_expression.IsIrExpression(expr) {
+			expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+				if !expression.IsIrExpression(expr) {
 					return
 				}
 
@@ -46,7 +46,7 @@ func CountVariables(job *pipeline_compilation.CompilationJob) {
 				// first, and then assigns offsets to pure functions lazily. We emulate that behavior by
 				// assigning offsets in two passes instead of one, only in compatibility mode.
 				if job.Compatibility == ir.CompatibilityModeTemplateDefinitionBuilder {
-					if pureFunc, ok := expr.(*ir_expression.PureFunctionExpr); ok {
+					if pureFunc, ok := expr.(*expression.PureFunctionExpr); ok {
 						_ = pureFunc
 						return
 					}
@@ -63,8 +63,8 @@ func CountVariables(job *pipeline_compilation.CompilationJob) {
 			})
 		}
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-				if !ir_expression.IsIrExpression(expr) {
+			expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+				if !expression.IsIrExpression(expr) {
 					return
 				}
 
@@ -72,7 +72,7 @@ func CountVariables(job *pipeline_compilation.CompilationJob) {
 				// first, and then assigns offsets to pure functions lazily. We emulate that behavior by
 				// assigning offsets in two passes instead of one, only in compatibility mode.
 				if job.Compatibility == ir.CompatibilityModeTemplateDefinitionBuilder {
-					if pureFunc, ok := expr.(*ir_expression.PureFunctionExpr); ok {
+					if pureFunc, ok := expr.(*expression.PureFunctionExpr); ok {
 						_ = pureFunc
 						return
 					}
@@ -92,11 +92,11 @@ func CountVariables(job *pipeline_compilation.CompilationJob) {
 		// Compatibility mode pass for pure function offsets (as explained above).
 		if job.Compatibility == ir.CompatibilityModeTemplateDefinitionBuilder {
 			for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-				ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-					if !ir_expression.IsIrExpression(expr) {
+				expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+					if !expression.IsIrExpression(expr) {
 						return
 					}
-					pureFunc, ok := expr.(*ir_expression.PureFunctionExpr)
+					pureFunc, ok := expr.(*expression.PureFunctionExpr)
 					if !ok {
 						return
 					}
@@ -113,11 +113,11 @@ func CountVariables(job *pipeline_compilation.CompilationJob) {
 				})
 			}
 			for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-				ir_expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) {
-					if !ir_expression.IsIrExpression(expr) {
+				expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
+					if !expression.IsIrExpression(expr) {
 						return
 					}
-					pureFunc, ok := expr.(*ir_expression.PureFunctionExpr)
+					pureFunc, ok := expr.(*expression.PureFunctionExpr)
 					if !ok {
 						return
 					}
@@ -268,13 +268,13 @@ func VarsUsedByIrExpression(expr interface{}) int {
 }
 
 func varsUsedByIrExpression(expr interface{}) int {
-	if pureFunc, ok := expr.(*ir_expression.PureFunctionExpr); ok {
+	if pureFunc, ok := expr.(*expression.PureFunctionExpr); ok {
 		return 1 + len(pureFunc.Args)
-	} else if pipeBinding, ok := expr.(*ir_expression.PipeBindingExpr); ok {
+	} else if pipeBinding, ok := expr.(*expression.PipeBindingExpr); ok {
 		return 1 + len(pipeBinding.Args)
-	} else if pipeVariadic, ok := expr.(*ir_expression.PipeBindingVariadicExpr); ok {
+	} else if pipeVariadic, ok := expr.(*expression.PipeBindingVariadicExpr); ok {
 		return 1 + pipeVariadic.NumArgs
-	} else if storeLet, ok := expr.(*ir_expression.StoreLetExpr); ok {
+	} else if storeLet, ok := expr.(*expression.StoreLetExpr); ok {
 		_ = storeLet
 		return 1
 	}

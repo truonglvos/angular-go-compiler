@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
@@ -29,7 +29,7 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 			defaultCaseIndex := -1
 			var defaultSlot *ir.SlotHandle
 			for i, cond := range conditionalOp.Conditions {
-				if caseExpr, ok := cond.(*ir_expression.ConditionalCaseExpr); ok {
+				if caseExpr, ok := cond.(*expression.ConditionalCaseExpr); ok {
 					if caseExpr.Expr == nil {
 						defaultCaseIndex = i
 						defaultSlot = caseExpr.TargetSlot
@@ -47,17 +47,17 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 					}
 				}
 				conditionalOp.Conditions = conditions
-				test = ir_expression.NewSlotLiteralExpr(defaultSlot)
+				test = expression.NewSlotLiteralExpr(defaultSlot)
 			} else {
 				// By default, a switch evaluates to `-1`, causing no template to be displayed.
 				test = output.NewLiteralExpr(-1, nil, nil)
 			}
 
 			// Switch expressions assign their main test to a temporary, to avoid re-executing it.
-			var tmp *ir_expression.AssignTemporaryExpr
+			var tmp *expression.AssignTemporaryExpr
 			if conditionalOp.Processed != nil {
 				xref := job.AllocateXrefId()
-				tmp = ir_expression.NewAssignTemporaryExpr(conditionalOp.Processed, xref)
+				tmp = expression.NewAssignTemporaryExpr(conditionalOp.Processed, xref)
 			}
 			var caseExpressionTemporaryXref ir_operation.XrefId = 0
 			hasCaseExpressionTemporary := false
@@ -65,7 +65,7 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 			// For each remaining condition, test whether the temporary satisfies the check. (If no temp is
 			// present, just check each expression directly.)
 			for i := len(conditionalOp.Conditions) - 1; i >= 0; i-- {
-				caseExpr, ok := conditionalOp.Conditions[i].(*ir_expression.ConditionalCaseExpr)
+				caseExpr, ok := conditionalOp.Conditions[i].(*expression.ConditionalCaseExpr)
 				if !ok || caseExpr.Expr == nil {
 					continue
 				}
@@ -75,7 +75,7 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 					if i == 0 {
 						useTmp = tmp
 					} else {
-						useTmp = ir_expression.NewReadTemporaryExpr(tmp.Xref)
+						useTmp = expression.NewReadTemporaryExpr(tmp.Xref)
 					}
 					caseExpr.Expr = output.NewBinaryOperatorExpr(
 						output.BinaryOperatorIdentical,
@@ -91,13 +91,13 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 						caseExpressionTemporaryXref = job.AllocateXrefId()
 						hasCaseExpressionTemporary = true
 					}
-					caseExpr.Expr = ir_expression.NewAssignTemporaryExpr(caseExpr.Expr, caseExpressionTemporaryXref)
-					conditionalOp.ContextValue = ir_expression.NewReadTemporaryExpr(caseExpressionTemporaryXref)
+					caseExpr.Expr = expression.NewAssignTemporaryExpr(caseExpr.Expr, caseExpressionTemporaryXref)
+					conditionalOp.ContextValue = expression.NewReadTemporaryExpr(caseExpressionTemporaryXref)
 				}
 
 				test = output.NewConditionalExpr(
 					caseExpr.Expr,
-					ir_expression.NewSlotLiteralExpr(caseExpr.TargetSlot),
+					expression.NewSlotLiteralExpr(caseExpr.TargetSlot),
 					test,
 					nil,
 					nil,
@@ -128,7 +128,7 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 			defaultCaseIndex := -1
 			var defaultSlot *ir.SlotHandle
 			for i, cond := range conditionalOp.Conditions {
-				if caseExpr, ok := cond.(*ir_expression.ConditionalCaseExpr); ok {
+				if caseExpr, ok := cond.(*expression.ConditionalCaseExpr); ok {
 					if caseExpr.Expr == nil {
 						defaultCaseIndex = i
 						defaultSlot = caseExpr.TargetSlot
@@ -146,17 +146,17 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 					}
 				}
 				conditionalOp.Conditions = conditions
-				test = ir_expression.NewSlotLiteralExpr(defaultSlot)
+				test = expression.NewSlotLiteralExpr(defaultSlot)
 			} else {
 				// By default, a switch evaluates to `-1`, causing no template to be displayed.
 				test = output.NewLiteralExpr(-1, nil, nil)
 			}
 
 			// Switch expressions assign their main test to a temporary, to avoid re-executing it.
-			var tmp *ir_expression.AssignTemporaryExpr
+			var tmp *expression.AssignTemporaryExpr
 			if conditionalOp.Processed != nil {
 				xref := job.AllocateXrefId()
-				tmp = ir_expression.NewAssignTemporaryExpr(conditionalOp.Processed, xref)
+				tmp = expression.NewAssignTemporaryExpr(conditionalOp.Processed, xref)
 			}
 			var caseExpressionTemporaryXref ir_operation.XrefId = 0
 			hasCaseExpressionTemporary := false
@@ -164,7 +164,7 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 			// For each remaining condition, test whether the temporary satisfies the check. (If no temp is
 			// present, just check each expression directly.)
 			for i := len(conditionalOp.Conditions) - 1; i >= 0; i-- {
-				caseExpr, ok := conditionalOp.Conditions[i].(*ir_expression.ConditionalCaseExpr)
+				caseExpr, ok := conditionalOp.Conditions[i].(*expression.ConditionalCaseExpr)
 				if !ok || caseExpr.Expr == nil {
 					continue
 				}
@@ -174,7 +174,7 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 					if i == 0 {
 						useTmp = tmp
 					} else {
-						useTmp = ir_expression.NewReadTemporaryExpr(tmp.Xref)
+						useTmp = expression.NewReadTemporaryExpr(tmp.Xref)
 					}
 					caseExpr.Expr = output.NewBinaryOperatorExpr(
 						output.BinaryOperatorIdentical,
@@ -190,13 +190,13 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 						caseExpressionTemporaryXref = job.AllocateXrefId()
 						hasCaseExpressionTemporary = true
 					}
-					caseExpr.Expr = ir_expression.NewAssignTemporaryExpr(caseExpr.Expr, caseExpressionTemporaryXref)
-					conditionalOp.ContextValue = ir_expression.NewReadTemporaryExpr(caseExpressionTemporaryXref)
+					caseExpr.Expr = expression.NewAssignTemporaryExpr(caseExpr.Expr, caseExpressionTemporaryXref)
+					conditionalOp.ContextValue = expression.NewReadTemporaryExpr(caseExpressionTemporaryXref)
 				}
 
 				test = output.NewConditionalExpr(
 					caseExpr.Expr,
-					ir_expression.NewSlotLiteralExpr(caseExpr.TargetSlot),
+					expression.NewSlotLiteralExpr(caseExpr.TargetSlot),
 					test,
 					nil,
 					nil,

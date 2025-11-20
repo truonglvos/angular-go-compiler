@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -12,10 +12,10 @@ import (
 func GeneratePureLiteralStructures(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetUpdate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-					if flags&ir_expression.VisitorContextFlagInChildOperation != 0 {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+					if flags&expression.VisitorContextFlagInChildOperation != 0 {
 						return expr
 					}
 
@@ -27,7 +27,7 @@ func GeneratePureLiteralStructures(job *pipeline.CompilationJob) {
 
 					return expr
 				},
-				ir_expression.VisitorContextFlagNone,
+				expression.VisitorContextFlagNone,
 			)
 		}
 	}
@@ -42,10 +42,10 @@ func transformLiteralArray(expr *output.LiteralArrayExpr) output.OutputExpressio
 		} else {
 			idx := len(nonConstantArgs)
 			nonConstantArgs = append(nonConstantArgs, entry)
-			derivedEntries = append(derivedEntries, ir_expression.NewPureFunctionParameterExpr(idx))
+			derivedEntries = append(derivedEntries, expression.NewPureFunctionParameterExpr(idx))
 		}
 	}
-	return ir_expression.NewPureFunctionExpr(output.NewLiteralArrayExpr(derivedEntries, nil, nil), nonConstantArgs)
+	return expression.NewPureFunctionExpr(output.NewLiteralArrayExpr(derivedEntries, nil, nil), nonConstantArgs)
 }
 
 func transformLiteralMap(expr *output.LiteralMapExpr) output.OutputExpression {
@@ -59,10 +59,10 @@ func transformLiteralMap(expr *output.LiteralMapExpr) output.OutputExpression {
 			nonConstantArgs = append(nonConstantArgs, entry.Value)
 			derivedEntries = append(derivedEntries, output.NewLiteralMapEntry(
 				entry.Key,
-				ir_expression.NewPureFunctionParameterExpr(idx),
+				expression.NewPureFunctionParameterExpr(idx),
 				entry.Quoted,
 			))
 		}
 	}
-	return ir_expression.NewPureFunctionExpr(output.NewLiteralMapExpr(derivedEntries, nil, nil), nonConstantArgs)
+	return expression.NewPureFunctionExpr(output.NewLiteralMapExpr(derivedEntries, nil, nil), nonConstantArgs)
 }

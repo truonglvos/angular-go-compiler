@@ -5,7 +5,7 @@ import (
 
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 	instruction "ngc-go/packages/compiler/src/template/pipeline/src/instruction"
 )
@@ -21,14 +21,14 @@ func TransformTwoWayBindingSet(job *pipeline.CompilationJob) {
 				continue
 			}
 
-			ir_expression.TransformExpressionsInOp(
+			expression.TransformExpressionsInOp(
 				op,
-				func(expr output.OutputExpression, flags ir_expression.VisitorContextFlag) output.OutputExpression {
-					if flags&ir_expression.VisitorContextFlagInChildOperation == 0 {
+				func(expr output.OutputExpression, flags expression.VisitorContextFlag) output.OutputExpression {
+					if flags&expression.VisitorContextFlagInChildOperation == 0 {
 						return expr
 					}
 
-					twoWayBindingSet, ok := expr.(*ir_expression.TwoWayBindingSetExpr)
+					twoWayBindingSet, ok := expr.(*expression.TwoWayBindingSetExpr)
 					if !ok {
 						return expr
 					}
@@ -46,7 +46,7 @@ func TransformTwoWayBindingSet(job *pipeline.CompilationJob) {
 						twoWayBindingSetCall := instruction.TwoWayBindingSet(readKey, value)
 						assignment := readKey.Set(value)
 						return or(twoWayBindingSetCall, assignment)
-					} else if readVar, ok := target.(*ir_expression.ReadVariableExpr); ok {
+					} else if readVar, ok := target.(*expression.ReadVariableExpr); ok {
 						// ASSUMPTION: here we're assuming that `ReadVariableExpr` will be a reference
 						// to a local template variable. This appears to be the case at the time of writing.
 						// If the expression is targeting a variable read, we only emit the `twoWayBindingSet`
@@ -57,7 +57,7 @@ func TransformTwoWayBindingSet(job *pipeline.CompilationJob) {
 
 					panic(fmt.Sprintf("Unsupported expression in two-way action binding: %T", target))
 				},
-				ir_expression.VisitorContextFlagInChildOperation,
+				expression.VisitorContextFlagInChildOperation,
 			)
 		}
 	}

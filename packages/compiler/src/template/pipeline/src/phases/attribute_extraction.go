@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/core"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
@@ -98,7 +98,7 @@ func ExtractAttributes(job *pipeline.CompilationJob) {
 						name = stylePropOp.Name
 						target = stylePropOp.Target
 						// Check if expression is EmptyExpr
-						if emptyExpr, ok := stylePropOp.Expression.(*ir_expression.EmptyExpr); ok && emptyExpr != nil {
+						if emptyExpr, ok := stylePropOp.Expression.(*expression.EmptyExpr); ok && emptyExpr != nil {
 							extractedAttrOp := ops_create.NewExtractedAttributeOp(
 								target,
 								ir.BindingKindProperty,
@@ -116,7 +116,7 @@ func ExtractAttributes(job *pipeline.CompilationJob) {
 						name = classPropOp.Name
 						target = classPropOp.Target
 						// Check if expression is EmptyExpr
-						if emptyExpr, ok := classPropOp.Expression.(*ir_expression.EmptyExpr); ok && emptyExpr != nil {
+						if emptyExpr, ok := classPropOp.Expression.(*expression.EmptyExpr); ok && emptyExpr != nil {
 							extractedAttrOp := ops_create.NewExtractedAttributeOp(
 								target,
 								ir.BindingKindProperty,
@@ -251,7 +251,7 @@ func ExtractAttributes(job *pipeline.CompilationJob) {
 					if stylePropOp, ok := op.(*ops_update.StylePropOp); ok {
 						name = stylePropOp.Name
 						target = stylePropOp.Target
-						if emptyExpr, ok := stylePropOp.Expression.(*ir_expression.EmptyExpr); ok && emptyExpr != nil {
+						if emptyExpr, ok := stylePropOp.Expression.(*expression.EmptyExpr); ok && emptyExpr != nil {
 							extractedAttrOp := ops_create.NewExtractedAttributeOp(
 								target,
 								ir.BindingKindProperty,
@@ -268,7 +268,7 @@ func ExtractAttributes(job *pipeline.CompilationJob) {
 					} else if classPropOp, ok := op.(*ops_update.ClassPropOp); ok {
 						name = classPropOp.Name
 						target = classPropOp.Target
-						if emptyExpr, ok := classPropOp.Expression.(*ir_expression.EmptyExpr); ok && emptyExpr != nil {
+						if emptyExpr, ok := classPropOp.Expression.(*expression.EmptyExpr); ok && emptyExpr != nil {
 							extractedAttrOp := ops_create.NewExtractedAttributeOp(
 								target,
 								ir.BindingKindProperty,
