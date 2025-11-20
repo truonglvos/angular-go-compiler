@@ -1,4 +1,4 @@
-package pool
+package constant
 
 import (
 	"fmt"
@@ -355,6 +355,11 @@ func (cp *ConstantPool) freshName() string {
 // GetStatements returns all statements in the pool
 func (cp *ConstantPool) GetStatements() []output.OutputStatement {
 	return cp.statements
+}
+
+// AddStatement adds a statement to the pool
+func (cp *ConstantPool) AddStatement(stmt output.OutputStatement) {
+	cp.statements = append(cp.statements, stmt)
 }
 
 // ExpressionKeyFn is an interface for generating keys from expressions
