@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode"
 
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
 	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"

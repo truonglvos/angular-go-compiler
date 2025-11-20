@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/core"
 	"ngc-go/packages/compiler/src/output"
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"

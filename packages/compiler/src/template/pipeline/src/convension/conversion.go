@@ -2,7 +2,7 @@ package pipeline_convension
 
 import (
 	"ngc-go/packages/compiler/src/output"
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 )
 
 // BinaryOperators maps binary operator strings to their corresponding output.BinaryOperator values

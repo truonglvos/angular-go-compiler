@@ -5,7 +5,7 @@ import (
 
 	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
 	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"

@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/output"
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"

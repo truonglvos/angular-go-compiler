@@ -1,7 +1,7 @@
 package ir_operation
 
 import (
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 )
 
 // XrefId is a branded type for a cross-reference ID

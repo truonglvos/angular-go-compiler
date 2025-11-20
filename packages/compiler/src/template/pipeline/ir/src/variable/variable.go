@@ -2,7 +2,7 @@ package ir_variable
 
 import (
 	"ngc-go/packages/compiler/src/output"
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 )
 

@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/render3/view"
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ir_variables "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 )

@@ -1,7 +1,7 @@
 package ir_traits
 
 import (
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	"ngc-go/packages/compiler/src/util"
 )

@@ -1,7 +1,7 @@
 package phases
 
 import (
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 

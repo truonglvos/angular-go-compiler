@@ -13,7 +13,7 @@ import (
 	"ngc-go/packages/compiler/src/render3/view"
 	view_i18n "ngc-go/packages/compiler/src/render3/view/i18n"
 	"ngc-go/packages/compiler/src/schema"
-	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
