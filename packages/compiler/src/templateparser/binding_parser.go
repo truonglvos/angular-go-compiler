@@ -7,7 +7,7 @@ import (
 
 	"ngc-go/packages/compiler/src/core"
 	"ngc-go/packages/compiler/src/css"
-	"ngc-go/packages/compiler/src/expression_parser"
+	"ngc-go/packages/compiler/src/expressionparser"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/schema"
 	"ngc-go/packages/compiler/src/util"
@@ -29,14 +29,14 @@ type HostListeners map[string]string
 
 // BindingParser parses bindings in templates and in the directive host area
 type BindingParser struct {
-	exprParser     *expression_parser.Parser
+	exprParser     *expressionparser.Parser
 	schemaRegistry schema.ElementSchemaRegistry
 	Errors         []*util.ParseError
 }
 
 // NewBindingParser creates a new BindingParser
 func NewBindingParser(
-	exprParser *expression_parser.Parser,
+	exprParser *expressionparser.Parser,
 	schemaRegistry schema.ElementSchemaRegistry,
 	errors []*util.ParseError,
 ) *BindingParser {
@@ -56,8 +56,8 @@ func (bp *BindingParser) GetErrors() []*util.ParseError {
 func (bp *BindingParser) CreateBoundHostProperties(
 	properties HostProperties,
 	sourceSpan *util.ParseSourceSpan,
-) []*expression_parser.ParsedProperty {
-	boundProps := []*expression_parser.ParsedProperty{}
+) []*expressionparser.ParsedProperty {
+	boundProps := []*expressionparser.ParsedProperty{}
 	for propName, expression := range properties {
 		bp.ParsePropertyBinding(
 			propName,
@@ -79,8 +79,8 @@ func (bp *BindingParser) CreateBoundHostProperties(
 func (bp *BindingParser) CreateDirectiveHostEventAsts(
 	hostListeners HostListeners,
 	sourceSpan *util.ParseSourceSpan,
-) []*expression_parser.ParsedEvent {
-	targetEvents := []*expression_parser.ParsedEvent{}
+) []*expressionparser.ParsedEvent {
+	targetEvents := []*expressionparser.ParsedEvent{}
 	for propName, expression := range hostListeners {
 		// Use the `sourceSpan` for `keySpan` and `handlerSpan`
 		targetMatchableAttrs := []string{}
@@ -103,7 +103,7 @@ func (bp *BindingParser) ParseInterpolation(
 	value string,
 	sourceSpan *util.ParseSourceSpan,
 	interpolatedTokens interface{}, // []ml_parser.InterpolatedAttributeToken | []ml_parser.InterpolatedTextToken | nil
-) *expression_parser.ASTWithSource {
+) *expressionparser.ASTWithSource {
 	absoluteOffset := sourceSpan.FullStart.Offset
 
 	defer func() {
@@ -129,7 +129,7 @@ func (bp *BindingParser) ParseInterpolation(
 func (bp *BindingParser) ParseInterpolationExpression(
 	expression string,
 	sourceSpan *util.ParseSourceSpan,
-) *expression_parser.ASTWithSource {
+) *expressionparser.ASTWithSource {
 	absoluteOffset := sourceSpan.Start.Offset
 
 	defer func() {
@@ -157,8 +157,8 @@ func (bp *BindingParser) ParseInlineTemplateBinding(
 	sourceSpan *util.ParseSourceSpan,
 	absoluteValueOffset int,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetProps *[]*expression_parser.ParsedProperty,
-	targetVars *[]*expression_parser.ParsedVariable,
+	targetProps *[]*expressionparser.ParsedProperty,
+	targetVars *[]*expressionparser.ParsedVariable,
 	isIvyAst bool,
 ) {
 	absoluteKeyOffset := sourceSpan.Start.Offset + len(TEMPLATE_ATTR_PREFIX)
@@ -178,7 +178,7 @@ func (bp *BindingParser) ParseInlineTemplateBinding(
 		var keySpan *util.ParseSourceSpan
 
 		switch b := binding.(type) {
-		case *expression_parser.VariableBinding:
+		case *expressionparser.VariableBinding:
 			key = b.Key.Source
 			keySpan = moveParseSourceSpanFromAbsolute(sourceSpan, b.Key.Span)
 			value := "$implicit"
@@ -187,14 +187,14 @@ func (bp *BindingParser) ParseInlineTemplateBinding(
 				value = b.Value.Source
 				valueSpan = moveParseSourceSpanFromAbsolute(sourceSpan, b.Value.Span)
 			}
-			*targetVars = append(*targetVars, expression_parser.NewParsedVariable(
+			*targetVars = append(*targetVars, expressionparser.NewParsedVariable(
 				key,
 				value,
 				bindingSpan,
 				keySpan,
 				valueSpan,
 			))
-		case *expression_parser.ExpressionBinding:
+		case *expressionparser.ExpressionBinding:
 			key = b.Key.Source
 			keySpan = moveParseSourceSpanFromAbsolute(sourceSpan, b.Key.Span)
 			if b.Value != nil {
@@ -238,7 +238,7 @@ func (bp *BindingParser) parseTemplateBindings(
 	sourceSpan *util.ParseSourceSpan,
 	absoluteKeyOffset int,
 	absoluteValueOffset int,
-) []expression_parser.TemplateBinding {
+) []expressionparser.TemplateBinding {
 	defer func() {
 		if r := recover(); r != nil {
 			errMsg := fmt.Sprintf("%v", r)
@@ -260,7 +260,7 @@ func (bp *BindingParser) parseTemplateBindings(
 		}
 		return bindingsResult.TemplateBindings
 	}
-	return []expression_parser.TemplateBinding{}
+	return []expressionparser.TemplateBinding{}
 }
 
 // ParseLiteralAttr parses a literal attribute
@@ -271,7 +271,7 @@ func (bp *BindingParser) ParseLiteralAttr(
 	absoluteOffset int,
 	valueSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetProps *[]*expression_parser.ParsedProperty,
+	targetProps *[]*expressionparser.ParsedProperty,
 	keySpan *util.ParseSourceSpan,
 ) {
 	if isLegacyAnimationLabel(name) {
@@ -279,7 +279,7 @@ func (bp *BindingParser) ParseLiteralAttr(
 		if keySpan != nil {
 			keySpan = moveParseSourceSpanFromAbsolute(
 				keySpan,
-				expression_parser.NewAbsoluteSourceSpan(
+				expressionparser.NewAbsoluteSourceSpan(
 					keySpan.Start.Offset+1,
 					keySpan.End.Offset,
 				),
@@ -307,10 +307,10 @@ func (bp *BindingParser) ParseLiteralAttr(
 		if value != nil {
 			valueStr = *value
 		}
-		*targetProps = append(*targetProps, expression_parser.NewParsedProperty(
+		*targetProps = append(*targetProps, expressionparser.NewParsedProperty(
 			name,
 			bp.exprParser.WrapLiteralPrimitive(value, valueStr, absoluteOffset),
-			expression_parser.ParsedPropertyTypeLiteralAttr,
+			expressionparser.ParsedPropertyTypeLiteralAttr,
 			sourceSpan,
 			keySpan,
 			valueSpan,
@@ -328,7 +328,7 @@ func (bp *BindingParser) ParsePropertyBinding(
 	absoluteOffset int,
 	valueSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetProps *[]*expression_parser.ParsedProperty,
+	targetProps *[]*expressionparser.ParsedProperty,
 	keySpan *util.ParseSourceSpan,
 ) {
 	if len(name) == 0 {
@@ -342,7 +342,7 @@ func (bp *BindingParser) ParsePropertyBinding(
 		if keySpan != nil {
 			keySpan = moveParseSourceSpanFromAbsolute(
 				keySpan,
-				expression_parser.NewAbsoluteSourceSpan(
+				expressionparser.NewAbsoluteSourceSpan(
 					keySpan.Start.Offset+len(LEGACY_ANIMATE_PROP_PREFIX),
 					keySpan.End.Offset,
 				),
@@ -354,7 +354,7 @@ func (bp *BindingParser) ParsePropertyBinding(
 		if keySpan != nil {
 			keySpan = moveParseSourceSpanFromAbsolute(
 				keySpan,
-				expression_parser.NewAbsoluteSourceSpan(
+				expressionparser.NewAbsoluteSourceSpan(
 					keySpan.Start.Offset+1,
 					keySpan.End.Offset,
 				),
@@ -417,7 +417,7 @@ func (bp *BindingParser) ParsePropertyInterpolation(
 	sourceSpan *util.ParseSourceSpan,
 	valueSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetProps *[]*expression_parser.ParsedProperty,
+	targetProps *[]*expressionparser.ParsedProperty,
 	keySpan *util.ParseSourceSpan,
 	interpolatedTokens interface{}, // []ml_parser.InterpolatedAttributeToken | []ml_parser.InterpolatedTextToken | nil
 ) bool {
@@ -447,24 +447,24 @@ func (bp *BindingParser) ParsePropertyInterpolation(
 // parsePropertyAst parses a property AST
 func (bp *BindingParser) parsePropertyAst(
 	name string,
-	ast *expression_parser.ASTWithSource,
+	ast *expressionparser.ASTWithSource,
 	isPartOfAssignmentBinding bool,
 	sourceSpan *util.ParseSourceSpan,
 	keySpan *util.ParseSourceSpan,
 	valueSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetProps *[]*expression_parser.ParsedProperty,
+	targetProps *[]*expressionparser.ParsedProperty,
 ) {
 	astSource := ""
 	if ast.Source != nil {
 		astSource = *ast.Source
 	}
 	*targetMatchableAttrs = append(*targetMatchableAttrs, name, astSource)
-	propType := expression_parser.ParsedPropertyTypeDefault
+	propType := expressionparser.ParsedPropertyTypeDefault
 	if isPartOfAssignmentBinding {
-		propType = expression_parser.ParsedPropertyTypeTwoWay
+		propType = expressionparser.ParsedPropertyTypeTwoWay
 	}
-	*targetProps = append(*targetProps, expression_parser.NewParsedProperty(
+	*targetProps = append(*targetProps, expressionparser.NewParsedProperty(
 		name,
 		ast,
 		propType,
@@ -477,22 +477,22 @@ func (bp *BindingParser) parsePropertyAst(
 // parseAnimation parses an animation property
 func (bp *BindingParser) parseAnimation(
 	name string,
-	ast *expression_parser.ASTWithSource,
+	ast *expressionparser.ASTWithSource,
 	sourceSpan *util.ParseSourceSpan,
 	keySpan *util.ParseSourceSpan,
 	valueSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetProps *[]*expression_parser.ParsedProperty,
+	targetProps *[]*expressionparser.ParsedProperty,
 ) {
 	astSource := ""
 	if ast.Source != nil {
 		astSource = *ast.Source
 	}
 	*targetMatchableAttrs = append(*targetMatchableAttrs, name, astSource)
-	*targetProps = append(*targetProps, expression_parser.NewParsedProperty(
+	*targetProps = append(*targetProps, expressionparser.NewParsedProperty(
 		name,
 		ast,
-		expression_parser.ParsedPropertyTypeAnimation,
+		expressionparser.ParsedPropertyTypeAnimation,
 		sourceSpan,
 		keySpan,
 		valueSpan,
@@ -508,7 +508,7 @@ func (bp *BindingParser) parseLegacyAnimation(
 	keySpan *util.ParseSourceSpan,
 	valueSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetProps *[]*expression_parser.ParsedProperty,
+	targetProps *[]*expressionparser.ParsedProperty,
 ) {
 	if len(name) == 0 {
 		bp.reportError("Animation trigger is missing", sourceSpan, util.ParseErrorLevelError)
@@ -533,10 +533,10 @@ func (bp *BindingParser) parseLegacyAnimation(
 		astSource = *ast.Source
 	}
 	*targetMatchableAttrs = append(*targetMatchableAttrs, name, astSource)
-	*targetProps = append(*targetProps, expression_parser.NewParsedProperty(
+	*targetProps = append(*targetProps, expressionparser.NewParsedProperty(
 		name,
 		ast,
-		expression_parser.ParsedPropertyTypeLegacyAnimation,
+		expressionparser.ParsedPropertyTypeLegacyAnimation,
 		sourceSpan,
 		keySpan,
 		valueSpan,
@@ -549,7 +549,7 @@ func (bp *BindingParser) ParseBinding(
 	isHostBinding bool,
 	sourceSpan *util.ParseSourceSpan,
 	absoluteOffset int,
-) *expression_parser.ASTWithSource {
+) *expressionparser.ASTWithSource {
 	defer func() {
 		if r := recover(); r != nil {
 			errMsg := fmt.Sprintf("%v", r)
@@ -557,7 +557,7 @@ func (bp *BindingParser) ParseBinding(
 		}
 	}()
 
-	var ast *expression_parser.ASTWithSource
+	var ast *expressionparser.ASTWithSource
 	if isHostBinding {
 		ast = bp.exprParser.ParseSimpleBinding(value, sourceSpan, absoluteOffset)
 	} else {
@@ -576,21 +576,21 @@ func (bp *BindingParser) parseBinding(
 	isHostBinding bool,
 	sourceSpan *util.ParseSourceSpan,
 	absoluteOffset int,
-) *expression_parser.ASTWithSource {
+) *expressionparser.ASTWithSource {
 	return bp.ParseBinding(value, isHostBinding, sourceSpan, absoluteOffset)
 }
 
 // CreateBoundElementProperty creates a bound element property
 func (bp *BindingParser) CreateBoundElementProperty(
 	elementSelector *string,
-	boundProp *expression_parser.ParsedProperty,
+	boundProp *expressionparser.ParsedProperty,
 	skipValidation bool,
 	mapPropertyName bool,
-) *expression_parser.BoundElementProperty {
+) *expressionparser.BoundElementProperty {
 	if boundProp.IsLegacyAnimation {
-		return expression_parser.NewBoundElementProperty(
+		return expressionparser.NewBoundElementProperty(
 			boundProp.Name,
-			expression_parser.BindingTypeLegacyAnimation,
+			expressionparser.BindingTypeLegacyAnimation,
 			core.SecurityContextNONE,
 			boundProp.Expression,
 			nil, // unit
@@ -601,7 +601,7 @@ func (bp *BindingParser) CreateBoundElementProperty(
 	}
 
 	var unit *string
-	var bindingType expression_parser.BindingType
+	var bindingType expressionparser.BindingType
 	var boundPropertyName *string
 	parts := strings.Split(boundProp.Name, PROPERTY_PARTS_SEPARATOR)
 	var securityContexts []core.SecurityContext
@@ -633,21 +633,21 @@ func (bp *BindingParser) CreateBoundElementProperty(
 				boundPropertyName = &merged
 			}
 
-			bindingType = expression_parser.BindingTypeAttribute
+			bindingType = expressionparser.BindingTypeAttribute
 		} else if parts[0] == CLASS_PREFIX {
 			boundPropertyName = &parts[1]
-			bindingType = expression_parser.BindingTypeClass
+			bindingType = expressionparser.BindingTypeClass
 			securityContexts = []core.SecurityContext{core.SecurityContextNONE}
 		} else if parts[0] == STYLE_PREFIX {
 			if len(parts) > 2 {
 				unit = &parts[2]
 			}
 			boundPropertyName = &parts[1]
-			bindingType = expression_parser.BindingTypeStyle
+			bindingType = expressionparser.BindingTypeStyle
 			securityContexts = []core.SecurityContext{core.SecurityContextSTYLE}
 		} else if parts[0] == ANIMATE_PREFIX {
 			boundPropertyName = &boundProp.Name
-			bindingType = expression_parser.BindingTypeAnimation
+			bindingType = expressionparser.BindingTypeAnimation
 			securityContexts = []core.SecurityContext{core.SecurityContextNONE}
 		}
 	}
@@ -670,10 +670,10 @@ func (bp *BindingParser) CreateBoundElementProperty(
 			mappedPropName,
 			false,
 		)
-		if boundProp.Type == expression_parser.ParsedPropertyTypeTwoWay {
-			bindingType = expression_parser.BindingTypeTwoWay
+		if boundProp.Type == expressionparser.ParsedPropertyTypeTwoWay {
+			bindingType = expressionparser.BindingTypeTwoWay
 		} else {
-			bindingType = expression_parser.BindingTypeProperty
+			bindingType = expressionparser.BindingTypeProperty
 		}
 		if !skipValidation {
 			bp.validatePropertyOrAttributeName(mappedPropName, boundProp.SourceSpan, false)
@@ -685,7 +685,7 @@ func (bp *BindingParser) CreateBoundElementProperty(
 		securityContext = securityContexts[0]
 	}
 
-	return expression_parser.NewBoundElementProperty(
+	return expressionparser.NewBoundElementProperty(
 		*boundPropertyName,
 		bindingType,
 		securityContext,
@@ -705,7 +705,7 @@ func (bp *BindingParser) ParseEvent(
 	sourceSpan *util.ParseSourceSpan,
 	handlerSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetEvents *[]*expression_parser.ParsedEvent,
+	targetEvents *[]*expressionparser.ParsedEvent,
 	keySpan *util.ParseSourceSpan,
 ) {
 	if len(name) == 0 {
@@ -717,7 +717,7 @@ func (bp *BindingParser) ParseEvent(
 		if keySpan != nil {
 			keySpan = moveParseSourceSpanFromAbsolute(
 				keySpan,
-				expression_parser.NewAbsoluteSourceSpan(
+				expressionparser.NewAbsoluteSourceSpan(
 					keySpan.Start.Offset+1,
 					keySpan.End.Offset,
 				),
@@ -753,7 +753,7 @@ func (bp *BindingParser) parseEvent(
 	sourceSpan *util.ParseSourceSpan,
 	handlerSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string,
-	targetEvents *[]*expression_parser.ParsedEvent,
+	targetEvents *[]*expressionparser.ParsedEvent,
 	keySpan *util.ParseSourceSpan,
 ) {
 	bp.ParseEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan)
@@ -799,15 +799,15 @@ func (bp *BindingParser) parseLegacyAnimationEvent(
 	expression string,
 	sourceSpan *util.ParseSourceSpan,
 	handlerSpan *util.ParseSourceSpan,
-	targetEvents *[]*expression_parser.ParsedEvent,
+	targetEvents *[]*expressionparser.ParsedEvent,
 	keySpan *util.ParseSourceSpan,
 ) {
 	eventName, phase := bp.ParseLegacyAnimationEventName(name)
 	ast := bp.parseAction(expression, handlerSpan)
-	*targetEvents = append(*targetEvents, expression_parser.NewParsedEvent(
+	*targetEvents = append(*targetEvents, expressionparser.NewParsedEvent(
 		eventName,
 		phase,
-		expression_parser.ParsedEventTypeLegacyAnimation,
+		expressionparser.ParsedEventTypeLegacyAnimation,
 		ast,
 		sourceSpan,
 		handlerSpan,
@@ -842,7 +842,7 @@ func (bp *BindingParser) parseRegularEvent(
 	sourceSpan *util.ParseSourceSpan,
 	handlerSpan *util.ParseSourceSpan,
 	targetMatchableAttrs *[]string, // [][]string - array of [key, value] pairs
-	targetEvents *[]*expression_parser.ParsedEvent,
+	targetEvents *[]*expressionparser.ParsedEvent,
 	keySpan *util.ParseSourceSpan,
 ) {
 	// long format: 'target: eventName'
@@ -862,15 +862,15 @@ func (bp *BindingParser) parseRegularEvent(
 		bp.reportError("Unsupported expression in a two-way binding", sourceSpan, util.ParseErrorLevelError)
 	}
 
-	eventType := expression_parser.ParsedEventTypeRegular
+	eventType := expressionparser.ParsedEventTypeRegular
 	if isAssignmentEvent {
-		eventType = expression_parser.ParsedEventTypeTwoWay
+		eventType = expressionparser.ParsedEventTypeTwoWay
 	}
 	if strings.HasPrefix(name, ANIMATE_PREFIX+PROPERTY_PARTS_SEPARATOR) {
-		eventType = expression_parser.ParsedEventTypeAnimation
+		eventType = expressionparser.ParsedEventTypeAnimation
 	}
 
-	*targetEvents = append(*targetEvents, expression_parser.NewParsedEvent(
+	*targetEvents = append(*targetEvents, expressionparser.NewParsedEvent(
 		eventName,
 		target,
 		eventType,
@@ -884,7 +884,7 @@ func (bp *BindingParser) parseRegularEvent(
 }
 
 // parseAction parses an action expression
-func (bp *BindingParser) parseAction(value string, sourceSpan *util.ParseSourceSpan) *expression_parser.ASTWithSource {
+func (bp *BindingParser) parseAction(value string, sourceSpan *util.ParseSourceSpan) *expressionparser.ASTWithSource {
 	absoluteOffset := 0
 	if sourceSpan != nil && sourceSpan.Start != nil {
 		absoluteOffset = sourceSpan.Start.Offset
@@ -942,21 +942,21 @@ func (bp *BindingParser) validatePropertyOrAttributeName(
 }
 
 // isAllowedAssignmentEvent checks if an AST is allowed to be used within the event side of a two-way binding
-func (bp *BindingParser) isAllowedAssignmentEvent(ast expression_parser.AST) bool {
-	if astWithSource, ok := ast.(*expression_parser.ASTWithSource); ok {
+func (bp *BindingParser) isAllowedAssignmentEvent(ast expressionparser.AST) bool {
+	if astWithSource, ok := ast.(*expressionparser.ASTWithSource); ok {
 		return bp.isAllowedAssignmentEvent(astWithSource.AST)
 	}
 
-	if nonNullAssert, ok := ast.(*expression_parser.NonNullAssert); ok {
+	if nonNullAssert, ok := ast.(*expressionparser.NonNullAssert); ok {
 		return bp.isAllowedAssignmentEvent(nonNullAssert.Expression)
 	}
 
-	if call, ok := ast.(*expression_parser.Call); ok {
+	if call, ok := ast.(*expressionparser.Call); ok {
 		if len(call.Args) == 1 {
-			if propRead, ok := call.Receiver.(*expression_parser.PropertyRead); ok {
+			if propRead, ok := call.Receiver.(*expressionparser.PropertyRead); ok {
 				if propRead.Name == "$any" {
-					if _, ok := propRead.Receiver.(*expression_parser.ImplicitReceiver); ok {
-						if _, isThisReceiver := propRead.Receiver.(*expression_parser.ThisReceiver); !isThisReceiver {
+					if _, ok := propRead.Receiver.(*expressionparser.ImplicitReceiver); ok {
+						if _, isThisReceiver := propRead.Receiver.(*expressionparser.ThisReceiver); !isThisReceiver {
 							return bp.isAllowedAssignmentEvent(call.Args[0])
 						}
 					}
@@ -965,11 +965,11 @@ func (bp *BindingParser) isAllowedAssignmentEvent(ast expression_parser.AST) boo
 		}
 	}
 
-	if propRead, ok := ast.(*expression_parser.PropertyRead); ok {
+	if propRead, ok := ast.(*expressionparser.PropertyRead); ok {
 		return !hasRecursiveSafeReceiver(propRead)
 	}
 
-	if keyedRead, ok := ast.(*expression_parser.KeyedRead); ok {
+	if keyedRead, ok := ast.(*expressionparser.KeyedRead); ok {
 		return !hasRecursiveSafeReceiver(keyedRead)
 	}
 
@@ -977,28 +977,28 @@ func (bp *BindingParser) isAllowedAssignmentEvent(ast expression_parser.AST) boo
 }
 
 // hasRecursiveSafeReceiver checks if an AST has a recursive safe receiver
-func hasRecursiveSafeReceiver(ast expression_parser.AST) bool {
-	if _, ok := ast.(*expression_parser.SafePropertyRead); ok {
+func hasRecursiveSafeReceiver(ast expressionparser.AST) bool {
+	if _, ok := ast.(*expressionparser.SafePropertyRead); ok {
 		return true
 	}
 
-	if _, ok := ast.(*expression_parser.SafeKeyedRead); ok {
+	if _, ok := ast.(*expressionparser.SafeKeyedRead); ok {
 		return true
 	}
 
-	if parenthesized, ok := ast.(*expression_parser.ParenthesizedExpression); ok {
+	if parenthesized, ok := ast.(*expressionparser.ParenthesizedExpression); ok {
 		return hasRecursiveSafeReceiver(parenthesized.Expression)
 	}
 
-	if propRead, ok := ast.(*expression_parser.PropertyRead); ok {
+	if propRead, ok := ast.(*expressionparser.PropertyRead); ok {
 		return hasRecursiveSafeReceiver(propRead.Receiver)
 	}
 
-	if keyedRead, ok := ast.(*expression_parser.KeyedRead); ok {
+	if keyedRead, ok := ast.(*expressionparser.KeyedRead); ok {
 		return hasRecursiveSafeReceiver(keyedRead.Receiver)
 	}
 
-	if call, ok := ast.(*expression_parser.Call); ok {
+	if call, ok := ast.(*expressionparser.Call); ok {
 		return hasRecursiveSafeReceiver(call.Receiver)
 	}
 
@@ -1011,8 +1011,8 @@ func isLegacyAnimationLabel(name string) bool {
 }
 
 // isEmptyExpr checks if an AST is an EmptyExpr
-func isEmptyExpr(ast expression_parser.AST) bool {
-	_, ok := ast.(*expression_parser.EmptyExpr)
+func isEmptyExpr(ast expressionparser.AST) bool {
+	_, ok := ast.(*expressionparser.EmptyExpr)
 	return ok
 }
 
@@ -1092,7 +1092,7 @@ func calcPossibleSecurityContexts(
 // moveParseSourceSpan moves a ParseSourceSpan based on an absolute span
 func moveParseSourceSpan(
 	sourceSpan *util.ParseSourceSpan,
-	absoluteSpan *expression_parser.AbsoluteSourceSpan,
+	absoluteSpan *expressionparser.AbsoluteSourceSpan,
 ) *util.ParseSourceSpan {
 	// The difference of two absolute offsets provide the relative offset
 	startDiff := absoluteSpan.Start - sourceSpan.Start.Offset
@@ -1108,7 +1108,7 @@ func moveParseSourceSpan(
 // moveParseSourceSpanFromAbsolute is a helper that creates an AbsoluteSourceSpan and moves
 func moveParseSourceSpanFromAbsolute(
 	sourceSpan *util.ParseSourceSpan,
-	absoluteSpan *expression_parser.AbsoluteSourceSpan,
+	absoluteSpan *expressionparser.AbsoluteSourceSpan,
 ) *util.ParseSourceSpan {
 	return moveParseSourceSpan(sourceSpan, absoluteSpan)
 }

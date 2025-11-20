@@ -2,7 +2,7 @@ package render3
 
 import (
 	"ngc-go/packages/compiler/src/core"
-	"ngc-go/packages/compiler/src/expression_parser"
+	"ngc-go/packages/compiler/src/expressionparser"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/util"
 	"regexp"
@@ -198,7 +198,7 @@ type OnTriggerParser struct {
 	onSourceSpan       *util.ParseSourceSpan
 	hydrateSpan        *util.ParseSourceSpan
 	index              int
-	tokens             []*expression_parser.Token
+	tokens             []*expressionparser.Token
 }
 
 // NewOnTriggerParser creates a new OnTriggerParser
@@ -215,7 +215,7 @@ func NewOnTriggerParser(
 	onSourceSpan *util.ParseSourceSpan,
 	hydrateSpan *util.ParseSourceSpan,
 ) *OnTriggerParser {
-	lexer := expression_parser.NewLexer()
+	lexer := expressionparser.NewLexer()
 	tokens := lexer.Tokenize(expression[start:])
 	return &OnTriggerParser{
 		expression:         expression,
@@ -280,7 +280,7 @@ func (p *OnTriggerParser) isFollowedByOrLast(char int) bool {
 }
 
 // token returns the current token
-func (p *OnTriggerParser) token() *expression_parser.Token {
+func (p *OnTriggerParser) token() *expressionparser.Token {
 	if p.index >= len(p.tokens) {
 		return p.tokens[len(p.tokens)-1]
 	}
@@ -288,7 +288,7 @@ func (p *OnTriggerParser) token() *expression_parser.Token {
 }
 
 // consumeTrigger consumes a trigger
-func (p *OnTriggerParser) consumeTrigger(identifier *expression_parser.Token, parameters []ParsedParameter) {
+func (p *OnTriggerParser) consumeTrigger(identifier *expressionparser.Token, parameters []ParsedParameter) {
 	triggerNameStartSpan := p.span.Start.MoveBy(
 		p.start + identifier.Index - p.tokens[0].Index,
 	)
@@ -413,7 +413,7 @@ func (p *OnTriggerParser) consumeParameters() []ParsedParameter {
 	p.advance()
 
 	commaDelimStack := []int{}
-	var tokens []*expression_parser.Token
+	var tokens []*expressionparser.Token
 
 	for p.index < len(p.tokens) {
 		token := p.token()
@@ -430,7 +430,7 @@ func (p *OnTriggerParser) consumeParameters() []ParsedParameter {
 		}
 
 		// Handle comma-delimited syntax
-		if token.Type == expression_parser.TokenTypeCharacter {
+		if token.Type == expressionparser.TokenTypeCharacter {
 			if closingChar, ok := commaDelimitedSyntax[int(token.NumValue)]; ok {
 				commaDelimStack = append(commaDelimStack, closingChar)
 			}
@@ -448,7 +448,7 @@ func (p *OnTriggerParser) consumeParameters() []ParsedParameter {
 				Start:      tokens[0].Index,
 			})
 			p.advance()
-			tokens = []*expression_parser.Token{}
+			tokens = []*expressionparser.Token{}
 			continue
 		}
 
@@ -469,7 +469,7 @@ func (p *OnTriggerParser) consumeParameters() []ParsedParameter {
 }
 
 // tokenRangeText gets the text for a range of tokens
-func (p *OnTriggerParser) tokenRangeText(tokens []*expression_parser.Token) string {
+func (p *OnTriggerParser) tokenRangeText(tokens []*expressionparser.Token) string {
 	if len(tokens) == 0 {
 		return ""
 	}
@@ -483,7 +483,7 @@ func (p *OnTriggerParser) trackTrigger(name string, trigger DeferredTriggerInter
 }
 
 // error adds an error
-func (p *OnTriggerParser) error(token *expression_parser.Token, message string) {
+func (p *OnTriggerParser) error(token *expressionparser.Token, message string) {
 	newStart := p.span.Start.MoveBy(p.start + token.Index)
 	newEnd := newStart.MoveBy(token.End - token.Index)
 	*p.errors = append(*p.errors, util.NewParseError(
@@ -493,7 +493,7 @@ func (p *OnTriggerParser) error(token *expression_parser.Token, message string) 
 }
 
 // unexpectedToken adds an error for an unexpected token
-func (p *OnTriggerParser) unexpectedToken(token *expression_parser.Token) {
+func (p *OnTriggerParser) unexpectedToken(token *expressionparser.Token) {
 	p.error(token, `Unexpected token "`+token.String()+`"`)
 }
 
@@ -708,7 +708,7 @@ func createViewportTrigger(
 	}
 
 	var reference *string
-	var options *expression_parser.LiteralMap
+	var options *expressionparser.LiteralMap
 
 	if len(parameters) == 0 {
 		reference = nil
@@ -725,7 +725,7 @@ func createViewportTrigger(
 			sourceSpan.Start.Offset+start+parameters[0].Start,
 		)
 
-		literalMap, ok := parsed.AST.(*expression_parser.LiteralMap)
+		literalMap, ok := parsed.AST.(*expressionparser.LiteralMap)
 		if !ok {
 			return nil, &ParseError{Message: `Options parameter of the "viewport" trigger must be an object literal`}
 		}
@@ -750,13 +750,13 @@ func createViewportTrigger(
 			options = literalMap
 		} else {
 			value := literalMap.Values[triggerIndex]
-			propertyRead, ok := value.(*expression_parser.PropertyRead)
+			propertyRead, ok := value.(*expressionparser.PropertyRead)
 			if !ok {
 				return nil, &ParseError{Message: `"trigger" option of the "viewport" trigger must be an identifier`}
 			}
 
-			_, isImplicitReceiver := propertyRead.Receiver.(*expression_parser.ImplicitReceiver)
-			_, isThisReceiver := propertyRead.Receiver.(*expression_parser.ThisReceiver)
+			_, isImplicitReceiver := propertyRead.Receiver.(*expressionparser.ImplicitReceiver)
+			_, isThisReceiver := propertyRead.Receiver.(*expressionparser.ThisReceiver)
 			if !isImplicitReceiver || isThisReceiver {
 				return nil, &ParseError{Message: `"trigger" option of the "viewport" trigger must be an identifier`}
 			}
@@ -765,15 +765,15 @@ func createViewportTrigger(
 			reference = &ref
 
 			// Filter out the trigger key and value
-			filteredKeys := []expression_parser.LiteralMapKey{}
-			filteredValues := []expression_parser.AST{}
+			filteredKeys := []expressionparser.LiteralMapKey{}
+			filteredValues := []expressionparser.AST{}
 			for i, key := range literalMap.Keys {
 				if i != triggerIndex {
 					filteredKeys = append(filteredKeys, key)
 					filteredValues = append(filteredValues, literalMap.Values[i])
 				}
 			}
-			options = expression_parser.NewLiteralMap(literalMap.Span(), literalMap.SourceSpan(), filteredKeys, filteredValues)
+			options = expressionparser.NewLiteralMap(literalMap.Span(), literalMap.SourceSpan(), filteredKeys, filteredValues)
 		}
 	}
 
@@ -862,31 +862,31 @@ func ParseDeferredTime(value string) *int {
 
 // DynamicAstValidator is a visitor that finds dynamic nodes in an AST
 type DynamicAstValidator struct {
-	*expression_parser.RecursiveAstVisitor
-	dynamicNode expression_parser.AST
+	*expressionparser.RecursiveAstVisitor
+	dynamicNode expressionparser.AST
 }
 
 // NewDynamicAstValidator creates a new DynamicAstValidator
 func NewDynamicAstValidator() *DynamicAstValidator {
 	return &DynamicAstValidator{
-		RecursiveAstVisitor: &expression_parser.RecursiveAstVisitor{},
+		RecursiveAstVisitor: &expressionparser.RecursiveAstVisitor{},
 		dynamicNode:         nil,
 	}
 }
 
 // DynamicAstValidatorFindDynamicNode finds a dynamic node in an AST
-func DynamicAstValidatorFindDynamicNode(ast expression_parser.AST) expression_parser.AST {
+func DynamicAstValidatorFindDynamicNode(ast expressionparser.AST) expressionparser.AST {
 	visitor := NewDynamicAstValidator()
 	ast.Visit(visitor, nil)
 	return visitor.dynamicNode
 }
 
 // Visit visits an AST node
-func (d *DynamicAstValidator) Visit(ast expression_parser.AST, context interface{}) interface{} {
-	_, isASTWithSource := ast.(*expression_parser.ASTWithSource)
-	_, isLiteralPrimitive := ast.(*expression_parser.LiteralPrimitive)
-	_, isLiteralArray := ast.(*expression_parser.LiteralArray)
-	_, isLiteralMap := ast.(*expression_parser.LiteralMap)
+func (d *DynamicAstValidator) Visit(ast expressionparser.AST, context interface{}) interface{} {
+	_, isASTWithSource := ast.(*expressionparser.ASTWithSource)
+	_, isLiteralPrimitive := ast.(*expressionparser.LiteralPrimitive)
+	_, isLiteralArray := ast.(*expressionparser.LiteralArray)
+	_, isLiteralMap := ast.(*expressionparser.LiteralMap)
 
 	if !isASTWithSource && !isLiteralPrimitive && !isLiteralArray && !isLiteralMap {
 		d.dynamicNode = ast
@@ -897,28 +897,28 @@ func (d *DynamicAstValidator) Visit(ast expression_parser.AST, context interface
 }
 
 // getTypeName gets the type name of an AST node
-func getTypeName(ast expression_parser.AST) string {
+func getTypeName(ast expressionparser.AST) string {
 	// Simple type name extraction - in Go we can use reflection or type switch
 	switch ast.(type) {
-	case *expression_parser.PropertyRead:
+	case *expressionparser.PropertyRead:
 		return "PropertyRead"
-	case *expression_parser.SafePropertyRead:
+	case *expressionparser.SafePropertyRead:
 		return "SafePropertyRead"
-	case *expression_parser.KeyedRead:
+	case *expressionparser.KeyedRead:
 		return "KeyedRead"
-	case *expression_parser.SafeKeyedRead:
+	case *expressionparser.SafeKeyedRead:
 		return "SafeKeyedRead"
-	case *expression_parser.Call:
+	case *expressionparser.Call:
 		return "Call"
-	case *expression_parser.SafeCall:
+	case *expressionparser.SafeCall:
 		return "SafeCall"
-	case *expression_parser.Binary:
+	case *expressionparser.Binary:
 		return "Binary"
-	case *expression_parser.Unary:
+	case *expressionparser.Unary:
 		return "Unary"
-	case *expression_parser.Conditional:
+	case *expressionparser.Conditional:
 		return "Conditional"
-	case *expression_parser.BindingPipe:
+	case *expressionparser.BindingPipe:
 		return "BindingPipe"
 	default:
 		return "Unknown"

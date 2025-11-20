@@ -7,7 +7,7 @@ import (
 
 	"ngc-go/packages/compiler/src/core"
 	"ngc-go/packages/compiler/src/css"
-	"ngc-go/packages/compiler/src/expression_parser"
+	"ngc-go/packages/compiler/src/expressionparser"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/util"
@@ -300,7 +300,7 @@ func GetAttrsForDirectiveMatching(elOrTpl Node) map[string]string {
 		}
 		GetInputs() []interface {
 			GetName() string
-			GetType() expression_parser.BindingType
+			GetType() expressionparser.BindingType
 		}
 		GetOutputs() []interface{ GetName() string }
 	}); ok {
@@ -323,11 +323,11 @@ func GetAttrsForDirectiveMatching(elOrTpl Node) map[string]string {
 		if inputsGetter, ok := element.(interface {
 			GetInputs() []interface {
 				GetName() string
-				GetType() expression_parser.BindingType
+				GetType() expressionparser.BindingType
 			}
 		}); ok {
 			for _, input := range inputsGetter.GetInputs() {
-				if input.GetType() == expression_parser.BindingTypeProperty || input.GetType() == expression_parser.BindingTypeTwoWay {
+				if input.GetType() == expressionparser.BindingTypeProperty || input.GetType() == expressionparser.BindingTypeTwoWay {
 					attributesMap[input.GetName()] = ""
 				}
 			}

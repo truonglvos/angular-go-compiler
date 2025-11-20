@@ -1,4 +1,4 @@
-package expression_parser
+package expressionparser
 
 import (
 	"ngc-go/packages/compiler/src/core"

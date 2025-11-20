@@ -1,4 +1,4 @@
-package expression_parser
+package expressionparser
 
 import (
 	"fmt"

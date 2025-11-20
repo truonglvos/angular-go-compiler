@@ -1,7 +1,7 @@
 package render3
 
 import (
-	"ngc-go/packages/compiler/src/expression_parser"
+	"ngc-go/packages/compiler/src/expressionparser"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/util"
 	"regexp"
@@ -42,7 +42,7 @@ var allowedForLoopLetVariables = map[string]bool{
 // BindingParser is an interface for parsing bindings
 // TODO: This should be defined in template_parser package
 type BindingParser interface {
-	ParseBinding(expression string, allowPipes bool, sourceSpan *util.ParseSourceSpan, absoluteOffset int) *expression_parser.ASTWithSource
+	ParseBinding(expression string, allowPipes bool, sourceSpan *util.ParseSourceSpan, absoluteOffset int) *expressionparser.ASTWithSource
 }
 
 // IsConnectedForLoopBlock determines if a block with a specific name can be connected to a `for` block
@@ -228,7 +228,7 @@ func CreateSwitchBlock(
 	bindingParser BindingParser,
 ) CreateSwitchBlockResult {
 	errors := validateSwitchBlock(ast)
-	var primaryExpression expression_parser.AST
+	var primaryExpression expressionparser.AST
 	if len(ast.Parameters) > 0 {
 		primaryExpression = parseBlockParameterToBinding(ast.Parameters[0], bindingParser, nil).AST
 	} else {
@@ -250,7 +250,7 @@ func CreateSwitchBlock(
 			continue
 		}
 
-		var expr expression_parser.AST
+		var expr expressionparser.AST
 		if block.Name == "case" {
 			expr = parseBlockParameterToBinding(block.Parameters[0], bindingParser, nil).AST
 		} else {
@@ -297,19 +297,19 @@ func CreateSwitchBlock(
 type ForLoopParameters struct {
 	ItemName   *Variable
 	TrackBy    *TrackByExpression
-	Expression *expression_parser.ASTWithSource
+	Expression *expressionparser.ASTWithSource
 	Context    []*Variable
 }
 
 // TrackByExpression represents a track by expression
 type TrackByExpression struct {
-	Expression  *expression_parser.ASTWithSource
+	Expression  *expressionparser.ASTWithSource
 	KeywordSpan *util.ParseSourceSpan
 }
 
 // ConditionalBlockParameters represents parsed parameters for a conditional block
 type ConditionalBlockParameters struct {
-	Expression      expression_parser.AST
+	Expression      expressionparser.AST
 	ExpressionAlias *Variable
 }
 
@@ -411,7 +411,7 @@ func parseForLoopParameters(
 				*errors = append(*errors, util.NewParseError(param.SourceSpan(), `@for loop can only have one "track" expression`))
 			} else {
 				expr := parseBlockParameterToBinding(param, bindingParser, &trackMatch[1])
-				if _, ok := expr.AST.(*expression_parser.EmptyExpr); ok {
+				if _, ok := expr.AST.(*expressionparser.EmptyExpr); ok {
 					*errors = append(*errors, util.NewParseError(block.StartSourceSpan, `@for loop must have a "track" expression`))
 				}
 				keywordSpan := util.NewParseSourceSpan(
@@ -436,7 +436,7 @@ func parseForLoopParameters(
 
 // validateTrackByExpression validates a track by expression
 func validateTrackByExpression(
-	expr *expression_parser.ASTWithSource,
+	expr *expressionparser.ASTWithSource,
 	parseSourceSpan *util.ParseSourceSpan,
 	errors *[]*util.ParseError,
 ) {
@@ -614,7 +614,7 @@ func parseBlockParameterToBinding(
 	ast *ml_parser.BlockParameter,
 	bindingParser BindingParser,
 	part *string,
-) *expression_parser.ASTWithSource {
+) *expressionparser.ASTWithSource {
 	var start int
 	var end int
 
@@ -738,20 +738,20 @@ func stripOptionalParentheses(param *ml_parser.BlockParameter, errors *[]*util.P
 
 // PipeVisitor is a visitor that checks if an expression contains pipes
 type PipeVisitor struct {
-	*expression_parser.RecursiveAstVisitor
+	*expressionparser.RecursiveAstVisitor
 	HasPipe bool
 }
 
 // NewPipeVisitor creates a new PipeVisitor
 func NewPipeVisitor() *PipeVisitor {
 	return &PipeVisitor{
-		RecursiveAstVisitor: &expression_parser.RecursiveAstVisitor{},
+		RecursiveAstVisitor: &expressionparser.RecursiveAstVisitor{},
 		HasPipe:             false,
 	}
 }
 
 // VisitPipe visits a binding pipe
-func (p *PipeVisitor) VisitPipe(ast *expression_parser.BindingPipe, context interface{}) interface{} {
+func (p *PipeVisitor) VisitPipe(ast *expressionparser.BindingPipe, context interface{}) interface{} {
 	p.HasPipe = true
 	return nil
 }

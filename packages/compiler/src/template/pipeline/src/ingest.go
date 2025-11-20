@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"ngc-go/packages/compiler/src/constant"
-	"ngc-go/packages/compiler/src/expression_parser"
+	"ngc-go/packages/compiler/src/expressionparser"
 	"ngc-go/packages/compiler/src/i18n"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/output"
@@ -91,9 +91,9 @@ func IngestComponent(
 type HostBindingInput struct {
 	ComponentName     string
 	ComponentSelector string
-	Properties        []*expression_parser.ParsedProperty
+	Properties        []*expressionparser.ParsedProperty
 	Attributes        map[string]output.OutputExpression
-	Events            []*expression_parser.ParsedEvent
+	Events            []*expressionparser.ParsedEvent
 }
 
 // IngestHostBinding processes a host binding AST and converts it into a HostBindingCompilationJob in the intermediate representation
@@ -373,11 +373,11 @@ func ingestBoundText(
 	icuPlaceholder *string,
 ) {
 	value := text.Value
-	if astWithSource, ok := value.(*expression_parser.ASTWithSource); ok {
+	if astWithSource, ok := value.(*expressionparser.ASTWithSource); ok {
 		value = astWithSource.AST
 	}
 
-	interpolation, ok := value.(*expression_parser.Interpolation)
+	interpolation, ok := value.(*expressionparser.Interpolation)
 	if !ok {
 		panic(fmt.Sprintf(
 			"AssertionError: expected Interpolation for BoundText node, got %T",
@@ -442,7 +442,7 @@ func ingestBoundText(
 
 // Helper function to convert expressions
 func convertExpressions(
-	expressions []expression_parser.AST,
+	expressions []expressionparser.AST,
 	job *pipeline_compilation.CompilationJob,
 	baseSourceSpan *util.ParseSourceSpan,
 ) []output.OutputExpression {
@@ -754,9 +754,9 @@ func ingestControlFlowInsertionPoint(
 
 			// Also collect the inputs since they participate in content projection as well.
 			for _, input := range rootElement.Inputs {
-				if input.Type != expression_parser.BindingTypeLegacyAnimation &&
-					input.Type != expression_parser.BindingTypeAnimation &&
-					input.Type != expression_parser.BindingTypeAttribute {
+				if input.Type != expressionparser.BindingTypeLegacyAnimation &&
+					input.Type != expressionparser.BindingTypeAnimation &&
+					input.Type != expressionparser.BindingTypeAttribute {
 					securityContext := domSchema.SecurityContext(NG_TEMPLATE_TAG_NAME, input.Name, true)
 					unit.Create.Push(ops_create.NewExtractedAttributeOp(
 						xref,
@@ -773,9 +773,9 @@ func ingestControlFlowInsertionPoint(
 		} else if rootTemplate != nil {
 			// Templates don't have attributes in the same way, but we can still collect inputs
 			for _, input := range rootTemplate.Inputs {
-				if input.Type != expression_parser.BindingTypeLegacyAnimation &&
-					input.Type != expression_parser.BindingTypeAnimation &&
-					input.Type != expression_parser.BindingTypeAttribute {
+				if input.Type != expressionparser.BindingTypeLegacyAnimation &&
+					input.Type != expressionparser.BindingTypeAnimation &&
+					input.Type != expressionparser.BindingTypeAttribute {
 					securityContext := domSchema.SecurityContext(NG_TEMPLATE_TAG_NAME, input.Name, true)
 					unit.Create.Push(ops_create.NewExtractedAttributeOp(
 						xref,
@@ -985,7 +985,7 @@ func ingestDeferTriggers(
 	}
 
 	if triggers.When != nil {
-		if _, ok := triggers.When.Value.(*expression_parser.Interpolation); ok {
+		if _, ok := triggers.When.Value.(*expressionparser.Interpolation); ok {
 			panic("Unexpected interpolation in defer block when trigger")
 		}
 		deferWhenOp := ops_update.NewDeferWhenOp(
@@ -1417,18 +1417,18 @@ func ingestLetDeclaration(unit *pipeline_compilation.ViewCompilationUnit, node *
 // makeListenerHandlerOps creates handler operations for a listener
 func makeListenerHandlerOps(
 	unit pipeline_compilation.CompilationUnit,
-	handler expression_parser.AST,
+	handler expressionparser.AST,
 	handlerSpan *util.ParseSourceSpan,
 ) []ir_operations.UpdateOp {
 	handler = astOf(handler)
 	handlerOps := make([]ir_operations.UpdateOp, 0)
 
 	// Handle Chain expressions
-	var handlerExprs []expression_parser.AST
-	if chain, ok := handler.(*expression_parser.Chain); ok {
+	var handlerExprs []expressionparser.AST
+	if chain, ok := handler.(*expressionparser.Chain); ok {
 		handlerExprs = chain.Expressions
 	} else {
-		handlerExprs = []expression_parser.AST{handler}
+		handlerExprs = []expressionparser.AST{handler}
 	}
 
 	if len(handlerExprs) == 0 {
@@ -1463,14 +1463,14 @@ func makeListenerHandlerOps(
 // makeTwoWayListenerHandlerOps creates handler operations for a two-way listener
 func makeTwoWayListenerHandlerOps(
 	unit pipeline_compilation.CompilationUnit,
-	handler expression_parser.AST,
+	handler expressionparser.AST,
 	handlerSpan *util.ParseSourceSpan,
 ) []ir_operations.UpdateOp {
 	handler = astOf(handler)
 	handlerOps := make([]ir_operations.UpdateOp, 0)
 
 	// Handle Chain expressions
-	if chain, ok := handler.(*expression_parser.Chain); ok {
+	if chain, ok := handler.(*expressionparser.Chain); ok {
 		if len(chain.Expressions) == 1 {
 			handler = chain.Expressions[0]
 		} else {
@@ -1497,9 +1497,9 @@ func makeTwoWayListenerHandlerOps(
 func createTemplateBinding(
 	view *pipeline_compilation.ViewCompilationUnit,
 	xref ir_operations.XrefId,
-	bindingType expression_parser.BindingType,
+	bindingType expressionparser.BindingType,
 	name string,
-	value interface{}, // expression_parser.AST | string
+	value interface{}, // expressionparser.AST | string
 	unit *string,
 	securityContext interface{}, // core.SecurityContext
 	isStructuralTemplateAttribute bool,
@@ -1519,9 +1519,9 @@ func createTemplateBinding(
 	if templateKind != nil && *templateKind == ir.TemplateKindStructural {
 		if !isStructuralTemplateAttribute {
 			switch bindingType {
-			case expression_parser.BindingTypeProperty,
-				expression_parser.BindingTypeClass,
-				expression_parser.BindingTypeStyle:
+			case expressionparser.BindingTypeProperty,
+				expressionparser.BindingTypeClass,
+				expressionparser.BindingTypeStyle:
 				// Because this binding doesn't really target the ng-template, it must be a binding on an
 				// inner node of a structural template. We can't skip it entirely, because we still need
 				// it on the ng-template's consts (e.g. for the purposes of directive matching). However,
@@ -1536,7 +1536,7 @@ func createTemplateBinding(
 					i18nMessage,
 					securityContext,
 				)
-			case expression_parser.BindingTypeTwoWay:
+			case expressionparser.BindingTypeTwoWay:
 				return ops_create.NewExtractedAttributeOp(
 					xref,
 					ir.BindingKindTwoWayProperty,
@@ -1551,9 +1551,9 @@ func createTemplateBinding(
 		}
 
 		if !isTextBinding &&
-			(bindingType == expression_parser.BindingTypeAttribute ||
-				bindingType == expression_parser.BindingTypeLegacyAnimation ||
-				bindingType == expression_parser.BindingTypeAnimation) {
+			(bindingType == expressionparser.BindingTypeAttribute ||
+				bindingType == expressionparser.BindingTypeLegacyAnimation ||
+				bindingType == expressionparser.BindingTypeAnimation) {
 			// Again, this binding doesn't really target the ng-template; it actually targets the element
 			// inside the structural template. In the case of non-text attribute or animation bindings,
 			// the binding doesn't even show up on the ng-template const array, so we just skip it
@@ -1574,9 +1574,9 @@ func createTemplateBinding(
 		// sense on an `ng-template` and should probably be parser errors. However,
 		// TemplateDefinitionBuilder generates `property` instructions for them, and so we do that as
 		// well.
-		if bindingType == expression_parser.BindingTypeClass ||
-			bindingType == expression_parser.BindingTypeStyle ||
-			(bindingType == expression_parser.BindingTypeAttribute && !isTextBinding) {
+		if bindingType == expressionparser.BindingTypeClass ||
+			bindingType == expressionparser.BindingTypeStyle ||
+			(bindingType == expressionparser.BindingTypeAttribute && !isTextBinding) {
 			// TODO: These cases should be parse errors.
 			bindingKind = ir.BindingKindProperty
 		}
@@ -1586,7 +1586,7 @@ func createTemplateBinding(
 	if isTextBinding {
 		expression = convertAstWithInterpolation(view.GetJob(), strValue, i18nMessage, sourceSpan)
 	} else {
-		ast, ok := value.(expression_parser.AST)
+		ast, ok := value.(expressionparser.AST)
 		if !ok {
 			panic(fmt.Sprintf("Expected AST for non-text binding, got %T", value))
 		}
@@ -1667,7 +1667,7 @@ func ingestElementBindings(
 
 		// If the input name is 'field', this could be a form control binding which requires a
 		// `ControlCreateOp` to properly initialize.
-		if input.Type == expression_parser.BindingTypeProperty && input.Name == "field" {
+		if input.Type == expressionparser.BindingTypeProperty && input.Name == "field" {
 			// TODO: Implement ControlCreateOp
 			// unit.Create.Push(ops.NewControlCreateOp(input.SourceSpan))
 		}
@@ -1686,11 +1686,11 @@ func ingestElementBindings(
 	}
 
 	for _, output := range element.Outputs {
-		if output.Type == expression_parser.ParsedEventTypeLegacyAnimation && output.Phase == nil {
+		if output.Type == expressionparser.ParsedEventTypeLegacyAnimation && output.Phase == nil {
 			panic("Animation listener should have a phase")
 		}
 
-		if output.Type == expression_parser.ParsedEventTypeTwoWay {
+		if output.Type == expressionparser.ParsedEventTypeTwoWay {
 			unit.Create.Push(
 				ops_create.NewTwoWayListenerOp(
 					op.Xref,
@@ -1701,7 +1701,7 @@ func ingestElementBindings(
 					output.SourceSpan(),
 				),
 			)
-		} else if output.Type == expression_parser.ParsedEventTypeAnimation {
+		} else if output.Type == expressionparser.ParsedEventTypeAnimation {
 			animationKind := ir.AnimationKindEnter
 			if !strings.HasSuffix(output.Name, "enter") {
 				animationKind = ir.AnimationKindLeave
@@ -1774,7 +1774,7 @@ func ingestTemplateBindings(
 			binding := createTemplateBinding(
 				unit,
 				op.Xref,
-				expression_parser.BindingTypeAttribute,
+				expressionparser.BindingTypeAttribute,
 				textAttr.Name,
 				textAttr.Value,
 				nil,
@@ -1813,7 +1813,7 @@ func ingestTemplateBindings(
 		binding := createTemplateBinding(
 			unit,
 			op.Xref,
-			expression_parser.BindingTypeAttribute,
+			expressionparser.BindingTypeAttribute,
 			attr.Name,
 			attr.Value,
 			nil,
@@ -1861,12 +1861,12 @@ func ingestTemplateBindings(
 	}
 
 	for _, output := range template.Outputs {
-		if output.Type == expression_parser.ParsedEventTypeLegacyAnimation && output.Phase == nil {
+		if output.Type == expressionparser.ParsedEventTypeLegacyAnimation && output.Phase == nil {
 			panic("Animation listener should have a phase")
 		}
 
 		if templateKind == ir.TemplateKindNgTemplate {
-			if output.Type == expression_parser.ParsedEventTypeTwoWay {
+			if output.Type == expressionparser.ParsedEventTypeTwoWay {
 				unit.Create.Push(
 					ops_create.NewTwoWayListenerOp(
 						op.Xref,
@@ -1946,8 +1946,8 @@ func ingestReferences(op interface{}, element interface{}) {
 // Helper functions
 
 // astOf extracts the AST from an ASTWithSource, or returns the AST itself
-func astOf(ast expression_parser.AST) expression_parser.AST {
-	if astWithSource, ok := ast.(*expression_parser.ASTWithSource); ok {
+func astOf(ast expressionparser.AST) expressionparser.AST {
+	if astWithSource, ok := ast.(*expressionparser.ASTWithSource); ok {
 		return astWithSource.AST
 	}
 	return ast
@@ -1967,7 +1967,7 @@ func asMessage(i18nMeta interface{}) *i18n.Message {
 
 // convertSourceSpan creates an absolute ParseSourceSpan from the relative ParseSpan
 func convertSourceSpan(
-	span *expression_parser.ParseSpan,
+	span *expressionparser.ParseSpan,
 	baseSourceSpan *util.ParseSourceSpan,
 ) *util.ParseSourceSpan {
 	if baseSourceSpan == nil {
@@ -1981,20 +1981,20 @@ func convertSourceSpan(
 
 // convertAst converts a template AST expression into an output AST expression
 func convertAst(
-	ast expression_parser.AST,
+	ast expressionparser.AST,
 	job *pipeline_compilation.CompilationJob,
 	baseSourceSpan *util.ParseSourceSpan,
 ) output.OutputExpression {
 	// Handle ASTWithSource wrapper
-	if astWithSource, ok := ast.(*expression_parser.ASTWithSource); ok {
+	if astWithSource, ok := ast.(*expressionparser.ASTWithSource); ok {
 		return convertAst(astWithSource.AST, job, baseSourceSpan)
 	}
 
 	// Handle PropertyRead
-	if propRead, ok := ast.(*expression_parser.PropertyRead); ok {
+	if propRead, ok := ast.(*expressionparser.PropertyRead); ok {
 		// Whether this is an implicit receiver, *excluding* explicit reads of `this`
-		_, isImplicitReceiver := propRead.Receiver.(*expression_parser.ImplicitReceiver)
-		_, isThisReceiver := propRead.Receiver.(*expression_parser.ThisReceiver)
+		_, isImplicitReceiver := propRead.Receiver.(*expressionparser.ImplicitReceiver)
+		_, isThisReceiver := propRead.Receiver.(*expressionparser.ThisReceiver)
 		isImplicitReceiver = isImplicitReceiver && !isThisReceiver
 
 		if isImplicitReceiver {
@@ -2010,8 +2010,8 @@ func convertAst(
 	}
 
 	// Handle Call
-	if call, ok := ast.(*expression_parser.Call); ok {
-		if _, isImplicitReceiver := call.Receiver.(*expression_parser.ImplicitReceiver); isImplicitReceiver {
+	if call, ok := ast.(*expressionparser.Call); ok {
+		if _, isImplicitReceiver := call.Receiver.(*expressionparser.ImplicitReceiver); isImplicitReceiver {
 			panic("Unexpected ImplicitReceiver")
 		}
 		args := make([]output.OutputExpression, len(call.Args))
@@ -2028,7 +2028,7 @@ func convertAst(
 	}
 
 	// Handle LiteralPrimitive
-	if literal, ok := ast.(*expression_parser.LiteralPrimitive); ok {
+	if literal, ok := ast.(*expressionparser.LiteralPrimitive); ok {
 		return output.NewLiteralExpr(
 			literal.Value,
 			nil,
@@ -2037,7 +2037,7 @@ func convertAst(
 	}
 
 	// Handle Unary
-	if unary, ok := ast.(*expression_parser.Unary); ok {
+	if unary, ok := ast.(*expressionparser.Unary); ok {
 		var op output.UnaryOperator
 		switch unary.Operator {
 		case "+":
@@ -2057,7 +2057,7 @@ func convertAst(
 	}
 
 	// Handle Binary
-	if binary, ok := ast.(*expression_parser.Binary); ok {
+	if binary, ok := ast.(*expressionparser.Binary); ok {
 		operator, ok := pipeline_convension.BinaryOperators[binary.Operation]
 		if !ok {
 			panic(fmt.Sprintf("AssertionError: unknown binary operator %s", binary.Operation))
@@ -2072,13 +2072,13 @@ func convertAst(
 	}
 
 	// Handle ThisReceiver
-	if thisReceiver, ok := ast.(*expression_parser.ThisReceiver); ok {
+	if thisReceiver, ok := ast.(*expressionparser.ThisReceiver); ok {
 		_ = thisReceiver
 		return ir_expression.NewContextExpr(job.GetRoot().GetXref())
 	}
 
 	// Handle KeyedRead
-	if keyedRead, ok := ast.(*expression_parser.KeyedRead); ok {
+	if keyedRead, ok := ast.(*expressionparser.KeyedRead); ok {
 		return output.NewReadKeyExpr(
 			convertAst(keyedRead.Receiver, job, baseSourceSpan),
 			convertAst(keyedRead.Key, job, baseSourceSpan),
@@ -2088,12 +2088,12 @@ func convertAst(
 	}
 
 	// Handle Chain
-	if _, ok := ast.(*expression_parser.Chain); ok {
+	if _, ok := ast.(*expressionparser.Chain); ok {
 		panic("AssertionError: Chain in unknown context")
 	}
 
 	// Handle LiteralMap
-	if literalMap, ok := ast.(*expression_parser.LiteralMap); ok {
+	if literalMap, ok := ast.(*expressionparser.LiteralMap); ok {
 		entries := make([]*output.LiteralMapEntry, len(literalMap.Keys))
 		for i, key := range literalMap.Keys {
 			entries[i] = output.NewLiteralMapEntry(
@@ -2110,7 +2110,7 @@ func convertAst(
 	}
 
 	// Handle LiteralArray
-	if literalArray, ok := ast.(*expression_parser.LiteralArray); ok {
+	if literalArray, ok := ast.(*expressionparser.LiteralArray); ok {
 		entries := make([]output.OutputExpression, len(literalArray.Expressions))
 		for i, expr := range literalArray.Expressions {
 			entries[i] = convertAst(expr, job, baseSourceSpan)
@@ -2119,7 +2119,7 @@ func convertAst(
 	}
 
 	// Handle Conditional
-	if conditional, ok := ast.(*expression_parser.Conditional); ok {
+	if conditional, ok := ast.(*expressionparser.Conditional); ok {
 		return output.NewConditionalExpr(
 			convertAst(conditional.Condition, job, baseSourceSpan),
 			convertAst(conditional.TrueExp, job, baseSourceSpan),
@@ -2130,13 +2130,13 @@ func convertAst(
 	}
 
 	// Handle NonNullAssert
-	if nonNullAssert, ok := ast.(*expression_parser.NonNullAssert); ok {
+	if nonNullAssert, ok := ast.(*expressionparser.NonNullAssert); ok {
 		// A non-null assertion shouldn't impact generated instructions, so we can just drop it
 		return convertAst(nonNullAssert.Expression, job, baseSourceSpan)
 	}
 
 	// Handle BindingPipe
-	if pipe, ok := ast.(*expression_parser.BindingPipe); ok {
+	if pipe, ok := ast.(*expressionparser.BindingPipe); ok {
 		args := make([]output.OutputExpression, 0, 1+len(pipe.Args))
 		args = append(args, convertAst(pipe.Exp, job, baseSourceSpan))
 		for _, arg := range pipe.Args {
@@ -2151,7 +2151,7 @@ func convertAst(
 	}
 
 	// Handle SafeKeyedRead
-	if safeKeyedRead, ok := ast.(*expression_parser.SafeKeyedRead); ok {
+	if safeKeyedRead, ok := ast.(*expressionparser.SafeKeyedRead); ok {
 		return ir_expression.NewSafeKeyedReadExpr(
 			convertAst(safeKeyedRead.Receiver, job, baseSourceSpan),
 			convertAst(safeKeyedRead.Key, job, baseSourceSpan),
@@ -2160,7 +2160,7 @@ func convertAst(
 	}
 
 	// Handle SafePropertyRead
-	if safePropRead, ok := ast.(*expression_parser.SafePropertyRead); ok {
+	if safePropRead, ok := ast.(*expressionparser.SafePropertyRead); ok {
 		return ir_expression.NewSafePropertyReadExpr(
 			convertAst(safePropRead.Receiver, job, baseSourceSpan),
 			safePropRead.Name,
@@ -2168,7 +2168,7 @@ func convertAst(
 	}
 
 	// Handle SafeCall
-	if safeCall, ok := ast.(*expression_parser.SafeCall); ok {
+	if safeCall, ok := ast.(*expressionparser.SafeCall); ok {
 		args := make([]output.OutputExpression, len(safeCall.Args))
 		for i, arg := range safeCall.Args {
 			args[i] = convertAst(arg, job, baseSourceSpan)
@@ -2180,12 +2180,12 @@ func convertAst(
 	}
 
 	// Handle EmptyExpr
-	if emptyExpr, ok := ast.(*expression_parser.EmptyExpr); ok {
+	if emptyExpr, ok := ast.(*expressionparser.EmptyExpr); ok {
 		return ir_expression.NewEmptyExpr(convertSourceSpan(emptyExpr.Span(), baseSourceSpan))
 	}
 
 	// Handle PrefixNot
-	if prefixNot, ok := ast.(*expression_parser.PrefixNot); ok {
+	if prefixNot, ok := ast.(*expressionparser.PrefixNot); ok {
 		return output.NewNotExpr(
 			convertAst(prefixNot.Expression, job, baseSourceSpan),
 			convertSourceSpan(prefixNot.Span(), baseSourceSpan),
@@ -2193,7 +2193,7 @@ func convertAst(
 	}
 
 	// Handle TypeofExpression
-	if typeofExpr, ok := ast.(*expression_parser.TypeofExpression); ok {
+	if typeofExpr, ok := ast.(*expressionparser.TypeofExpression); ok {
 		return output.NewTypeofExpr(
 			convertAst(typeofExpr.Expression, job, baseSourceSpan),
 			nil,
@@ -2202,7 +2202,7 @@ func convertAst(
 	}
 
 	// Handle VoidExpression
-	if voidExpr, ok := ast.(*expression_parser.VoidExpression); ok {
+	if voidExpr, ok := ast.(*expressionparser.VoidExpression); ok {
 		return output.NewVoidExpr(
 			convertAst(voidExpr.Expression, job, baseSourceSpan),
 			nil,
@@ -2211,12 +2211,12 @@ func convertAst(
 	}
 
 	// Handle TemplateLiteral
-	if templateLiteral, ok := ast.(*expression_parser.TemplateLiteral); ok {
+	if templateLiteral, ok := ast.(*expressionparser.TemplateLiteral); ok {
 		return convertTemplateLiteral(templateLiteral, job, baseSourceSpan)
 	}
 
 	// Handle TaggedTemplateLiteral
-	if taggedTemplateLiteral, ok := ast.(*expression_parser.TaggedTemplateLiteral); ok {
+	if taggedTemplateLiteral, ok := ast.(*expressionparser.TaggedTemplateLiteral); ok {
 		templateExpr := convertTemplateLiteral(taggedTemplateLiteral.Template, job, baseSourceSpan)
 		template, ok := templateExpr.(*output.TemplateLiteralExpr)
 		if !ok {
@@ -2231,7 +2231,7 @@ func convertAst(
 	}
 
 	// Handle ParenthesizedExpression
-	if parenthesizedExpr, ok := ast.(*expression_parser.ParenthesizedExpression); ok {
+	if parenthesizedExpr, ok := ast.(*expressionparser.ParenthesizedExpression); ok {
 		return output.NewParenthesizedExpr(
 			convertAst(parenthesizedExpr.Expression, job, baseSourceSpan),
 			nil,
@@ -2240,7 +2240,7 @@ func convertAst(
 	}
 
 	// Handle RegularExpressionLiteral
-	if regexLiteral, ok := ast.(*expression_parser.RegularExpressionLiteral); ok {
+	if regexLiteral, ok := ast.(*expressionparser.RegularExpressionLiteral); ok {
 		return output.NewRegularExpressionLiteralExpr(
 			regexLiteral.Body,
 			regexLiteral.Flags,
@@ -2262,7 +2262,7 @@ func convertAst(
 
 // convertTemplateLiteral converts a template literal AST to an output expression
 func convertTemplateLiteral(
-	ast *expression_parser.TemplateLiteral,
+	ast *expressionparser.TemplateLiteral,
 	job *pipeline_compilation.CompilationJob,
 	baseSourceSpan *util.ParseSourceSpan,
 ) output.OutputExpression {
@@ -2294,7 +2294,7 @@ func convertAstWithInterpolation(
 ) interface{} { // output.OutputExpression | *ops.Interpolation
 	var expression interface{}
 
-	if interpolation, ok := value.(*expression_parser.Interpolation); ok {
+	if interpolation, ok := value.(*expressionparser.Interpolation); ok {
 		placeholders := make([]string, 0)
 		if msg := asMessage(i18nMeta); msg != nil {
 			for key := range msg.Placeholders {
@@ -2310,7 +2310,7 @@ func convertAstWithInterpolation(
 			panic(err)
 		}
 		expression = interp
-	} else if ast, ok := value.(expression_parser.AST); ok {
+	} else if ast, ok := value.(expressionparser.AST); ok {
 		expression = convertAst(ast, job, sourceSpan)
 	} else if str, ok := value.(string); ok {
 		expression = output.NewLiteralExpr(str, nil, nil)
@@ -2322,14 +2322,14 @@ func convertAstWithInterpolation(
 }
 
 // BINDING_KINDS maps BindingType to BindingKind
-var BINDING_KINDS = map[expression_parser.BindingType]ir.BindingKind{
-	expression_parser.BindingTypeProperty:        ir.BindingKindProperty,
-	expression_parser.BindingTypeTwoWay:          ir.BindingKindTwoWayProperty,
-	expression_parser.BindingTypeAttribute:       ir.BindingKindAttribute,
-	expression_parser.BindingTypeClass:           ir.BindingKindClassName,
-	expression_parser.BindingTypeStyle:           ir.BindingKindStyleProperty,
-	expression_parser.BindingTypeLegacyAnimation: ir.BindingKindLegacyAnimation,
-	expression_parser.BindingTypeAnimation:       ir.BindingKindAnimation,
+var BINDING_KINDS = map[expressionparser.BindingType]ir.BindingKind{
+	expressionparser.BindingTypeProperty:        ir.BindingKindProperty,
+	expressionparser.BindingTypeTwoWay:          ir.BindingKindTwoWayProperty,
+	expressionparser.BindingTypeAttribute:       ir.BindingKindAttribute,
+	expressionparser.BindingTypeClass:           ir.BindingKindClassName,
+	expressionparser.BindingTypeStyle:           ir.BindingKindStyleProperty,
+	expressionparser.BindingTypeLegacyAnimation: ir.BindingKindLegacyAnimation,
+	expressionparser.BindingTypeAnimation:       ir.BindingKindAnimation,
 }
 
 func isPlainTemplate(tmpl *render3.Template) bool {

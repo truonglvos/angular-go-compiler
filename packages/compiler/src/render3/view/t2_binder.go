@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"ngc-go/packages/compiler/src/css"
-	"ngc-go/packages/compiler/src/expression_parser"
+	"ngc-go/packages/compiler/src/expressionparser"
 	"ngc-go/packages/compiler/src/render3"
 )
 
@@ -183,7 +183,7 @@ func (b *R3TargetBinder) Bind(target *Target) BoundTarget {
 	bindings := make(BindingsMap)
 	references := make(ReferenceMap)
 	scopedNodeEntities := make(ScopedNodeEntities)
-	expressions := make(map[expression_parser.AST]TemplateEntity)
+	expressions := make(map[expressionparser.AST]TemplateEntity)
 	symbols := make(map[TemplateEntity]*render3.Template)
 	nestingLevel := make(map[ScopedNode]int)
 	usedPipes := make(map[string]bool)
@@ -1154,8 +1154,8 @@ func (db *DirectiveBinder) VisitLetDeclaration(decl *render3.LetDeclaration) int
 // Expressions are visited by the superclass `RecursiveAstVisitor`, with custom logic provided
 // by overridden methods from that visitor.
 type TemplateBinder struct {
-	expression_parser.RecursiveAstVisitor
-	bindings      map[expression_parser.AST]TemplateEntity
+	expressionparser.RecursiveAstVisitor
+	bindings      map[expressionparser.AST]TemplateEntity
 	symbols       map[TemplateEntity]*render3.Template
 	usedPipes     map[string]bool
 	eagerPipes    map[string]bool
@@ -1180,7 +1180,7 @@ type TemplateBinder struct {
 func TemplateBinderApplyWithScope(
 	nodeOrNodes interface{},
 	scope *Scope,
-	expressions map[expression_parser.AST]TemplateEntity,
+	expressions map[expressionparser.AST]TemplateEntity,
 	symbols map[TemplateEntity]*render3.Template,
 	nestingLevel map[ScopedNode]int,
 	usedPipes map[string]bool,
@@ -1297,7 +1297,7 @@ func (tb *TemplateBinder) ingest(nodeOrNodes interface{}) {
 }
 
 // VisitAST wraps RecursiveAstVisitor.Visit for AST expressions
-func (tb *TemplateBinder) VisitAST(ast expression_parser.AST, context interface{}) interface{} {
+func (tb *TemplateBinder) VisitAST(ast expressionparser.AST, context interface{}) interface{} {
 	return ast.Visit(&tb.RecursiveAstVisitor, context)
 }
 
@@ -1453,7 +1453,7 @@ func (tb *TemplateBinder) VisitLetDeclaration(decl *render3.LetDeclaration) inte
 }
 
 // VisitPipe visits a BindingPipe node
-func (tb *TemplateBinder) VisitPipe(ast *expression_parser.BindingPipe, context interface{}) interface{} {
+func (tb *TemplateBinder) VisitPipe(ast *expressionparser.BindingPipe, context interface{}) interface{} {
 	tb.usedPipes[ast.Name] = true
 	if !tb.scope.IsDeferred {
 		tb.eagerPipes[ast.Name] = true
@@ -1462,13 +1462,13 @@ func (tb *TemplateBinder) VisitPipe(ast *expression_parser.BindingPipe, context 
 }
 
 // VisitPropertyRead visits a PropertyRead node
-func (tb *TemplateBinder) VisitPropertyRead(ast *expression_parser.PropertyRead, context interface{}) interface{} {
+func (tb *TemplateBinder) VisitPropertyRead(ast *expressionparser.PropertyRead, context interface{}) interface{} {
 	tb.maybeMap(ast, ast.Name)
 	return tb.RecursiveAstVisitor.VisitPropertyRead(ast, context)
 }
 
 // VisitSafePropertyRead visits a SafePropertyRead node
-func (tb *TemplateBinder) VisitSafePropertyRead(ast *expression_parser.SafePropertyRead, context interface{}) interface{} {
+func (tb *TemplateBinder) VisitSafePropertyRead(ast *expressionparser.SafePropertyRead, context interface{}) interface{} {
 	tb.maybeMap(ast, ast.Name)
 	return tb.RecursiveAstVisitor.VisitSafePropertyRead(ast, context)
 }
@@ -1477,7 +1477,7 @@ func (tb *TemplateBinder) VisitSafePropertyRead(ast *expression_parser.SafePrope
 func (tb *TemplateBinder) ingestScopedNode(node ScopedNode) {
 	childScope := tb.scope.GetChildScope(node)
 	binder := &TemplateBinder{
-		RecursiveAstVisitor: expression_parser.RecursiveAstVisitor{},
+		RecursiveAstVisitor: expressionparser.RecursiveAstVisitor{},
 		bindings:            tb.bindings,
 		symbols:             tb.symbols,
 		usedPipes:           tb.usedPipes,
@@ -1494,11 +1494,11 @@ func (tb *TemplateBinder) ingestScopedNode(node ScopedNode) {
 
 // maybeMap maps an AST expression to a template entity if it refers to one
 func (tb *TemplateBinder) maybeMap(ast interface{}, name string) {
-	var receiver expression_parser.AST
+	var receiver expressionparser.AST
 	switch a := ast.(type) {
-	case *expression_parser.PropertyRead:
+	case *expressionparser.PropertyRead:
 		receiver = a.Receiver
-	case *expression_parser.SafePropertyRead:
+	case *expressionparser.SafePropertyRead:
 		receiver = a.Receiver
 	default:
 		return
@@ -1506,10 +1506,10 @@ func (tb *TemplateBinder) maybeMap(ast interface{}, name string) {
 
 	// If the receiver of the expression isn't the `ImplicitReceiver`, this isn't the root of an
 	// `AST` expression that maps to a `Variable` or `Reference`.
-	if _, ok := receiver.(*expression_parser.ImplicitReceiver); !ok {
+	if _, ok := receiver.(*expressionparser.ImplicitReceiver); !ok {
 		return
 	}
-	if _, ok := receiver.(*expression_parser.ThisReceiver); ok {
+	if _, ok := receiver.(*expressionparser.ThisReceiver); ok {
 		return
 	}
 
@@ -1518,9 +1518,9 @@ func (tb *TemplateBinder) maybeMap(ast interface{}, name string) {
 	target := tb.scope.Lookup(name)
 	if target != nil {
 		switch a := ast.(type) {
-		case *expression_parser.PropertyRead:
+		case *expressionparser.PropertyRead:
 			tb.bindings[a] = target
-		case *expression_parser.SafePropertyRead:
+		case *expressionparser.SafePropertyRead:
 			tb.bindings[a] = target
 		}
 	}
@@ -1657,7 +1657,7 @@ type R3BoundTarget struct {
 	missingDirectives  map[string]bool
 	bindings           BindingsMap
 	references         ReferenceMap
-	exprTargets        map[expression_parser.AST]TemplateEntity
+	exprTargets        map[expressionparser.AST]TemplateEntity
 	symbols            map[TemplateEntity]*render3.Template
 	nestingLevel       map[ScopedNode]int
 	scopedNodeEntities ScopedNodeEntities
@@ -1675,7 +1675,7 @@ func NewR3BoundTarget(
 	missingDirectives map[string]bool,
 	bindings BindingsMap,
 	references ReferenceMap,
-	exprTargets map[expression_parser.AST]TemplateEntity,
+	exprTargets map[expressionparser.AST]TemplateEntity,
 	symbols map[TemplateEntity]*render3.Template,
 	nestingLevel map[ScopedNode]int,
 	scopedNodeEntities ScopedNodeEntities,
@@ -1774,7 +1774,7 @@ func (bt *R3BoundTarget) GetConsumerOfBinding(
 //
 // This is only defined for `AST` expressions that read or write to a property of an
 // `ImplicitReceiver`.
-func (bt *R3BoundTarget) GetExpressionTarget(expr expression_parser.AST) TemplateEntity {
+func (bt *R3BoundTarget) GetExpressionTarget(expr expressionparser.AST) TemplateEntity {
 	if target, exists := bt.exprTargets[expr]; exists {
 		return target
 	}
