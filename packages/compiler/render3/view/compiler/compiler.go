@@ -6,13 +6,11 @@ import (
 
 	"ngc-go/packages/compiler/core"
 	"ngc-go/packages/compiler/css"
-	"ngc-go/packages/compiler/expression_parser"
 	"ngc-go/packages/compiler/output"
 	constant "ngc-go/packages/compiler/pool"
 	"ngc-go/packages/compiler/render3"
 	"ngc-go/packages/compiler/render3/r3_identifiers"
 	"ngc-go/packages/compiler/render3/view"
-	"ngc-go/packages/compiler/schema"
 	pipeline "ngc-go/packages/compiler/template/pipeline/src"
 	"ngc-go/packages/compiler/template/pipeline/src/compilation"
 	"ngc-go/packages/compiler/templateparser"
@@ -72,14 +70,14 @@ func baseDirectiveFields(
 		// e.g. `contentQueries: (rf, ctx, dirIndex) => { ... }
 		definitionMap.Set(
 			"contentQueries",
-			createContentQueriesFunction(meta.Queries, constantPool, meta.Name),
+			view.CreateContentQueriesFunction(meta.Queries, constantPool, meta.Name),
 		)
 	}
 
 	if len(meta.ViewQueries) > 0 {
 		definitionMap.Set(
 			"viewQuery",
-			createViewQueriesFunction(meta.ViewQueries, constantPool, meta.Name),
+			view.CreateViewQueriesFunction(meta.ViewQueries, constantPool, meta.Name),
 		)
 	}
 
@@ -160,29 +158,101 @@ func hasAnimationHostBinding(meta interface{}) bool {
 	return hasAttr || hasProp || hasListener
 }
 
-// QueryFlags represents flags used with queries
-type QueryFlags int
+// addFeatures adds features to the definition map
+func addFeatures(
+	definitionMap *view.DefinitionMap,
+	meta interface{},
+) {
+	features := []output.OutputExpression{}
 
-const (
-	QueryFlagsNone                QueryFlags = 0b0000
-	QueryFlagsDescendants         QueryFlags = 0b0001
-	QueryFlagsIsStatic            QueryFlags = 0b0010
-	QueryFlagsEmitDistinctChanges QueryFlags = 0b0100
-)
+	var providers *output.OutputExpression
+	var viewProviders *output.OutputExpression
 
-// toQueryFlags translates query metadata into query flags
-func toQueryFlags(query view.R3QueryMetadata) int {
-	var flags QueryFlags = QueryFlagsNone
-	if query.Descendants {
-		flags |= QueryFlagsDescendants
+	switch m := meta.(type) {
+	case *view.R3DirectiveMetadata:
+		providers = m.Providers
+	case *view.R3ComponentMetadata:
+		providers = m.R3DirectiveMetadata.Providers
+		viewProviders = m.ViewProviders
 	}
-	if query.Static {
-		flags |= QueryFlagsIsStatic
+
+	if providers != nil || viewProviders != nil {
+		args := []output.OutputExpression{}
+		if providers != nil {
+			args = append(args, *providers)
+		} else {
+			args = append(args, output.NewLiteralArrayExpr([]output.OutputExpression{}, nil, nil))
+		}
+		if viewProviders != nil {
+			args = append(args, *viewProviders)
+		}
+		features = append(features, output.NewInvokeFunctionExpr(
+			output.NewExternalExpr(r3_identifiers.ProvidersFeature, nil, nil, nil),
+			args,
+			nil,
+			nil,
+			false,
+		))
 	}
-	if query.EmitDistinctChangesOnly {
-		flags |= QueryFlagsEmitDistinctChanges
+
+	var hostDirectives []view.R3HostDirectiveMetadata
+	var usesInheritance bool
+	var lifecycle view.R3LifecycleMetadata
+	var externalStyles []string
+
+	switch m := meta.(type) {
+	case *view.R3DirectiveMetadata:
+		if m.HostDirectives != nil {
+			hostDirectives = m.HostDirectives
+		}
+		usesInheritance = m.UsesInheritance
+		lifecycle = m.Lifecycle
+	case *view.R3ComponentMetadata:
+		if m.HostDirectives != nil {
+			hostDirectives = m.HostDirectives
+		}
+		usesInheritance = m.UsesInheritance
+		lifecycle = m.Lifecycle
+		if m.ExternalStyles != nil {
+			externalStyles = m.ExternalStyles
+		}
 	}
-	return int(flags)
+
+	if hostDirectives != nil && len(hostDirectives) > 0 {
+		features = append(features, output.NewInvokeFunctionExpr(
+			output.NewExternalExpr(r3_identifiers.HostDirectivesFeature, nil, nil, nil),
+			[]output.OutputExpression{createHostDirectivesFeatureArg(hostDirectives)},
+			nil,
+			nil,
+			false,
+		))
+	}
+
+	if usesInheritance {
+		features = append(features, output.NewExternalExpr(r3_identifiers.InheritDefinitionFeature, nil, nil, nil))
+	}
+
+	if lifecycle.UsesOnChanges {
+		features = append(features, output.NewExternalExpr(r3_identifiers.NgOnChangesFeature, nil, nil, nil))
+	}
+
+	if len(externalStyles) > 0 {
+		externalStyleNodes := make([]output.OutputExpression, len(externalStyles))
+		for i, style := range externalStyles {
+			externalStyleNodes[i] = output.NewLiteralExpr(style, output.InferredType, nil)
+		}
+		features = append(features, output.NewInvokeFunctionExpr(
+			output.NewExternalExpr(r3_identifiers.ExternalStylesFeature, nil, nil, nil),
+			[]output.OutputExpression{output.NewLiteralArrayExpr(externalStyleNodes, nil, nil)},
+			nil,
+			nil,
+			false,
+		))
+	}
+
+	if len(features) > 0 {
+		definitionMap.Set("features", output.NewLiteralArrayExpr(features, nil, nil))
+	}
 }
 
 // queryAdvancePlaceholder represents a placeholder for query advance statements
@@ -261,8 +331,8 @@ func createQueryCreateCall(
 		propRead := output.NewReadPropExpr(ctxVar, query.PropertyName, output.DynamicType, nil)
 		parameters = append(parameters, propRead)
 	}
-	parameters = append(parameters, getQueryPredicate(query, constantPool))
-	parameters = append(parameters, output.NewLiteralExpr(toQueryFlags(query), output.InferredType, nil))
+	parameters = append(parameters, view.GetQueryPredicate(query, constantPool))
+	parameters = append(parameters, output.NewLiteralExpr(view.ToQueryFlags(query), output.InferredType, nil))
 	if query.Read != nil {
 		parameters = append(parameters, *query.Read)
 	}
@@ -484,103 +554,6 @@ func createContentQueriesFunction(
 		nil,
 		contentQueriesFnName,
 	)
-}
-
-// addFeatures adds features to the definition map
-func addFeatures(
-	definitionMap *view.DefinitionMap,
-	meta interface{},
-) {
-	features := []output.OutputExpression{}
-
-	var providers *output.OutputExpression
-	var viewProviders *output.OutputExpression
-
-	switch m := meta.(type) {
-	case *view.R3DirectiveMetadata:
-		providers = m.Providers
-	case *view.R3ComponentMetadata:
-		providers = m.R3DirectiveMetadata.Providers
-		viewProviders = m.ViewProviders
-	}
-
-	if providers != nil || viewProviders != nil {
-		args := []output.OutputExpression{}
-		if providers != nil {
-			args = append(args, *providers)
-		} else {
-			args = append(args, output.NewLiteralArrayExpr([]output.OutputExpression{}, nil, nil))
-		}
-		if viewProviders != nil {
-			args = append(args, *viewProviders)
-		}
-		features = append(features, output.NewInvokeFunctionExpr(
-			output.NewExternalExpr(r3_identifiers.ProvidersFeature, nil, nil, nil),
-			args,
-			nil,
-			nil,
-			false,
-		))
-	}
-
-	var hostDirectives []view.R3HostDirectiveMetadata
-	var usesInheritance bool
-	var lifecycle view.R3LifecycleMetadata
-	var externalStyles []string
-
-	switch m := meta.(type) {
-	case *view.R3DirectiveMetadata:
-		if m.HostDirectives != nil {
-			hostDirectives = m.HostDirectives
-		}
-		usesInheritance = m.UsesInheritance
-		lifecycle = m.Lifecycle
-	case *view.R3ComponentMetadata:
-		if m.HostDirectives != nil {
-			hostDirectives = m.HostDirectives
-		}
-		usesInheritance = m.UsesInheritance
-		lifecycle = m.Lifecycle
-		if m.ExternalStyles != nil {
-			externalStyles = m.ExternalStyles
-		}
-	}
-
-	if hostDirectives != nil && len(hostDirectives) > 0 {
-		features = append(features, output.NewInvokeFunctionExpr(
-			output.NewExternalExpr(r3_identifiers.HostDirectivesFeature, nil, nil, nil),
-			[]output.OutputExpression{createHostDirectivesFeatureArg(hostDirectives)},
-			nil,
-			nil,
-			false,
-		))
-	}
-
-	if usesInheritance {
-		features = append(features, output.NewExternalExpr(r3_identifiers.InheritDefinitionFeature, nil, nil, nil))
-	}
-
-	if lifecycle.UsesOnChanges {
-		features = append(features, output.NewExternalExpr(r3_identifiers.NgOnChangesFeature, nil, nil, nil))
-	}
-
-	if len(externalStyles) > 0 {
-		externalStyleNodes := make([]output.OutputExpression, len(externalStyles))
-		for i, style := range externalStyles {
-			externalStyleNodes[i] = output.NewLiteralExpr(style, output.InferredType, nil)
-		}
-		features = append(features, output.NewInvokeFunctionExpr(
-			output.NewExternalExpr(r3_identifiers.ExternalStylesFeature, nil, nil, nil),
-			[]output.OutputExpression{output.NewLiteralArrayExpr(externalStyleNodes, nil, nil)},
-			nil,
-			nil,
-			false,
-		))
-	}
-
-	if len(features) > 0 {
-		definitionMap.Set("features", output.NewLiteralArrayExpr(features, nil, nil))
-	}
 }
 
 // CompileDirectiveFromMetadata compiles a directive for the render3 runtime as defined by the `R3DirectiveMetadata`.
@@ -1138,10 +1111,7 @@ func VerifyHostBindings(
 	bindings ParsedHostBindings,
 	sourceSpan *util.ParseSourceSpan,
 ) []*util.ParseError {
-	lexer := expression_parser.NewLexer()
-	parser := expression_parser.NewParser(lexer, false) // selectorlessEnabled = false
-	elementRegistry := schema.NewDomElementSchemaRegistry()
-	bindingParser := templateparser.NewBindingParser(parser, elementRegistry, []*util.ParseError{})
+	bindingParser := view.MakeBindingParser(false) // selectorlessEnabled = false
 	bindingParser.CreateDirectiveHostEventAsts(bindings.Listeners, sourceSpan)
 	bindingParser.CreateBoundHostProperties(bindings.Properties, sourceSpan)
 	return bindingParser.GetErrors()
