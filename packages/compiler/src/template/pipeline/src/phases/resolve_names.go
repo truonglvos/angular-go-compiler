@@ -11,7 +11,7 @@ import (
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
 
 // SavedView represents information about a SavedView variable
@@ -25,7 +25,7 @@ type SavedView struct {
 //
 // Also matches `ir.RestoreViewExpr` expressions with the variables of their corresponding saved
 // views.
-func ResolveNames(job *pipeline_compilation.CompilationJob) {
+func ResolveNames(job *compilation.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		processLexicalScopeResolveName(unit, unit.GetCreate(), nil)
 		processLexicalScopeResolveName(unit, unit.GetUpdate(), nil)
@@ -33,7 +33,7 @@ func ResolveNames(job *pipeline_compilation.CompilationJob) {
 }
 
 func processLexicalScopeResolveName(
-	unit pipeline_compilation.CompilationUnit,
+	unit compilation.CompilationUnit,
 	opsList *ir_operations.OpList,
 	savedView *SavedView,
 ) {
@@ -107,7 +107,7 @@ func processLexicalScopeResolveName(
 					} else {
 						// Reading from the component context.
 						// Get ComponentCompilationJob by casting unit to ViewCompilationUnit
-						viewUnit, ok := unit.(*pipeline_compilation.ViewCompilationUnit)
+						viewUnit, ok := unit.(*compilation.ViewCompilationUnit)
 						if !ok || viewUnit.Job == nil {
 							panic("Expected ViewCompilationUnit with ComponentCompilationJob")
 						}

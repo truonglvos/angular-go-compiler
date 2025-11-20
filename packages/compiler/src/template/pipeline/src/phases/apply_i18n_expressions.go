@@ -6,11 +6,11 @@ import (
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
 
 // ApplyI18nExpressions adds apply operations after i18n expressions.
-func ApplyI18nExpressions(job *pipeline_compilation.CompilationJob) {
+func ApplyI18nExpressions(job *compilation.CompilationJob) {
 	i18nContexts := make(map[ir_operations.XrefId]*ops_create.I18nContextOp)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil; op = op.Next() {

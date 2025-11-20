@@ -13,7 +13,7 @@ import (
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	pipeline_util "ngc-go/packages/compiler/src/template/pipeline/src/util"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
 
 // sanitizerFns maps security contexts to their sanitizer function
@@ -32,7 +32,7 @@ var trustedValueFns = map[core.SecurityContext]*output.ExternalReference{
 }
 
 // ResolveSanitizers resolves sanitization functions for ops that need them.
-func ResolveSanitizers(job *pipeline_compilation.CompilationJob) {
+func ResolveSanitizers(job *compilation.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		elements := pipeline_util.CreateOpXrefMap(unit)
 
@@ -40,7 +40,7 @@ func ResolveSanitizers(job *pipeline_compilation.CompilationJob) {
 		// attributes. However, for host bindings we skip this step (this matches what
 		// TemplateDefinitionBuilder does).
 		// TODO: Is the TDB behavior correct here?
-		if job.Kind != pipeline_compilation.CompilationJobKindHost {
+		if job.Kind != compilation.CompilationJobKindHost {
 			for op := unit.GetCreate().Head(); op != nil; op = op.Next() {
 				if extractedAttr, ok := op.(*ops_create.ExtractedAttributeOp); ok {
 					securityCtx := getOnlySecurityContext(extractedAttr.SecurityContext)
@@ -132,7 +132,7 @@ func ResolveSanitizers(job *pipeline_compilation.CompilationJob) {
 				// <iframe>).
 				if sanitizerFn == nil {
 					var isIframe bool
-					if job.Kind == pipeline_compilation.CompilationJobKindHost || op.GetKind() == ir.OpKindDomProperty {
+					if job.Kind == compilation.CompilationJobKindHost || op.GetKind() == ir.OpKindDomProperty {
 						// Note: for host bindings defined on a directive, we do not try to find all
 						// possible places where it can be matched, so we can not determine whether
 						// the host element is an <iframe>. In this case, we just assume it is and append a

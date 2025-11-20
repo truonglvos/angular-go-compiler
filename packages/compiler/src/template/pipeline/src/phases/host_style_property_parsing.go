@@ -7,7 +7,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
 
 const (
@@ -23,15 +23,15 @@ const (
 // as a result. Therefore, we need to do some extra parsing for host style properties, as compared
 // to non-host style properties.
 // TODO: Unify host bindings and non-host bindings in the parser.
-func ParseHostStyleProperties(job *pipeline_compilation.CompilationJob) {
+func ParseHostStyleProperties(job *compilation.CompilationJob) {
 	// Check if this is a host binding compilation job
-	if job.Kind != pipeline_compilation.CompilationJobKindHost {
+	if job.Kind != compilation.CompilationJobKindHost {
 		return
 	}
 
 	// Get the root unit and cast to HostBindingCompilationUnit
 	rootUnit := job.GetRoot()
-	hostUnit, ok := rootUnit.(*pipeline_compilation.HostBindingCompilationUnit)
+	hostUnit, ok := rootUnit.(*compilation.HostBindingCompilationUnit)
 	if !ok {
 		return
 	}

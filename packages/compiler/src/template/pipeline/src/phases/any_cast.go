@@ -4,12 +4,12 @@ import (
 	"ngc-go/packages/compiler/src/output"
 
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
 
 // DeleteAnyCasts finds any function calls to `$any`, excluding `this.$any`, and deletes them,
 // since they have no runtime effects.
-func DeleteAnyCasts(job *pipeline_compilation.CompilationJob) {
+func DeleteAnyCasts(job *compilation.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		// Iterate through all ops in create and update lists
 		for op := unit.GetCreate().Head(); op != nil; op = op.Next() {

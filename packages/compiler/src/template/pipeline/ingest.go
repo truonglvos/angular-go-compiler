@@ -20,7 +20,7 @@ import (
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 	pipeline_convension "ngc-go/packages/compiler/src/template/pipeline/src/convension"
 	"ngc-go/packages/compiler/src/util"
 )
@@ -63,15 +63,15 @@ func IngestComponent(
 	componentName string,
 	template []render3.Node,
 	constantPool *constant.ConstantPool,
-	compilationMode pipeline_compilation.TemplateCompilationMode,
+	compilationMode compilation.TemplateCompilationMode,
 	relativeContextFilePath string,
 	i18nUseExternalIds bool,
 	deferMeta view.R3ComponentDeferMetadata,
 	allDeferrableDepsFn *output.ReadVarExpr,
 	relativeTemplatePath *string,
 	enableDebugLocations bool,
-) *pipeline_compilation.ComponentCompilationJob {
-	job := pipeline_compilation.NewComponentCompilationJob(
+) *compilation.ComponentCompilationJob {
+	job := compilation.NewComponentCompilationJob(
 		componentName,
 		constantPool,
 		compatibilityMode,
@@ -101,12 +101,12 @@ func IngestHostBinding(
 	input *HostBindingInput,
 	bindingParser interface{}, // TODO: BindingParser type
 	constantPool *constant.ConstantPool,
-) *pipeline_compilation.HostBindingCompilationJob {
-	job := pipeline_compilation.NewHostBindingCompilationJob(
+) *compilation.HostBindingCompilationJob {
+	job := compilation.NewHostBindingCompilationJob(
 		input.ComponentName,
 		constantPool,
 		compatibilityMode,
-		pipeline_compilation.TemplateCompilationModeDomOnly,
+		compilation.TemplateCompilationModeDomOnly,
 	)
 
 	// TODO: Implement property, attribute, and event ingestion
@@ -116,7 +116,7 @@ func IngestHostBinding(
 }
 
 // ingestNodes ingests the nodes of a template AST into the given ViewCompilationUnit
-func ingestNodes(unit *pipeline_compilation.ViewCompilationUnit, template []render3.Node) {
+func ingestNodes(unit *compilation.ViewCompilationUnit, template []render3.Node) {
 	for _, node := range template {
 		switch n := node.(type) {
 		case *render3.Element:
@@ -150,7 +150,7 @@ func ingestNodes(unit *pipeline_compilation.ViewCompilationUnit, template []rend
 }
 
 // ingestElement ingests an element AST from the template into the given ViewCompilationUnit
-func ingestElement(unit *pipeline_compilation.ViewCompilationUnit, element *render3.Element) {
+func ingestElement(unit *compilation.ViewCompilationUnit, element *render3.Element) {
 	if element.I18n != nil {
 		_, isMessage := element.I18n.(*i18n.Message)
 		_, isTagPlaceholder := element.I18n.(*i18n.TagPlaceholder)
@@ -211,7 +211,7 @@ func ingestElement(unit *pipeline_compilation.ViewCompilationUnit, element *rend
 }
 
 // ingestTemplate ingests an `ng-template` node from the AST into the given ViewCompilationUnit
-func ingestTemplate(unit *pipeline_compilation.ViewCompilationUnit, tmpl *render3.Template) {
+func ingestTemplate(unit *compilation.ViewCompilationUnit, tmpl *render3.Template) {
 	if tmpl.I18n != nil {
 		_, isMessage := tmpl.I18n.(*i18n.Message)
 		_, isTagPlaceholder := tmpl.I18n.(*i18n.TagPlaceholder)
@@ -293,7 +293,7 @@ func ingestTemplate(unit *pipeline_compilation.ViewCompilationUnit, tmpl *render
 }
 
 // ingestContent ingests a content node from the AST into the given ViewCompilationUnit
-func ingestContent(unit *pipeline_compilation.ViewCompilationUnit, content *render3.Content) {
+func ingestContent(unit *compilation.ViewCompilationUnit, content *render3.Content) {
 	if content.I18n != nil {
 		_, isTagPlaceholder := content.I18n.(*i18n.TagPlaceholder)
 		if !isTagPlaceholder {
@@ -301,7 +301,7 @@ func ingestContent(unit *pipeline_compilation.ViewCompilationUnit, content *rend
 		}
 	}
 
-	var fallbackView *pipeline_compilation.ViewCompilationUnit
+	var fallbackView *compilation.ViewCompilationUnit
 
 	// Don't capture default content that's only made up of empty text nodes and comments.
 	// Note that we process the default content before the projection in order to match the
@@ -360,7 +360,7 @@ func ingestContent(unit *pipeline_compilation.ViewCompilationUnit, content *rend
 }
 
 // ingestText ingests a literal text node from the AST into the given ViewCompilationUnit
-func ingestText(unit *pipeline_compilation.ViewCompilationUnit, text *render3.Text, icuPlaceholder *string) {
+func ingestText(unit *compilation.ViewCompilationUnit, text *render3.Text, icuPlaceholder *string) {
 	unit.Create.Push(
 		ops_create.NewTextOp(unit.Job.AllocateXrefId(), text.Value, icuPlaceholder, text.SourceSpan()),
 	)
@@ -368,7 +368,7 @@ func ingestText(unit *pipeline_compilation.ViewCompilationUnit, text *render3.Te
 
 // ingestBoundText ingests an interpolated text node from the AST into the given ViewCompilationUnit
 func ingestBoundText(
-	unit *pipeline_compilation.ViewCompilationUnit,
+	unit *compilation.ViewCompilationUnit,
 	text *render3.BoundText,
 	icuPlaceholder *string,
 ) {
@@ -443,7 +443,7 @@ func ingestBoundText(
 // Helper function to convert expressions
 func convertExpressions(
 	expressions []expression_parser.AST,
-	job *pipeline_compilation.CompilationJob,
+	job *compilation.CompilationJob,
 	baseSourceSpan *util.ParseSourceSpan,
 ) []output.OutputExpression {
 	result := make([]output.OutputExpression, len(expressions))
@@ -478,7 +478,7 @@ func OpListInsertAfter(newOp ir_operations.Op, op ir_operations.Op) {
 }
 
 // ingestIfBlock ingests an `@if` block into the given ViewCompilationUnit
-func ingestIfBlock(unit *pipeline_compilation.ViewCompilationUnit, ifBlock *render3.IfBlock) {
+func ingestIfBlock(unit *compilation.ViewCompilationUnit, ifBlock *render3.IfBlock) {
 	var firstXref ir_operations.XrefId = 0
 	conditions := make([]interface{}, 0) // []*ir.ConditionalCaseExpr
 
@@ -570,7 +570,7 @@ func ingestIfBlock(unit *pipeline_compilation.ViewCompilationUnit, ifBlock *rend
 }
 
 // ingestSwitchBlock ingests an `@switch` block into the given ViewCompilationUnit
-func ingestSwitchBlock(unit *pipeline_compilation.ViewCompilationUnit, switchBlock *render3.SwitchBlock) {
+func ingestSwitchBlock(unit *compilation.ViewCompilationUnit, switchBlock *render3.SwitchBlock) {
 	// Don't ingest empty switches since they won't render anything
 	if len(switchBlock.Cases) == 0 {
 		return
@@ -668,7 +668,7 @@ func ingestSwitchBlock(unit *pipeline_compilation.ViewCompilationUnit, switchBlo
 // ingestControlFlowInsertionPoint extracts tag name and attributes from a control flow block
 // for content projection purposes
 func ingestControlFlowInsertionPoint(
-	unit *pipeline_compilation.ViewCompilationUnit,
+	unit *compilation.ViewCompilationUnit,
 	xref ir_operations.XrefId,
 	node interface{}, // render3.IfBlockBranch | render3.SwitchBlockCase | render3.ForLoopBlock | render3.ForLoopBlockEmpty
 ) string {
@@ -803,7 +803,7 @@ func ingestControlFlowInsertionPoint(
 
 // ingestDeferView creates a view for a defer block section (main, loading, placeholder, error)
 func ingestDeferView(
-	unit *pipeline_compilation.ViewCompilationUnit,
+	unit *compilation.ViewCompilationUnit,
 	suffix string,
 	i18nMeta interface{}, // i18n.I18nMeta
 	children []render3.Node,
@@ -865,7 +865,7 @@ func ingestDeferTriggers(
 	triggers *render3.DeferredBlockTriggers,
 	onOps []ir_operations.CreateOp, // []*ops.DeferOnOp
 	whenOps []ir_operations.UpdateOp, // []*ops.DeferWhenOp
-	unit *pipeline_compilation.ViewCompilationUnit,
+	unit *compilation.ViewCompilationUnit,
 	deferXref ir_operations.XrefId,
 ) ([]ir_operations.CreateOp, []ir_operations.UpdateOp) {
 	if triggers == nil {
@@ -1001,7 +1001,7 @@ func ingestDeferTriggers(
 }
 
 // ingestDeferBlock ingests a `@defer` block into the given ViewCompilationUnit
-func ingestDeferBlock(unit *pipeline_compilation.ViewCompilationUnit, deferBlock *render3.DeferredBlock) {
+func ingestDeferBlock(unit *compilation.ViewCompilationUnit, deferBlock *render3.DeferredBlock) {
 	var ownResolverFn output.OutputExpression
 
 	// Check if we need a per-block resolver function
@@ -1164,7 +1164,7 @@ func ingestDeferBlock(unit *pipeline_compilation.ViewCompilationUnit, deferBlock
 	}
 }
 
-func ingestIcu(unit *pipeline_compilation.ViewCompilationUnit, icu *render3.Icu) {
+func ingestIcu(unit *compilation.ViewCompilationUnit, icu *render3.Icu) {
 	if msg, ok := icu.I18n.(*i18n.Message); ok && IsSingleI18nIcu(icu.I18n) {
 		xref := unit.Job.AllocateXrefId()
 		icuPlaceholder := view_i18n.IcuFromI18nMessage(msg)
@@ -1285,7 +1285,7 @@ func getComputedForLoopVariableExpression(
 }
 
 // ingestForBlock ingests an `@for` block into the given ViewCompilationUnit
-func ingestForBlock(unit *pipeline_compilation.ViewCompilationUnit, forBlock *render3.ForLoopBlock) {
+func ingestForBlock(unit *compilation.ViewCompilationUnit, forBlock *render3.ForLoopBlock) {
 	repeaterView := unit.Job.AllocateView(unit.Xref)
 
 	// We copy TemplateDefinitionBuilder's scheme of creating names for `$count` and `$index`
@@ -1324,7 +1324,7 @@ func ingestForBlock(unit *pipeline_compilation.ViewCompilationUnit, forBlock *re
 
 	ingestNodes(repeaterView, forBlock.Children)
 
-	var emptyView *pipeline_compilation.ViewCompilationUnit
+	var emptyView *compilation.ViewCompilationUnit
 	var emptyTagName *string
 	if forBlock.Empty != nil {
 		emptyView = unit.Job.AllocateView(unit.Xref)
@@ -1398,7 +1398,7 @@ func ingestForBlock(unit *pipeline_compilation.ViewCompilationUnit, forBlock *re
 	unit.Update.Push(repeater)
 }
 
-func ingestLetDeclaration(unit *pipeline_compilation.ViewCompilationUnit, node *render3.LetDeclaration) {
+func ingestLetDeclaration(unit *compilation.ViewCompilationUnit, node *render3.LetDeclaration) {
 	target := unit.Job.AllocateXrefId()
 
 	unit.Create.Push(
@@ -1416,7 +1416,7 @@ func ingestLetDeclaration(unit *pipeline_compilation.ViewCompilationUnit, node *
 
 // makeListenerHandlerOps creates handler operations for a listener
 func makeListenerHandlerOps(
-	unit pipeline_compilation.CompilationUnit,
+	unit compilation.CompilationUnit,
 	handler expression_parser.AST,
 	handlerSpan *util.ParseSourceSpan,
 ) []ir_operations.UpdateOp {
@@ -1462,7 +1462,7 @@ func makeListenerHandlerOps(
 
 // makeTwoWayListenerHandlerOps creates handler operations for a two-way listener
 func makeTwoWayListenerHandlerOps(
-	unit pipeline_compilation.CompilationUnit,
+	unit compilation.CompilationUnit,
 	handler expression_parser.AST,
 	handlerSpan *util.ParseSourceSpan,
 ) []ir_operations.UpdateOp {
@@ -1495,7 +1495,7 @@ func makeTwoWayListenerHandlerOps(
 
 // createTemplateBinding creates a binding op for a template
 func createTemplateBinding(
-	view *pipeline_compilation.ViewCompilationUnit,
+	view *compilation.ViewCompilationUnit,
 	xref ir_operations.XrefId,
 	bindingType expression_parser.BindingType,
 	name string,
@@ -1611,7 +1611,7 @@ func createTemplateBinding(
 // ingestElementBindings processes all of the bindings on an element in the template AST
 // and converts them to their IR representation
 func ingestElementBindings(
-	unit *pipeline_compilation.ViewCompilationUnit,
+	unit *compilation.ViewCompilationUnit,
 	op *ops_create.ElementStartOp,
 	element *render3.Element,
 ) {
@@ -1759,7 +1759,7 @@ func ingestElementBindings(
 // ingestTemplateBindings processes all of the bindings on a template in the template AST
 // and converts them to their IR representation
 func ingestTemplateBindings(
-	unit *pipeline_compilation.ViewCompilationUnit,
+	unit *compilation.ViewCompilationUnit,
 	op *ops_create.TemplateOp,
 	template *render3.Template,
 	templateKind ir.TemplateKind,
@@ -1982,7 +1982,7 @@ func convertSourceSpan(
 // convertAst converts a template AST expression into an output AST expression
 func convertAst(
 	ast expression_parser.AST,
-	job *pipeline_compilation.CompilationJob,
+	job *compilation.CompilationJob,
 	baseSourceSpan *util.ParseSourceSpan,
 ) output.OutputExpression {
 	// Handle ASTWithSource wrapper
@@ -2263,7 +2263,7 @@ func convertAst(
 // convertTemplateLiteral converts a template literal AST to an output expression
 func convertTemplateLiteral(
 	ast *expression_parser.TemplateLiteral,
-	job *pipeline_compilation.CompilationJob,
+	job *compilation.CompilationJob,
 	baseSourceSpan *util.ParseSourceSpan,
 ) output.OutputExpression {
 	elements := make([]*output.TemplateLiteralElementExpr, len(ast.Elements))
@@ -2287,7 +2287,7 @@ func convertTemplateLiteral(
 
 // convertAstWithInterpolation converts an AST or string to an output expression or interpolation
 func convertAstWithInterpolation(
-	job *pipeline_compilation.CompilationJob,
+	job *compilation.CompilationJob,
 	value interface{},
 	i18nMeta interface{},
 	sourceSpan *util.ParseSourceSpan,

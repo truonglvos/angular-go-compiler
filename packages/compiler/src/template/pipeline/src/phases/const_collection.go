@@ -8,13 +8,13 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 	pipeline_convension "ngc-go/packages/compiler/src/template/pipeline/src/convension"
 )
 
 // CollectElementConsts converts the semantic attributes of element-like operations (elements, templates) into constant
 // array expressions, and lifts them into the overall component `consts`.
-func CollectElementConsts(job *pipeline_compilation.CompilationJob) {
+func CollectElementConsts(job *compilation.CompilationJob) {
 	// Collect all extracted attributes.
 	allElementAttributes := make(map[operations.XrefId]*ElementAttributes)
 	for _, unit := range job.GetUnits() {
@@ -48,11 +48,11 @@ func CollectElementConsts(job *pipeline_compilation.CompilationJob) {
 	}
 
 	// Serialize the extracted attributes into the const array.
-	if job.Kind == pipeline_compilation.CompilationJobKindTmpl {
+	if job.Kind == compilation.CompilationJobKindTmpl {
 		// Cast to ComponentCompilationJob by accessing through a ViewCompilationUnit
-		var componentJob *pipeline_compilation.ComponentCompilationJob
+		var componentJob *compilation.ComponentCompilationJob
 		if len(job.GetUnits()) > 0 {
-			if viewUnit, ok := job.GetUnits()[0].(*pipeline_compilation.ViewCompilationUnit); ok {
+			if viewUnit, ok := job.GetUnits()[0].(*compilation.ViewCompilationUnit); ok {
 				componentJob = viewUnit.Job
 			}
 		}
@@ -108,10 +108,10 @@ func CollectElementConsts(job *pipeline_compilation.CompilationJob) {
 				}
 			}
 		}
-	} else if job.Kind == pipeline_compilation.CompilationJobKindHost {
+	} else if job.Kind == compilation.CompilationJobKindHost {
 		// Get the root unit and cast to HostBindingCompilationUnit
 		rootUnit := job.GetRoot()
-		hostUnit, ok := rootUnit.(*pipeline_compilation.HostBindingCompilationUnit)
+		hostUnit, ok := rootUnit.(*compilation.HostBindingCompilationUnit)
 		if !ok {
 			return
 		}
@@ -130,7 +130,7 @@ func CollectElementConsts(job *pipeline_compilation.CompilationJob) {
 }
 
 func getConstIndex(
-	job *pipeline_compilation.ComponentCompilationJob,
+	job *compilation.ComponentCompilationJob,
 	allElementAttributes map[operations.XrefId]*ElementAttributes,
 	xref operations.XrefId,
 ) operations.ConstIndex {

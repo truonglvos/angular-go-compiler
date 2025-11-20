@@ -6,14 +6,14 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 	pipeline_convension "ngc-go/packages/compiler/src/template/pipeline/src/convension"
 )
 
 // GenerateProjectionDefs locates projection slots, populates the each component's `ngContentSelectors`
 // literal field, populates `project` arguments, and generates the required `projectionDef` instruction
 // for the job's root view.
-func GenerateProjectionDefs(job *pipeline_compilation.ComponentCompilationJob) {
+func GenerateProjectionDefs(job *compilation.ComponentCompilationJob) {
 	// TODO: Why does TemplateDefinitionBuilder force a shared constant?
 	share := job.Compatibility == ir.CompatibilityModeTemplateDefinitionBuilder
 	sharePtr := &share

@@ -11,13 +11,13 @@ import (
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
 
 // ResolveContexts resolves `ir.ContextExpr` expressions (which represent embedded view or component contexts) to
 // either the `ctx` parameter to component functions (for the current view context) or to variables
 // that store those contexts (for contexts accessed via the `nextContext()` instruction).
-func ResolveContexts(job *pipeline_compilation.CompilationJob) {
+func ResolveContexts(job *compilation.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		processLexicalScope(unit, unit.GetCreate())
 		processLexicalScope(unit, unit.GetUpdate())
@@ -25,7 +25,7 @@ func ResolveContexts(job *pipeline_compilation.CompilationJob) {
 }
 
 func processLexicalScope(
-	view pipeline_compilation.CompilationUnit,
+	view compilation.CompilationUnit,
 	opsList *operations.OpList,
 ) {
 	// Track the expressions used to access all available contexts within the current view, by the
@@ -67,7 +67,7 @@ func processLexicalScope(
 	}
 
 	// Check if this is the root view by casting view to ViewCompilationUnit and accessing Job
-	viewUnit, ok := view.(*pipeline_compilation.ViewCompilationUnit)
+	viewUnit, ok := view.(*compilation.ViewCompilationUnit)
 	if ok && viewUnit.Job != nil && view == viewUnit.Job.Root {
 		// Prefer `ctx` of the root view to any variables which happen to contain the root context.
 		scope[view.GetXref()] = output.NewReadVarExpr("ctx", nil, nil)

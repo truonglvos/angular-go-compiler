@@ -5,13 +5,13 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 	pipeline_convension "ngc-go/packages/compiler/src/template/pipeline/src/convension"
 )
 
 // ConfigureDeferInstructions finds the config options for defer instructions, and creates the corresponding const array.
 // Defer instructions take a configuration array, which should be collected into the component consts.
-func ConfigureDeferInstructions(job *pipeline_compilation.ComponentCompilationJob) {
+func ConfigureDeferInstructions(job *compilation.ComponentCompilationJob) {
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 			if op.GetKind() != ir.OpKindDefer {

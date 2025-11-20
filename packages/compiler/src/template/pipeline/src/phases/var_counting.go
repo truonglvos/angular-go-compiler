@@ -11,12 +11,12 @@ import (
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
 
 // CountVariables counts the number of variable slots used within each view, and stores that on the view itself, as
 // well as propagates it to the `ir.TemplateOp` for embedded views.
-func CountVariables(job *pipeline_compilation.CompilationJob) {
+func CountVariables(job *compilation.CompilationJob) {
 	// First, count the vars used in each view, and update the view-level counter.
 	for _, unit := range job.GetUnits() {
 		varCount := 0
@@ -140,13 +140,13 @@ func CountVariables(job *pipeline_compilation.CompilationJob) {
 
 	// Check if this is a ComponentCompilationJob by checking the Kind
 	// ComponentCompilationJob has Kind = CompilationJobKindTmpl
-	if job.Kind == pipeline_compilation.CompilationJobKindTmpl {
+	if job.Kind == compilation.CompilationJobKindTmpl {
 		// We need to access Views, which is only available on ComponentCompilationJob
 		// Since job is *CompilationJob, we need to get the actual ComponentCompilationJob
 		// We can do this by getting the root unit and accessing its Job field
 		root := job.GetRoot()
 		if root != nil {
-			viewUnit, ok := root.(*pipeline_compilation.ViewCompilationUnit)
+			viewUnit, ok := root.(*compilation.ViewCompilationUnit)
 			if ok && viewUnit.Job != nil {
 				componentJob := viewUnit.Job
 				// Add var counts for each view to the `ir.TemplateOp` which declares that view (if the view is

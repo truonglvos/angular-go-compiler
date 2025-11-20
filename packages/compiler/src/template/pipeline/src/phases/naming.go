@@ -14,7 +14,7 @@ import (
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
-	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
+	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
 
 // sanitizeIdentifier sanitizes an identifier to be a valid JavaScript identifier
@@ -34,15 +34,15 @@ func sanitizeIdentifier(name string) string {
 // NameFunctionsAndVariables generates names for functions and variables across all views.
 // This includes propagating those names into any `ir.ReadVariableExpr`s of those variables, so that
 // the reads can be emitted correctly.
-func NameFunctionsAndVariables(job *pipeline_compilation.CompilationJob) {
+func NameFunctionsAndVariables(job *compilation.CompilationJob) {
 	// Check if this is a template compilation job
-	if job.Kind != pipeline_compilation.CompilationJobKindTmpl {
+	if job.Kind != compilation.CompilationJobKindTmpl {
 		return
 	}
 
 	// Get ComponentCompilationJob by accessing through root unit
 	rootUnit := job.GetRoot()
-	viewUnit, ok := rootUnit.(*pipeline_compilation.ViewCompilationUnit)
+	viewUnit, ok := rootUnit.(*compilation.ViewCompilationUnit)
 	if !ok || viewUnit.Job == nil {
 		return
 	}
@@ -58,7 +58,7 @@ type namingState struct {
 }
 
 func addNamesToView(
-	unit pipeline_compilation.CompilationUnit,
+	unit compilation.CompilationUnit,
 	baseName string,
 	state *namingState,
 	compatibility bool,
@@ -121,7 +121,7 @@ func addNamesToView(
 
 func processOpForNaming(
 	op operations.Op,
-	unit pipeline_compilation.CompilationUnit,
+	unit compilation.CompilationUnit,
 	baseName string,
 	varNames map[operations.XrefId]string,
 	state *namingState,
@@ -232,7 +232,7 @@ func processOpForNaming(
 		}
 	case ir.OpKindRepeaterCreate:
 		if repeaterOp, ok := op.(*ops_create.RepeaterCreateOp); ok {
-			viewUnit, ok := unit.(*pipeline_compilation.ViewCompilationUnit)
+			viewUnit, ok := unit.(*compilation.ViewCompilationUnit)
 			if !ok {
 				panic("AssertionError: must be compiling a component")
 			}
@@ -255,7 +255,7 @@ func processOpForNaming(
 		}
 	case ir.OpKindProjection:
 		if projectionOp, ok := op.(*ops_create.ProjectionOp); ok {
-			viewUnit, ok := unit.(*pipeline_compilation.ViewCompilationUnit)
+			viewUnit, ok := unit.(*compilation.ViewCompilationUnit)
 			if !ok {
 				panic("AssertionError: must be compiling a component")
 			}
@@ -271,8 +271,8 @@ func processOpForNaming(
 			}
 		}
 	case ir.OpKindConditionalCreate, ir.OpKindConditionalBranchCreate, ir.OpKindTemplate:
-		if viewUnit, ok := unit.(*pipeline_compilation.ViewCompilationUnit); ok {
-			var childView *pipeline_compilation.ViewCompilationUnit
+		if viewUnit, ok := unit.(*compilation.ViewCompilationUnit); ok {
+			var childView *compilation.ViewCompilationUnit
 			var handle *ir.SlotHandle
 			var functionNameSuffix string
 
@@ -319,7 +319,7 @@ func processOpForNaming(
 }
 
 func getVariableName(
-	unit pipeline_compilation.CompilationUnit,
+	unit compilation.CompilationUnit,
 	variable interface{},
 	state *namingState,
 	compatibility bool,
