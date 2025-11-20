@@ -374,6 +374,7 @@ func (p *Parser) forEachUnquotedChar(input string, start int) <-chan int {
 			char := rune(input[i])
 			// Skip the characters inside quotes. Note that we only care about the outer-most
 			// quotes matching up and we need to account for escape characters.
+			// escapeCount here is from the previous character
 			if core.IsQuote(int(char)) &&
 				(currentQuote == nil || *currentQuote == char) &&
 				escapeCount%2 == 0 {
@@ -385,6 +386,8 @@ func (p *Parser) forEachUnquotedChar(input string, start int) <-chan int {
 			} else if currentQuote == nil {
 				ch <- i
 			}
+			// Count consecutive backslashes - this is calculated after checking quotes
+			// to match TypeScript behavior where escapeCount is from previous character
 			if char == '\\' {
 				escapeCount++
 			} else {
@@ -1113,7 +1116,7 @@ func (p *parseAST) parsePrimary() AST {
 		return NewLiteralPrimitive(p.span(start), p.sourceSpan(start), nil)
 	} else if p.next().IsKeywordUndefined() {
 		p.advance()
-		return NewLiteralPrimitive(p.span(start), p.sourceSpan(start), nil) // void 0 in JS is nil
+		return NewLiteralPrimitive(p.span(start), p.sourceSpan(start), Undefined) // void 0 in JS is undefined
 	} else if p.next().IsKeywordTrue() {
 		p.advance()
 		return NewLiteralPrimitive(p.span(start), p.sourceSpan(start), true)

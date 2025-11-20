@@ -122,7 +122,7 @@ func (s *SerializeExpressionVisitor) VisitLiteralPrimitive(ast *LiteralPrimitive
 		return fmt.Sprintf("'%s'", strings.ReplaceAll(v, "'", "\\'"))
 	default:
 		// Check for undefined
-		if _, ok := ast.Value.(interface{ IsUndefined() bool }); ok {
+		if _, ok := ast.Value.(UndefinedValue); ok {
 			return "undefined"
 		}
 		panic(fmt.Sprintf("Unsupported primitive type: %T", ast.Value))
@@ -174,7 +174,13 @@ func (s *SerializeExpressionVisitor) VisitSafeKeyedRead(ast *SafeKeyedRead, cont
 func (s *SerializeExpressionVisitor) VisitCall(ast *Call, context interface{}) interface{} {
 	args := make([]string, len(ast.Args))
 	for i, arg := range ast.Args {
-		args[i] = arg.Visit(s, context).(string)
+		result := arg.Visit(s, context)
+		if result == nil {
+			// EmptyExpr returns nil, serialize as empty string for trailing comma
+			args[i] = ""
+		} else {
+			args[i] = result.(string)
+		}
 	}
 	return fmt.Sprintf("%s(%s)",
 		ast.Receiver.Visit(s, context).(string),
@@ -185,9 +191,15 @@ func (s *SerializeExpressionVisitor) VisitCall(ast *Call, context interface{}) i
 func (s *SerializeExpressionVisitor) VisitSafeCall(ast *SafeCall, context interface{}) interface{} {
 	args := make([]string, len(ast.Args))
 	for i, arg := range ast.Args {
-		args[i] = arg.Visit(s, context).(string)
+		result := arg.Visit(s, context)
+		if result == nil {
+			// EmptyExpr returns nil, serialize as empty string for trailing comma
+			args[i] = ""
+		} else {
+			args[i] = result.(string)
+		}
 	}
-	return fmt.Sprintf("%s?(%s)",
+	return fmt.Sprintf("%s?.(%s)",
 		ast.Receiver.Visit(s, context).(string),
 		strings.Join(args, ", "))
 }

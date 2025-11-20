@@ -5,6 +5,18 @@ import (
 	"ngc-go/packages/compiler/src/util"
 )
 
+// UndefinedValue is a sentinel type to represent JavaScript's undefined value
+// This is different from nil (which represents null)
+type UndefinedValue struct{}
+
+// IsUndefined returns true to indicate this is an undefined value
+func (u UndefinedValue) IsUndefined() bool {
+	return true
+}
+
+// Undefined is the sentinel value for undefined
+var Undefined = UndefinedValue{}
+
 // ParseSpan represents a span within an expression
 type ParseSpan struct {
 	Start int
@@ -55,6 +67,11 @@ func (a *ASTWithName) Span() *ParseSpan {
 // SourceSpan returns the absolute source span
 func (a *ASTWithName) SourceSpan() *AbsoluteSourceSpan {
 	return a.sourceSpan
+}
+
+// NameSpan returns the absolute source span for the name
+func (a *ASTWithName) NameSpan() *AbsoluteSourceSpan {
+	return a.nameSpan
 }
 
 // EmptyExpr represents an empty expression
