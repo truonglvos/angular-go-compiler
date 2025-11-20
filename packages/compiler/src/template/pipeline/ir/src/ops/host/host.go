@@ -1,10 +1,10 @@
 package ops_host
 
 import (
-	"ngc-go/packages/compiler/output"
-	ir "ngc-go/packages/compiler/template/pipeline/ir/src"
-	ir_operations "ngc-go/packages/compiler/template/pipeline/ir/src/operations"
-	"ngc-go/packages/compiler/util"
+	"ngc-go/packages/compiler/src/output"
+	"ngc-go/packages/compiler/src/template/pipeline/ir"
+	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/util"
 )
 
 // DomPropertyOp is a logical operation representing a binding to a native DOM property

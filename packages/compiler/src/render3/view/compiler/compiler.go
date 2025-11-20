@@ -11,7 +11,7 @@ import (
 	"ngc-go/packages/compiler/src/render3"
 	"ngc-go/packages/compiler/src/render3/r3_identifiers"
 	"ngc-go/packages/compiler/src/render3/view"
-	pipeline "ngc-go/packages/compiler/src/template/pipeline/src"
+	"ngc-go/packages/compiler/src/template/pipeline"
 	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 	"ngc-go/packages/compiler/src/template_parser"
 	"ngc-go/packages/compiler/src/util"
