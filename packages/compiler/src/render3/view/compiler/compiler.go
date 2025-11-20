@@ -13,7 +13,7 @@ import (
 	"ngc-go/packages/compiler/src/render3/view"
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src"
 	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
-	"ngc-go/packages/compiler/src/templateparser"
+	"ngc-go/packages/compiler/src/template_parser"
 	"ngc-go/packages/compiler/src/util"
 )
 
@@ -48,7 +48,7 @@ type ParsedHostBindings struct {
 func baseDirectiveFields(
 	meta *view.R3DirectiveMetadata,
 	constantPool *constant.ConstantPool,
-	bindingParser templateparser.BindingParser,
+	bindingParser template_parser.BindingParser,
 ) *view.DefinitionMap {
 	definitionMap := view.NewDefinitionMap()
 	selectors := core.ParseSelectorToR3Selector(meta.Selector)
@@ -560,7 +560,7 @@ func createContentQueriesFunction(
 func CompileDirectiveFromMetadata(
 	meta *view.R3DirectiveMetadata,
 	constantPool *constant.ConstantPool,
-	bindingParser templateparser.BindingParser,
+	bindingParser template_parser.BindingParser,
 ) render3.R3CompiledExpression {
 	definitionMap := baseDirectiveFields(meta, constantPool, bindingParser)
 	addFeatures(definitionMap, meta)
@@ -584,7 +584,7 @@ func CompileDirectiveFromMetadata(
 func CompileComponentFromMetadata(
 	meta *view.R3ComponentMetadata,
 	constantPool *constant.ConstantPool,
-	bindingParser templateparser.BindingParser,
+	bindingParser template_parser.BindingParser,
 ) render3.R3CompiledExpression {
 	definitionMap := baseDirectiveFields(&meta.R3DirectiveMetadata, constantPool, bindingParser)
 	addFeatures(definitionMap, meta)
@@ -999,7 +999,7 @@ func createComponentType(meta *view.R3ComponentMetadata) output.Type {
 func createHostBindingsFunction(
 	hostBindingsMetadata view.R3HostMetadata,
 	typeSourceSpan *util.ParseSourceSpan,
-	bindingParser templateparser.BindingParser,
+	bindingParser template_parser.BindingParser,
 	constantPool *constant.ConstantPool,
 	selector string,
 	name string,

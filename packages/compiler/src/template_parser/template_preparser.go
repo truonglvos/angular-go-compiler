@@ -1,4 +1,4 @@
-package templateparser
+package template_parser
 
 import (
 	"strings"

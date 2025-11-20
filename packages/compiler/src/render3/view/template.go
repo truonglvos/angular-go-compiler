@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/render3"
 	viewi18n "ngc-go/packages/compiler/src/render3/view/i18n"
 	"ngc-go/packages/compiler/src/schema"
-	"ngc-go/packages/compiler/src/templateparser"
+	"ngc-go/packages/compiler/src/template_parser"
 	"ngc-go/packages/compiler/src/util"
 )
 
@@ -326,10 +326,10 @@ func ParseTemplate(
 var elementRegistry = schema.NewDomElementSchemaRegistry()
 
 // MakeBindingParser constructs a `BindingParser` with a default configuration.
-func MakeBindingParser(selectorlessEnabled bool) *templateparser.BindingParser {
+func MakeBindingParser(selectorlessEnabled bool) *template_parser.BindingParser {
 	lexer := expression_parser.NewLexer()
 	parser := expression_parser.NewParser(lexer, selectorlessEnabled)
-	return templateparser.NewBindingParser(parser, elementRegistry, []*util.ParseError{})
+	return template_parser.NewBindingParser(parser, elementRegistry, []*util.ParseError{})
 }
 
 // Render3ParseResult represents the result of the html AST to Ivy AST transformation
@@ -346,7 +346,7 @@ type Render3ParseResult struct {
 // This is a placeholder implementation - the full implementation should be in r3_template_transform.go
 func htmlAstToRender3Ast(
 	htmlNodes []ml_parser.Node,
-	bindingParser *templateparser.BindingParser,
+	bindingParser *template_parser.BindingParser,
 	collectCommentNodes bool,
 ) *Render3ParseResult {
 	// TODO: Implement full htmlAstToRender3Ast conversion
