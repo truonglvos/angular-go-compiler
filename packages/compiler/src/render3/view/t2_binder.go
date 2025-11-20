@@ -156,7 +156,7 @@ func (f *fakeInputOutputPropertySet) HasBindingPropertyName(propertyName string)
 	return false
 }
 
-// R3TargetBinder processes `Target`s with a given set of directives and performs a binding operation, which
+// R3TargetBinder processes `Target`s with a given set of directives and performs a binding operations, which
 // returns an object similar to TypeScript's `ts.TypeChecker` that contains knowledge about the
 // target.
 type R3TargetBinder struct {
@@ -170,7 +170,7 @@ func NewR3TargetBinder(directiveMatcher DirectiveMatcher) *R3TargetBinder {
 	}
 }
 
-// Bind performs a binding operation on the given `Target` and return a `BoundTarget` which contains
+// Bind performs a binding operations on the given `Target` and return a `BoundTarget` which contains
 // metadata about the types referenced in the template.
 func (b *R3TargetBinder) Bind(target *Target) BoundTarget {
 	if target.Template == nil && target.Host == nil {
@@ -191,7 +191,7 @@ func (b *R3TargetBinder) Bind(target *Target) BoundTarget {
 	deferBlocks := []DeferBlockScope{}
 
 	if target.Template != nil {
-		// First, parse the template into a `Scope` structure. This operation captures the syntactic
+		// First, parse the template into a `Scope` structure. This operations captures the syntactic
 		// scopes in the template and makes them available for later use.
 		scope := NewScope().Apply(target.Template)
 

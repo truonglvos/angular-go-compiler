@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
 
@@ -20,7 +20,7 @@ func AllocateSlots(job *pipeline.ComponentCompilationJob) {
 	// This map needs to be global (across all views within the component) since it's possible to
 	// reference a slot from one view from an expression within another (e.g. local references work
 	// this way).
-	slotMap := make(map[ir_operation.XrefId]int)
+	slotMap := make(map[operations.XrefId]int)
 
 	// Process all views in the component and assign slot indexes.
 	for _, unit := range job.GetUnits() {
@@ -65,7 +65,7 @@ func AllocateSlots(job *pipeline.ComponentCompilationJob) {
 	// whole template, across all views. Next, look for expressions which implement
 	// `UsesSlotIndexExprTrait` and propagate the assigned slot indexes into them.
 	// Additionally, this second scan allows us to find `ir.TemplateOp`s which declare views and
-	// propagate the number of slots used for each view into the operation which declares it.
+	// propagate the number of slots used for each view into the operations which declares it.
 	for _, unit := range job.GetUnits() {
 		// Process create ops
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
@@ -79,13 +79,13 @@ func AllocateSlots(job *pipeline.ComponentCompilationJob) {
 	}
 }
 
-func processOpForSlotPropagation(op ir_operation.Op, job *pipeline.ComponentCompilationJob) {
+func processOpForSlotPropagation(op operations.Op, job *pipeline.ComponentCompilationJob) {
 	kind := op.GetKind()
 	if kind == ir.OpKindTemplate || kind == ir.OpKindConditionalCreate ||
 		kind == ir.OpKindConditionalBranchCreate || kind == ir.OpKindRepeaterCreate {
-		// Record the number of slots used by the view this operation declares in the
-		// operation itself, so it can be emitted later.
-		childView := job.Views[op.(ir_operation.CreateOp).GetXref()]
+		// Record the number of slots used by the view this operations declares in the
+		// operations itself, so it can be emitted later.
+		childView := job.Views[op.(operations.CreateOp).GetXref()]
 		if childView != nil && childView.Decls != nil {
 			if templateOp, ok := op.(*ops_create.TemplateOp); ok {
 				templateOp.Decls = childView.Decls

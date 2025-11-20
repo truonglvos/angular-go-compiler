@@ -7,7 +7,7 @@ import (
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
@@ -15,12 +15,12 @@ import (
 	pipeline_util "ngc-go/packages/compiler/src/template/pipeline/src/util"
 )
 
-// SpecializeBindings specializes binding operations into more specific operation types.
+// SpecializeBindings specializes binding operations into more specific operations types.
 func SpecializeBindings(job *pipeline.CompilationJob) {
-	elements := make(map[ir_operation.XrefId]ir_operation.CreateOp)
+	elements := make(map[operations.XrefId]operations.CreateOp)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			createOp, ok := op.(ir_operation.CreateOp)
+			createOp, ok := op.(operations.CreateOp)
 			if !ok {
 				continue
 			}
@@ -46,11 +46,11 @@ func SpecializeBindings(job *pipeline.CompilationJob) {
 	}
 }
 
-// specializeBindingOp specializes a single binding operation
+// specializeBindingOp specializes a single binding operations
 func specializeBindingOp(
 	unit pipeline.CompilationUnit,
-	op ir_operation.Op,
-	elements map[ir_operation.XrefId]ir_operation.CreateOp,
+	op operations.Op,
+	elements map[operations.XrefId]operations.CreateOp,
 	job *pipeline.CompilationJob,
 ) {
 	bindingOp, ok := op.(*ops_update.BindingOp)
@@ -176,9 +176,9 @@ func specializeBindingOp(
 
 // lookupElementBinding looks up an element in the given map by xref ID.
 func lookupElementBinding(
-	elements map[ir_operation.XrefId]ir_operation.CreateOp,
-	xref ir_operation.XrefId,
-) ir_operation.CreateOp {
+	elements map[operations.XrefId]operations.CreateOp,
+	xref operations.XrefId,
+) operations.CreateOp {
 	el, exists := elements[xref]
 	if !exists {
 		panic(fmt.Sprintf("All attributes should have an element-like target: %d", xref))

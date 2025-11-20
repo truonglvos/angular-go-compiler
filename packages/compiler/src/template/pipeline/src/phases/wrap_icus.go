@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -12,7 +12,7 @@ import (
 func WrapI18nIcus(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		var currentI18nOp *ops_create.I18nStartOp = nil
-		var addedI18nId ir_operation.XrefId = 0
+		var addedI18nId operations.XrefId = 0
 		hasAddedI18nId := false
 
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {

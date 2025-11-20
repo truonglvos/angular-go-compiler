@@ -4,27 +4,27 @@ package ir
 type OpKind int
 
 const (
-	// OpKindListEnd - A special operation type which is used to represent the beginning and end nodes of a linked list of operations
+	// OpKindListEnd - A special operations type which is used to represent the beginning and end nodes of a linked list of operations
 	OpKindListEnd OpKind = iota
-	// OpKindStatement - An operation which wraps an output AST statement
+	// OpKindStatement - An operations which wraps an output AST statement
 	OpKindStatement
-	// OpKindVariable - An operation which declares and initializes a `SemanticVariable`
+	// OpKindVariable - An operations which declares and initializes a `SemanticVariable`
 	OpKindVariable
-	// OpKindElementStart - An operation to begin rendering of an element
+	// OpKindElementStart - An operations to begin rendering of an element
 	OpKindElementStart
-	// OpKindElement - An operation to render an element with no children
+	// OpKindElement - An operations to render an element with no children
 	OpKindElement
-	// OpKindTemplate - An operation which declares an embedded view
+	// OpKindTemplate - An operations which declares an embedded view
 	OpKindTemplate
-	// OpKindElementEnd - An operation to end rendering of an element previously started with `ElementStart`
+	// OpKindElementEnd - An operations to end rendering of an element previously started with `ElementStart`
 	OpKindElementEnd
-	// OpKindContainerStart - An operation to begin an `ng-container`
+	// OpKindContainerStart - An operations to begin an `ng-container`
 	OpKindContainerStart
-	// OpKindContainer - An operation for an `ng-container` with no children
+	// OpKindContainer - An operations for an `ng-container` with no children
 	OpKindContainer
-	// OpKindContainerEnd - An operation to end an `ng-container`
+	// OpKindContainerEnd - An operations to end an `ng-container`
 	OpKindContainerEnd
-	// OpKindDisableBindings - An operation disable binding for subsequent elements
+	// OpKindDisableBindings - An operations disable binding for subsequent elements
 	OpKindDisableBindings
 	// OpKindConditionalCreate - Create a conditional creation instruction op
 	OpKindConditionalCreate
@@ -32,39 +32,39 @@ const (
 	OpKindConditionalBranchCreate
 	// OpKindConditional - An op to conditionally render a template
 	OpKindConditional
-	// OpKindEnableBindings - An operation to re-enable binding, after it was previously disabled
+	// OpKindEnableBindings - An operations to re-enable binding, after it was previously disabled
 	OpKindEnableBindings
-	// OpKindText - An operation to render a text node
+	// OpKindText - An operations to render a text node
 	OpKindText
-	// OpKindListener - An operation declaring an event listener for an element
+	// OpKindListener - An operations declaring an event listener for an element
 	OpKindListener
-	// OpKindInterpolateText - An operation to interpolate text into a text node
+	// OpKindInterpolateText - An operations to interpolate text into a text node
 	OpKindInterpolateText
 	// OpKindBinding - An intermediate binding op, that has not yet been processed
 	OpKindBinding
-	// OpKindProperty - An operation to bind an expression to a property of an element
+	// OpKindProperty - An operations to bind an expression to a property of an element
 	OpKindProperty
-	// OpKindStyleProp - An operation to bind an expression to a style property of an element
+	// OpKindStyleProp - An operations to bind an expression to a style property of an element
 	OpKindStyleProp
-	// OpKindClassProp - An operation to bind an expression to a class property of an element
+	// OpKindClassProp - An operations to bind an expression to a class property of an element
 	OpKindClassProp
-	// OpKindStyleMap - An operation to bind an expression to the styles of an element
+	// OpKindStyleMap - An operations to bind an expression to the styles of an element
 	OpKindStyleMap
-	// OpKindClassMap - An operation to bind an expression to the classes of an element
+	// OpKindClassMap - An operations to bind an expression to the classes of an element
 	OpKindClassMap
-	// OpKindAdvance - An operation to advance the runtime's implicit slot context
+	// OpKindAdvance - An operations to advance the runtime's implicit slot context
 	OpKindAdvance
-	// OpKindPipe - An operation to instantiate a pipe
+	// OpKindPipe - An operations to instantiate a pipe
 	OpKindPipe
-	// OpKindAttribute - An operation to associate an attribute with an element
+	// OpKindAttribute - An operations to associate an attribute with an element
 	OpKindAttribute
 	// OpKindExtractedAttribute - An attribute that has been extracted for inclusion in the consts array
 	OpKindExtractedAttribute
-	// OpKindDefer - An operation that configures a `@defer` block
+	// OpKindDefer - An operations that configures a `@defer` block
 	OpKindDefer
-	// OpKindDeferOn - An operation that controls when a `@defer` loads
+	// OpKindDeferOn - An operations that controls when a `@defer` loads
 	OpKindDeferOn
-	// OpKindDeferWhen - An operation that controls when a `@defer` loads, using a custom expression
+	// OpKindDeferWhen - An operations that controls when a `@defer` loads, using a custom expression
 	OpKindDeferWhen
 	// OpKindI18nMessage - An i18n message that has been extracted for inclusion in the consts array
 	OpKindI18nMessage
@@ -80,13 +80,13 @@ const (
 	OpKindRepeaterCreate
 	// OpKindRepeater - An update up for a repeater
 	OpKindRepeater
-	// OpKindTwoWayProperty - An operation to bind an expression to the property side of a two-way binding
+	// OpKindTwoWayProperty - An operations to bind an expression to the property side of a two-way binding
 	OpKindTwoWayProperty
-	// OpKindTwoWayListener - An operation declaring the event side of a two-way binding
+	// OpKindTwoWayListener - An operations declaring the event side of a two-way binding
 	OpKindTwoWayListener
-	// OpKindDeclareLet - A creation-time operation that initializes the slot for a `@let` declaration
+	// OpKindDeclareLet - A creation-time operations that initializes the slot for a `@let` declaration
 	OpKindDeclareLet
-	// OpKindStoreLet - An update-time operation that stores the current value of a `@let` declaration
+	// OpKindStoreLet - An update-time operations that stores the current value of a `@let` declaration
 	OpKindStoreLet
 	// OpKindI18nStart - The start of an i18n block
 	OpKindI18nStart
@@ -110,17 +110,17 @@ const (
 	OpKindI18nAttributes
 	// OpKindSourceLocation - Creation op that attaches the location at which an element was defined
 	OpKindSourceLocation
-	// OpKindAnimation - An operation to bind animation css classes to an element
+	// OpKindAnimation - An operations to bind animation css classes to an element
 	OpKindAnimation
-	// OpKindAnimationString - An operation to bind animation css classes to an element
+	// OpKindAnimationString - An operations to bind animation css classes to an element
 	OpKindAnimationString
-	// OpKindAnimationBinding - An operation to bind animation css classes to an element
+	// OpKindAnimationBinding - An operations to bind animation css classes to an element
 	OpKindAnimationBinding
-	// OpKindAnimationListener - An operation to bind animation events to an element
+	// OpKindAnimationListener - An operations to bind animation events to an element
 	OpKindAnimationListener
-	// OpKindControl - An operation to bind an expression to a `field` property of an element
+	// OpKindControl - An operations to bind an expression to a `field` property of an element
 	OpKindControl
-	// OpKindControlCreate - An operation to set up a corresponding Control operation
+	// OpKindControlCreate - An operations to set up a corresponding Control operations
 	OpKindControlCreate
 )
 
@@ -136,19 +136,19 @@ const (
 	ExpressionKindTrackContext
 	// ExpressionKindReadVariable - Read of a variable declared in a `VariableOp`
 	ExpressionKindReadVariable
-	// ExpressionKindNextContext - Runtime operation to navigate to the next view context
+	// ExpressionKindNextContext - Runtime operations to navigate to the next view context
 	ExpressionKindNextContext
-	// ExpressionKindReference - Runtime operation to retrieve the value of a local reference
+	// ExpressionKindReference - Runtime operations to retrieve the value of a local reference
 	ExpressionKindReference
 	// ExpressionKindStoreLet - A call storing the value of a `@let` declaration
 	ExpressionKindStoreLet
 	// ExpressionKindContextLetReference - A reference to a `@let` declaration read from the context view
 	ExpressionKindContextLetReference
-	// ExpressionKindGetCurrentView - Runtime operation to snapshot the current view context
+	// ExpressionKindGetCurrentView - Runtime operations to snapshot the current view context
 	ExpressionKindGetCurrentView
-	// ExpressionKindRestoreView - Runtime operation to restore a snapshotted view
+	// ExpressionKindRestoreView - Runtime operations to restore a snapshotted view
 	ExpressionKindRestoreView
-	// ExpressionKindResetView - Runtime operation to reset the current view context after `RestoreView`
+	// ExpressionKindResetView - Runtime operations to reset the current view context after `RestoreView`
 	ExpressionKindResetView
 	// ExpressionKindPureFunctionExpr - Defines and calls a function with change-detected arguments
 	ExpressionKindPureFunctionExpr

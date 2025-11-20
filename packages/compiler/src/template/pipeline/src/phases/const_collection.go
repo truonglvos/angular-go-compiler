@@ -5,7 +5,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline_compilation "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -16,7 +16,7 @@ import (
 // array expressions, and lifts them into the overall component `consts`.
 func CollectElementConsts(job *pipeline_compilation.CompilationJob) {
 	// Collect all extracted attributes.
-	allElementAttributes := make(map[ir_operation.XrefId]*ElementAttributes)
+	allElementAttributes := make(map[operations.XrefId]*ElementAttributes)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 			if op.GetKind() == ir.OpKindExtractedAttribute {
@@ -76,7 +76,7 @@ func CollectElementConsts(job *pipeline_compilation.CompilationJob) {
 					}
 				} else {
 					// Type assert to CreateOp to check IsElementOrContainerOp
-					createOp, ok := op.(ir_operation.CreateOp)
+					createOp, ok := op.(operations.CreateOp)
 					if !ok {
 						continue
 					}
@@ -131,9 +131,9 @@ func CollectElementConsts(job *pipeline_compilation.CompilationJob) {
 
 func getConstIndex(
 	job *pipeline_compilation.ComponentCompilationJob,
-	allElementAttributes map[ir_operation.XrefId]*ElementAttributes,
-	xref ir_operation.XrefId,
-) ir_operation.ConstIndex {
+	allElementAttributes map[operations.XrefId]*ElementAttributes,
+	xref operations.XrefId,
+) operations.ConstIndex {
 	attributes, exists := allElementAttributes[xref]
 	if exists {
 		attrArray := serializeAttributes(attributes)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -50,8 +50,8 @@ func isSelectAttribute(name string) bool {
 
 // lookupInXrefMap looks up an element in the given map by xref ID.
 func lookupInXrefMap(
-	elements map[ir_operation.XrefId]pipeline_util.OpXrefMapEntry,
-	xref ir_operation.XrefId,
+	elements map[operations.XrefId]pipeline_util.OpXrefMapEntry,
+	xref operations.XrefId,
 ) pipeline_util.OpXrefMapEntry {
 	el, exists := elements[xref]
 	if !exists {

@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -10,7 +10,7 @@ import (
 
 // DeduplicateTextBindings deduplicates text bindings, e.g. <div class="cls1" class="cls2">
 func DeduplicateTextBindings(job *pipeline.CompilationJob) {
-	seen := make(map[ir_operation.XrefId]map[string]bool)
+	seen := make(map[operations.XrefId]map[string]bool)
 	for _, unit := range job.GetUnits() {
 		// Iterate in reverse order
 		for op := unit.GetUpdate().Tail(); op != nil; op = op.GetPrev() {

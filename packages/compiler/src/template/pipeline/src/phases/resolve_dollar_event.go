@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -19,7 +19,7 @@ func ResolveDollarEvent(job *pipeline.CompilationJob) {
 	}
 }
 
-func transformDollarEvent(opsList *ir_operation.OpList) {
+func transformDollarEvent(opsList *operations.OpList) {
 	for op := opsList.Head(); op != nil; op = op.Next() {
 		kind := op.GetKind()
 		if kind == ir.OpKindListener || kind == ir.OpKindTwoWayListener || kind == ir.OpKindAnimationListener {

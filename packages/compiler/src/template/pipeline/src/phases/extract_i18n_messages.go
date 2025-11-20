@@ -6,7 +6,7 @@ import (
 
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -36,9 +36,9 @@ const (
 func ExtractI18nMessages(job *pipeline.CompilationJob) {
 	// Create an i18n message for each context.
 	// TODO: Merge the context op with the message op since they're 1:1 anyways.
-	i18nMessagesByContext := make(map[ir_operation.XrefId]*ops_create.I18nMessageOp)
-	i18nBlocks := make(map[ir_operation.XrefId]*ops_create.I18nStartOp)
-	i18nContexts := make(map[ir_operation.XrefId]*ops_create.I18nContextOp)
+	i18nMessagesByContext := make(map[operations.XrefId]*ops_create.I18nMessageOp)
+	i18nBlocks := make(map[operations.XrefId]*ops_create.I18nStartOp)
+	i18nContexts := make(map[operations.XrefId]*ops_create.I18nContextOp)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 			switch op.GetKind() {

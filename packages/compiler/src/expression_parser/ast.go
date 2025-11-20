@@ -211,7 +211,7 @@ func (c *Conditional) String() string {
 	return "AST"
 }
 
-// PropertyRead represents a property read operation
+// PropertyRead represents a property read operations
 type PropertyRead struct {
 	*ASTWithName
 	Receiver AST
@@ -241,7 +241,7 @@ func (p *PropertyRead) String() string {
 	return "AST"
 }
 
-// SafePropertyRead represents a safe property read operation (?.)
+// SafePropertyRead represents a safe property read operations (?.)
 type SafePropertyRead struct {
 	*ASTWithName
 	Receiver AST
@@ -271,7 +271,7 @@ func (s *SafePropertyRead) String() string {
 	return "AST"
 }
 
-// KeyedRead represents a keyed read operation (array/object access)
+// KeyedRead represents a keyed read operations (array/object access)
 type KeyedRead struct {
 	span       *ParseSpan
 	sourceSpan *AbsoluteSourceSpan
@@ -309,7 +309,7 @@ func (k *KeyedRead) String() string {
 	return "AST"
 }
 
-// SafeKeyedRead represents a safe keyed read operation (?.[])
+// SafeKeyedRead represents a safe keyed read operations (?.[])
 type SafeKeyedRead struct {
 	span       *ParseSpan
 	sourceSpan *AbsoluteSourceSpan
@@ -357,7 +357,7 @@ const (
 	ReferencedDirectly
 )
 
-// BindingPipe represents a pipe operation
+// BindingPipe represents a pipe operations
 type BindingPipe struct {
 	*ASTWithName
 	Exp  AST
@@ -546,7 +546,7 @@ func (i *Interpolation) String() string {
 	return "AST"
 }
 
-// Binary represents a binary operation
+// Binary represents a binary operations
 type Binary struct {
 	span       *ParseSpan
 	sourceSpan *AbsoluteSourceSpan
@@ -556,11 +556,11 @@ type Binary struct {
 }
 
 // NewBinary creates a new Binary
-func NewBinary(span *ParseSpan, sourceSpan *AbsoluteSourceSpan, operation string, left, right AST) *Binary {
+func NewBinary(span *ParseSpan, sourceSpan *AbsoluteSourceSpan, operations string, left, right AST) *Binary {
 	return &Binary{
 		span:       span,
 		sourceSpan: sourceSpan,
-		Operation:  operation,
+		Operation:  operations,
 		Left:       left,
 		Right:      right,
 	}
@@ -586,7 +586,7 @@ func (b *Binary) String() string {
 	return "AST"
 }
 
-// IsAssignmentOperation checks if an operator is an assignment operation
+// IsAssignmentOperation checks if an operator is an assignment operations
 func IsAssignmentOperation(op string) bool {
 	return op == "=" ||
 		op == "+=" ||
@@ -600,7 +600,7 @@ func IsAssignmentOperation(op string) bool {
 		op == "??="
 }
 
-// Unary represents a unary operation
+// Unary represents a unary operations
 type Unary struct {
 	*Binary
 	Operator string
@@ -647,7 +647,7 @@ func (u *Unary) Visit(visitor AstVisitor, context interface{}) interface{} {
 	return visitor.VisitUnary(u, context)
 }
 
-// PrefixNot represents a prefix not operation (!)
+// PrefixNot represents a prefix not operations (!)
 type PrefixNot struct {
 	span       *ParseSpan
 	sourceSpan *AbsoluteSourceSpan
@@ -755,7 +755,7 @@ func (v *VoidExpression) String() string {
 	return "AST"
 }
 
-// NonNullAssert represents a non-null assertion operation (!)
+// NonNullAssert represents a non-null assertion operations (!)
 type NonNullAssert struct {
 	span       *ParseSpan
 	sourceSpan *AbsoluteSourceSpan

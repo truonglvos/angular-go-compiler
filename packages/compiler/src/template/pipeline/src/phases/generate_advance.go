@@ -5,7 +5,7 @@ import (
 
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
 
@@ -17,13 +17,13 @@ import (
 func GenerateAdvance(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		// First build a map of all of the declarations in the view that have assigned slots.
-		slotMap := make(map[ir_operation.XrefId]int)
+		slotMap := make(map[operations.XrefId]int)
 		for op := unit.GetCreate().Head(); op != nil; op = op.Next() {
 			if !ir_traits.HasConsumesSlotTrait(op) {
 				continue
 			}
 
-			if createOp, ok := op.(ir_operation.CreateOp); ok {
+			if createOp, ok := op.(operations.CreateOp); ok {
 				if trait := getConsumesSlotTrait(op); trait != nil {
 					if trait.Handle == nil || trait.Handle.Slot == nil {
 						panic("AssertionError: expected slots to have been allocated before generating advance() calls")
@@ -35,7 +35,7 @@ func GenerateAdvance(job *pipeline.CompilationJob) {
 
 		// Next, step through the update operations and generate `ir.AdvanceOp`s as required to ensure
 		// the runtime's implicit slot counter will be set to the correct slot before executing each
-		// update operation which depends on it.
+		// update operations which depends on it.
 		//
 		// To do that, we track what the runtime's slot counter will be through the update operations.
 		slotContext := 0
@@ -88,7 +88,7 @@ func GenerateAdvance(job *pipeline.CompilationJob) {
 }
 
 // getConsumesSlotTrait gets the ConsumesSlotOpTrait from an op
-func getConsumesSlotTrait(op ir_operation.Op) *ir_traits.ConsumesSlotOpTrait {
+func getConsumesSlotTrait(op operations.Op) *ir_traits.ConsumesSlotOpTrait {
 	if traitOp, ok := op.(interface {
 		GetConsumesSlotTrait() *ir_traits.ConsumesSlotOpTrait
 	}); ok {

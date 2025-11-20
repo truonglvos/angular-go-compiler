@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -78,8 +78,8 @@ func needsTemporaryInSafeAccess(e output.OutputExpression) bool {
 }
 
 // temporariesIn finds all temporary assignments in an expression
-func temporariesIn(e output.OutputExpression) map[ir_operation.XrefId]bool {
-	temporaries := make(map[ir_operation.XrefId]bool)
+func temporariesIn(e output.OutputExpression) map[operations.XrefId]bool {
+	temporaries := make(map[operations.XrefId]bool)
 	// TODO: Although it's not currently supported by the transform helper, we should be able to
 	// short-circuit exploring the tree to do less work. In particular, we don't have to penetrate
 	// into the subexpressions of temporary assignments.
@@ -99,7 +99,7 @@ func temporariesIn(e output.OutputExpression) map[ir_operation.XrefId]bool {
 // eliminateTemporaryAssignments eliminates temporary assignments from an expression
 func eliminateTemporaryAssignments(
 	e output.OutputExpression,
-	tmps map[ir_operation.XrefId]bool,
+	tmps map[operations.XrefId]bool,
 	ctx *SafeTransformContext,
 ) output.OutputExpression {
 	// TODO: We can be more efficient than the transform helper here. We don't need to visit any

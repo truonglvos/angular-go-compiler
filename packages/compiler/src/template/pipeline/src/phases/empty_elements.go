@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -42,7 +42,7 @@ func CollapseEmptyInstructions(job *pipeline.CompilationJob) {
 			if prevOp != nil && prevOp.GetKind() == startKind {
 				// Replace the start instruction with the merged version
 				// This requires creating a new merged op based on the start op
-				var mergedOp ir_operation.CreateOp
+				var mergedOp operations.CreateOp
 				switch startKind {
 				case ir.OpKindElementStart:
 					if elementStart, ok := prevOp.(*ops_create.ElementStartOp); ok {

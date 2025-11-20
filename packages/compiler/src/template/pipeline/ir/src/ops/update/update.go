@@ -11,7 +11,7 @@ import (
 	"ngc-go/packages/compiler/src/util"
 )
 
-// Interpolation represents a logical operation to perform string interpolation on a text node
+// Interpolation represents a logical operations to perform string interpolation on a text node
 // Interpolation inputs are stored as static `string`s and dynamic `o.Expression`s, in separate
 // arrays. Thus, the interpolation `A{{b}}C{{d}}E` is stored as 3 static strings `['A', 'C', 'E']`
 // and 2 dynamic expressions `[b, d]`.
@@ -41,7 +41,7 @@ func NewInterpolation(
 	}, nil
 }
 
-// InterpolateTextOp is a logical operation to perform string interpolation on a text node
+// InterpolateTextOp is a logical operations to perform string interpolation on a text node
 type InterpolateTextOp struct {
 	ir_operations.OpBase
 	Target        ir_operations.XrefId
@@ -63,7 +63,7 @@ func NewInterpolateTextOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *InterpolateTextOp) GetKind() ir.OpKind {
 	return ir.OpKindInterpolateText
 }
@@ -140,7 +140,7 @@ func NewBindingOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (b *BindingOp) GetKind() ir.OpKind {
 	return ir.OpKindBinding
 }
@@ -155,7 +155,7 @@ func (b *BindingOp) SetXref(xref ir_operations.XrefId) {
 	b.Target = xref
 }
 
-// PropertyOp is an operation to bind an expression to a property of an element
+// PropertyOp is an operations to bind an expression to a property of an element
 type PropertyOp struct {
 	ir_operations.OpBase
 	Target          ir_operations.XrefId
@@ -190,7 +190,7 @@ func NewPropertyOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (p *PropertyOp) GetKind() ir.OpKind {
 	return ir.OpKindProperty
 }
@@ -205,7 +205,7 @@ func (p *PropertyOp) SetXref(xref ir_operations.XrefId) {
 	p.Target = xref
 }
 
-// StylePropOp is an operation to bind an expression to a style property of an element
+// StylePropOp is an operations to bind an expression to a style property of an element
 type StylePropOp struct {
 	ir_operations.OpBase
 	Target     ir_operations.XrefId
@@ -230,7 +230,7 @@ func NewStylePropOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (s *StylePropOp) GetKind() ir.OpKind {
 	return ir.OpKindStyleProp
 }
@@ -245,7 +245,7 @@ func (s *StylePropOp) SetXref(xref ir_operations.XrefId) {
 	s.Target = xref
 }
 
-// ClassPropOp is an operation to bind an expression to a class property of an element
+// ClassPropOp is an operations to bind an expression to a class property of an element
 type ClassPropOp struct {
 	ir_operations.OpBase
 	Target     ir_operations.XrefId
@@ -267,7 +267,7 @@ func NewClassPropOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ClassPropOp) GetKind() ir.OpKind {
 	return ir.OpKindClassProp
 }
@@ -282,7 +282,7 @@ func (c *ClassPropOp) SetXref(xref ir_operations.XrefId) {
 	c.Target = xref
 }
 
-// StyleMapOp is an operation to bind an expression to the styles of an element
+// StyleMapOp is an operations to bind an expression to the styles of an element
 type StyleMapOp struct {
 	ir_operations.OpBase
 	Target     ir_operations.XrefId
@@ -301,7 +301,7 @@ func NewStyleMapOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (s *StyleMapOp) GetKind() ir.OpKind {
 	return ir.OpKindStyleMap
 }
@@ -316,7 +316,7 @@ func (s *StyleMapOp) SetXref(xref ir_operations.XrefId) {
 	s.Target = xref
 }
 
-// ClassMapOp is an operation to bind an expression to the classes of an element
+// ClassMapOp is an operations to bind an expression to the classes of an element
 type ClassMapOp struct {
 	ir_operations.OpBase
 	Target     ir_operations.XrefId
@@ -335,7 +335,7 @@ func NewClassMapOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ClassMapOp) GetKind() ir.OpKind {
 	return ir.OpKindClassMap
 }
@@ -350,7 +350,7 @@ func (c *ClassMapOp) SetXref(xref ir_operations.XrefId) {
 	c.Target = xref
 }
 
-// AdvanceOp is an operation to advance the runtime's implicit slot context during the update phase of a view
+// AdvanceOp is an operations to advance the runtime's implicit slot context during the update phase of a view
 type AdvanceOp struct {
 	ir_operations.OpBase
 	AdvanceBy int
@@ -364,7 +364,7 @@ func NewAdvanceOp(advanceBy int) *AdvanceOp {
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (a *AdvanceOp) GetKind() ir.OpKind {
 	return ir.OpKindAdvance
 }
@@ -379,7 +379,7 @@ func (a *AdvanceOp) SetXref(xref ir_operations.XrefId) {
 	// No-op
 }
 
-// AttributeOp is an operation to associate an attribute with an element
+// AttributeOp is an operations to associate an attribute with an element
 type AttributeOp struct {
 	ir_operations.OpBase
 	Target                        ir_operations.XrefId
@@ -423,7 +423,7 @@ func NewAttributeOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (a *AttributeOp) GetKind() ir.OpKind {
 	return ir.OpKindAttribute
 }
@@ -467,7 +467,7 @@ func NewDomPropertyOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (d *DomPropertyOp) GetKind() ir.OpKind {
 	return ir.OpKindDomProperty
 }
@@ -482,7 +482,7 @@ func (d *DomPropertyOp) SetXref(xref ir_operations.XrefId) {
 	d.Target = xref
 }
 
-// TwoWayPropertyOp is an operation to bind an expression to the property side of a two-way binding
+// TwoWayPropertyOp is an operations to bind an expression to the property side of a two-way binding
 type TwoWayPropertyOp struct {
 	ir_operations.OpBase
 	Target     ir_operations.XrefId
@@ -507,7 +507,7 @@ func NewTwoWayPropertyOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (t *TwoWayPropertyOp) GetKind() ir.OpKind {
 	return ir.OpKindTwoWayProperty
 }
@@ -522,7 +522,7 @@ func (t *TwoWayPropertyOp) SetXref(xref ir_operations.XrefId) {
 	t.Target = xref
 }
 
-// ControlOp is an operation to bind an expression to a `field` property of an element
+// ControlOp is an operations to bind an expression to a `field` property of an element
 type ControlOp struct {
 	ir_operations.OpBase
 	Target     ir_operations.XrefId
@@ -547,7 +547,7 @@ func NewControlOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ControlOp) GetKind() ir.OpKind {
 	return ir.OpKindControl
 }
@@ -585,7 +585,7 @@ func NewConditionalOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ConditionalOp) GetKind() ir.OpKind {
 	return ir.OpKindConditional
 }
@@ -659,7 +659,7 @@ func NewI18nExpressionOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *I18nExpressionOp) GetKind() ir.OpKind {
 	return ir.OpKindI18nExpression
 }
@@ -705,7 +705,7 @@ func NewI18nApplyOp(owner ir_operations.XrefId, handle *ir.SlotHandle, sourceSpa
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *I18nApplyOp) GetKind() ir.OpKind {
 	return ir.OpKindI18nApply
 }
@@ -739,7 +739,7 @@ func NewRepeaterOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (r *RepeaterOp) GetKind() ir.OpKind {
 	return ir.OpKindRepeater
 }
@@ -792,7 +792,7 @@ func NewDeferWhenOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (d *DeferWhenOp) GetKind() ir.OpKind {
 	return ir.OpKindDeferWhen
 }
@@ -820,7 +820,7 @@ func (d *DeferWhenOp) GetDependsOnSlotContextTrait() *ir_traits.DependsOnSlotCon
 	}
 }
 
-// AnimationBindingOp is an operation to bind animation css classes to an element
+// AnimationBindingOp is an operations to bind animation css classes to an element
 type AnimationBindingOp struct {
 	ir_operations.OpBase
 	Target     ir_operations.XrefId
@@ -842,7 +842,7 @@ func NewAnimationBindingOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (a *AnimationBindingOp) GetKind() ir.OpKind {
 	return ir.OpKindAnimationBinding
 }
@@ -857,7 +857,7 @@ func (a *AnimationBindingOp) SetXref(xref ir_operations.XrefId) {
 	a.Target = xref
 }
 
-// StoreLetOp is an update-time operation that stores the current value of a `@let` declaration
+// StoreLetOp is an update-time operations that stores the current value of a `@let` declaration
 type StoreLetOp struct {
 	ir_operations.OpBase
 	Target       ir_operations.XrefId
@@ -882,7 +882,7 @@ func NewStoreLetOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (s *StoreLetOp) GetKind() ir.OpKind {
 	return ir.OpKindStoreLet
 }

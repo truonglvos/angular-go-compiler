@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
@@ -14,8 +14,8 @@ import (
 
 // BlockState represents the state of an i18n block
 type BlockState struct {
-	BlockXref        ir_operation.XrefId
-	LastSlotConsumer ir_operation.XrefId
+	BlockXref        operations.XrefId
+	LastSlotConsumer operations.XrefId
 }
 
 // AssignI18nSlotDependencies updates i18n expression ops to target the last slot in their owning i18n block,
@@ -23,7 +23,7 @@ type BlockState struct {
 func AssignI18nSlotDependencies(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
 		// The first update op.
-		var updateOp ir_operation.Op = unit.GetUpdate().Head()
+		var updateOp operations.Op = unit.GetUpdate().Head()
 
 		// I18n expressions currently being moved during the iteration.
 		var i18nExpressionsInProgress []*ops_update.I18nExpressionOp
@@ -48,7 +48,7 @@ func AssignI18nSlotDependencies(job *pipeline.CompilationJob) {
 
 			if ir_traits.HasConsumesSlotTrait(createOp) {
 				if state != nil {
-					if createOpWithXref, ok := createOp.(ir_operation.CreateOp); ok {
+					if createOpWithXref, ok := createOp.(operations.CreateOp); ok {
 						state.LastSlotConsumer = createOpWithXref.GetXref()
 					}
 				}
@@ -76,7 +76,7 @@ func AssignI18nSlotDependencies(job *pipeline.CompilationJob) {
 							GetDependsOnSlotContextTrait() *ir_traits.DependsOnSlotContextOpTrait
 						}); ok {
 							trait := depOp.GetDependsOnSlotContextTrait()
-							if createOpWithXref, ok := createOp.(ir_operation.CreateOp); ok && trait.Target != createOpWithXref.GetXref() {
+							if createOpWithXref, ok := createOp.(operations.CreateOp); ok && trait.Target != createOpWithXref.GetXref() {
 								hasDifferentTarget = true
 							}
 						}
@@ -88,7 +88,7 @@ func AssignI18nSlotDependencies(job *pipeline.CompilationJob) {
 									GetDependsOnSlotContextTrait() *ir_traits.DependsOnSlotContextOpTrait
 								}); ok {
 									trait := depExpr.GetDependsOnSlotContextTrait()
-									if createOpWithXref, ok := createOp.(ir_operation.CreateOp); ok && trait.Target != createOpWithXref.GetXref() {
+									if createOpWithXref, ok := createOp.(operations.CreateOp); ok && trait.Target != createOpWithXref.GetXref() {
 										hasDifferentTarget = true
 									}
 								}

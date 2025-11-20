@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
@@ -26,11 +26,11 @@ func ResolveContexts(job *pipeline_compilation.CompilationJob) {
 
 func processLexicalScope(
 	view pipeline_compilation.CompilationUnit,
-	opsList *ir_operation.OpList,
+	opsList *operations.OpList,
 ) {
 	// Track the expressions used to access all available contexts within the current view, by the
 	// view `ir.XrefId`.
-	scope := make(map[ir_operation.XrefId]output.OutputExpression)
+	scope := make(map[operations.XrefId]output.OutputExpression)
 
 	// The current view's context is accessible via the `ctx` parameter.
 	scope[view.GetXref()] = output.NewReadVarExpr("ctx", nil, nil)
@@ -44,7 +44,7 @@ func processLexicalScope(
 				}
 			}
 		case ir.OpKindAnimation, ir.OpKindAnimationListener, ir.OpKindListener, ir.OpKindTwoWayListener:
-			var handlerOps *ir_operation.OpList
+			var handlerOps *operations.OpList
 			if animOp, ok := op.(*ops_create.AnimationOp); ok {
 				handlerOps = animOp.HandlerOps
 			} else if animListenerOp, ok := op.(*ops_create.AnimationListenerOp); ok {

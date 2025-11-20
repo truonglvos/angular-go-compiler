@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
@@ -34,7 +34,7 @@ func GenerateTemporaryVariables(job *pipeline.CompilationJob) {
 	}
 }
 
-func generateTemporaries(opsList *ir_operation.OpList) []*ops_shared.StatementOp {
+func generateTemporaries(opsList *operations.OpList) []*ops_shared.StatementOp {
 	opCount := 0
 	var generatedStatements []*ops_shared.StatementOp
 
@@ -42,7 +42,7 @@ func generateTemporaries(opsList *ir_operation.OpList) []*ops_shared.StatementOp
 	// name and produce a `DeclareVarStmt` to the beginning of the block.
 	for op := opsList.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 		// Identify the final time each temp var is read.
-		finalReads := make(map[ir_operation.XrefId]*expression.ReadTemporaryExpr)
+		finalReads := make(map[operations.XrefId]*expression.ReadTemporaryExpr)
 		expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
 			if flags&expression.VisitorContextFlagInChildOperation != 0 {
 				return
@@ -55,9 +55,9 @@ func generateTemporaries(opsList *ir_operation.OpList) []*ops_shared.StatementOp
 		// Name the temp vars, accounting for the fact that a name can be reused after it has been
 		// read for the final time.
 		count := 0
-		assigned := make(map[ir_operation.XrefId]bool)
-		released := make(map[ir_operation.XrefId]bool)
-		defs := make(map[ir_operation.XrefId]string)
+		assigned := make(map[operations.XrefId]bool)
+		released := make(map[operations.XrefId]bool)
+		defs := make(map[operations.XrefId]string)
 
 		expression.VisitExpressionsInOp(op, func(expr output.OutputExpression, flags expression.VisitorContextFlag) {
 			if flags&expression.VisitorContextFlagInChildOperation != 0 {
@@ -96,7 +96,7 @@ func generateTemporaries(opsList *ir_operation.OpList) []*ops_shared.StatementOp
 		kind := op.GetKind()
 		if kind == ir.OpKindListener || kind == ir.OpKindAnimation ||
 			kind == ir.OpKindAnimationListener || kind == ir.OpKindTwoWayListener {
-			var handlerOps *ir_operation.OpList
+			var handlerOps *operations.OpList
 			if listenerOp, ok := op.(*ops_create.ListenerOp); ok {
 				handlerOps = listenerOp.HandlerOps
 			} else if animOp, ok := op.(*ops_create.AnimationOp); ok {
@@ -128,8 +128,8 @@ func generateTemporaries(opsList *ir_operation.OpList) []*ops_shared.StatementOp
 }
 
 // assignName assigns a name to the temporary variable in the given temporary variable expression.
-func assignName(names map[ir_operation.XrefId]string, expr interface{}) {
-	var xref ir_operation.XrefId
+func assignName(names map[operations.XrefId]string, expr interface{}) {
+	var xref operations.XrefId
 	var namePtr **string
 
 	if assignTemp, ok := expr.(*expression.AssignTemporaryExpr); ok {

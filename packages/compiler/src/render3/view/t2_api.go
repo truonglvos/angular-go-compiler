@@ -169,7 +169,7 @@ type TargetBinder interface {
 	Bind(target *Target) BoundTarget
 }
 
-// BoundTarget represents the result of performing the binding operation against a `Target`.
+// BoundTarget represents the result of performing the binding operations against a `Target`.
 //
 // The original `Target` is accessible, as well as a suite of methods for extracting binding
 // information regarding the `Target`.

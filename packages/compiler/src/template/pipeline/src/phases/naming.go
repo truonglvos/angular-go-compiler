@@ -8,7 +8,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
@@ -76,7 +76,7 @@ func addNamesToView(
 
 	// Keep track of the names we assign to variables in the view. We'll need to propagate these
 	// into reads of those variables afterwards.
-	varNames := make(map[ir_operation.XrefId]string)
+	varNames := make(map[operations.XrefId]string)
 
 	// Process create ops
 	for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
@@ -120,10 +120,10 @@ func addNamesToView(
 }
 
 func processOpForNaming(
-	op ir_operation.Op,
+	op operations.Op,
 	unit pipeline_compilation.CompilationUnit,
 	baseName string,
-	varNames map[ir_operation.XrefId]string,
+	varNames map[operations.XrefId]string,
 	state *namingState,
 	compatibility bool,
 ) {

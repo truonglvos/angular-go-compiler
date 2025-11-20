@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/i18n"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
@@ -18,7 +18,7 @@ import (
 // message.)
 func CreateI18nContexts(job *pipeline.CompilationJob) {
 	// Create i18n context ops for i18n attrs.
-	attrContextByMessage := make(map[*i18n.Message]ir_operation.XrefId)
+	attrContextByMessage := make(map[*i18n.Message]operations.XrefId)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 			switch op.GetKind() {
@@ -137,7 +137,7 @@ func CreateI18nContexts(job *pipeline.CompilationJob) {
 	}
 
 	// Create i18n context ops for root i18n blocks.
-	blockContextByI18nBlock := make(map[ir_operation.XrefId]*ops_create.I18nContextOp)
+	blockContextByI18nBlock := make(map[operations.XrefId]*ops_create.I18nContextOp)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 			if op.GetKind() == ir.OpKindI18nStart {

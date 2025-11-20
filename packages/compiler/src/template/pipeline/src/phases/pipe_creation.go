@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
 
@@ -41,10 +41,10 @@ func processPipeBindingsInView(unit pipeline.CompilationUnit) {
 			if job := unit.GetJob(); job.Compatibility == ir.CompatibilityModeTemplateDefinitionBuilder {
 				// TODO: We can delete this cast and check once compatibility mode is removed.
 				// In compatibility mode, we need to find the target slot handle
-				var targetXref ir_operation.XrefId
-				if updateOp, ok := op.(interface{ GetXref() ir_operation.XrefId }); ok {
+				var targetXref operations.XrefId
+				if updateOp, ok := op.(interface{ GetXref() operations.XrefId }); ok {
 					targetXref = updateOp.GetXref()
-				} else if updateOp, ok := op.(interface{ GetTarget() ir_operation.XrefId }); ok {
+				} else if updateOp, ok := op.(interface{ GetTarget() operations.XrefId }); ok {
 					targetXref = updateOp.GetTarget()
 				}
 				if targetXref == 0 {
@@ -64,10 +64,10 @@ func processPipeBindingsInView(unit pipeline.CompilationUnit) {
 
 func addPipeToCreationBlock(
 	unit pipeline.CompilationUnit,
-	afterTargetXref ir_operation.XrefId,
+	afterTargetXref operations.XrefId,
 	binding *expression.PipeBindingExpr,
 ) {
-	// Find the appropriate point to insert the Pipe creation operation.
+	// Find the appropriate point to insert the Pipe creation operations.
 	// We're looking for `afterTargetXref` (and also want to insert after any other pipe operations
 	// which might be beyond it).
 	for op := unit.GetCreate().Head().Next(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
@@ -76,7 +76,7 @@ func addPipeToCreationBlock(
 		}
 
 		// Type assert to CreateOp to access GetXref()
-		createOp, ok := op.(ir_operation.CreateOp)
+		createOp, ok := op.(operations.CreateOp)
 		if !ok {
 			continue
 		}

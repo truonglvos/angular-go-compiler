@@ -40,7 +40,7 @@ var domPropertyRemapping = map[string]string{
 // with actual runtime calls in their place.
 //
 // Reification replaces semantic operations with selected Ivy instructions and other generated code
-// structures. After reification, the create/update operation lists of all views should only contain
+// structures. After reification, the create/update operations lists of all views should only contain
 // `ir.StatementOp`s (which wrap generated `o.Statement`s).
 func Reify(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
@@ -1125,7 +1125,7 @@ func convertExpressionToOutputExpression(expr interface{}, sourceSpan *util.Pars
 	}
 }
 
-// reifyDomProperty reifies a DOM property binding operation.
+// reifyDomProperty reifies a DOM property binding operations.
 // This is an optimized version of reifyProperty that avoids unnecessarily trying to bind
 // to directive inputs at runtime for views that don't import any directives.
 func reifyDomProperty(op interface{}) ir_operations.UpdateOp {
@@ -1153,7 +1153,7 @@ func reifyDomProperty(op interface{}) ir_operations.UpdateOp {
 	return pipeline_instruction.DomProperty(remappedName, expression, sanitizer, nil)
 }
 
-// reifyProperty reifies a property binding operation.
+// reifyProperty reifies a property binding operations.
 // The returned statement attempts to bind to directive inputs before falling back to a DOM property.
 func reifyProperty(op *ops_update.PropertyOp) ir_operations.UpdateOp {
 	if isAriaAttribute(op.Name) {
@@ -1167,7 +1167,7 @@ func isAriaAttribute(name string) bool {
 	return len(name) > 5 && name[:5] == "aria-"
 }
 
-// reifyControl reifies a control operation
+// reifyControl reifies a control operations
 func reifyControl(op *ops_update.ControlOp) ir_operations.UpdateOp {
 	return pipeline_instruction.Control(op.Expression, op.Sanitizer, nil)
 }

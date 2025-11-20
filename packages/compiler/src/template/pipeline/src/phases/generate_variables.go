@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
@@ -30,7 +30,7 @@ func GenerateVariables(job *pipeline.ComponentCompilationJob) {
 // Scope is the lexical scope of a view, including a reference to its parent view's scope, if any.
 type Scope struct {
 	// XrefId of the view to which this scope corresponds.
-	View ir_operation.XrefId
+	View operations.XrefId
 
 	ViewContextVariable *ir_variable.ContextVariable
 
@@ -57,7 +57,7 @@ type Reference struct {
 
 	// XrefId of the element-like node which this reference targets.
 	// The reference may be either to the element (or template) itself, or to a directive on it.
-	TargetId ir_operation.XrefId
+	TargetId operations.XrefId
 
 	TargetSlot *ir.SlotHandle
 
@@ -70,7 +70,7 @@ type Reference struct {
 // LetDeclaration is information about `@let` declaration collected from a view.
 type LetDeclaration struct {
 	// XrefId of the `@let` declaration that the reference is pointing to.
-	TargetId ir_operation.XrefId
+	TargetId operations.XrefId
 
 	// Slot in which the declaration is stored.
 	TargetSlot *ir.SlotHandle
@@ -121,7 +121,7 @@ func recursivelyProcessView(view *pipeline.ViewCompilationUnit, parentScope *Sco
 				}
 				if repeaterOp.TrackByOps != nil {
 					newOps := generateVariablesInScopeForView(view, scope, false)
-					ops := make([]ir_operation.Op, len(newOps))
+					ops := make([]operations.Op, len(newOps))
 					for i, v := range newOps {
 						ops[i] = v
 					}
@@ -130,7 +130,7 @@ func recursivelyProcessView(view *pipeline.ViewCompilationUnit, parentScope *Sco
 			}
 		case ir.OpKindAnimation, ir.OpKindAnimationListener, ir.OpKindListener, ir.OpKindTwoWayListener:
 			// Prepend variables to listener handler functions.
-			var handlerOps *ir_operation.OpList
+			var handlerOps *operations.OpList
 			switch opType := op.(type) {
 			case *ops_create.AnimationOp:
 				handlerOps = opType.HandlerOps
@@ -143,7 +143,7 @@ func recursivelyProcessView(view *pipeline.ViewCompilationUnit, parentScope *Sco
 			}
 			if handlerOps != nil {
 				newOps := generateVariablesInScopeForView(view, scope, true)
-				ops := make([]ir_operation.Op, len(newOps))
+				ops := make([]operations.Op, len(newOps))
 				for i, v := range newOps {
 					ops[i] = v
 				}
@@ -153,7 +153,7 @@ func recursivelyProcessView(view *pipeline.ViewCompilationUnit, parentScope *Sco
 	}
 
 	newOps := generateVariablesInScopeForView(view, scope, false)
-	ops := make([]ir_operation.Op, len(newOps))
+	ops := make([]operations.Op, len(newOps))
 	for i, v := range newOps {
 		ops[i] = v
 	}
@@ -216,7 +216,7 @@ func getScopeForView(view *pipeline.ViewCompilationUnit, parent *Scope) *Scope {
 			}
 
 			// Type assert to CreateOp to access GetXref()
-			createOp, ok := op.(ir_operation.CreateOp)
+			createOp, ok := op.(operations.CreateOp)
 			if !ok {
 				continue
 			}
@@ -247,8 +247,8 @@ func getScopeForView(view *pipeline.ViewCompilationUnit, parent *Scope) *Scope {
 	return scope
 }
 
-// getHandle extracts the handle from an operation
-func getHandle(op ir_operation.Op) *ir.SlotHandle {
+// getHandle extracts the handle from an operations
+func getHandle(op operations.Op) *ir.SlotHandle {
 	switch opType := op.(type) {
 	case *ops_create.ElementStartOp:
 		return opType.Handle
@@ -275,7 +275,7 @@ func generateVariablesInScopeForView(
 
 	if scope.View != view.Xref {
 		// Before generating variables for a parent view, we need to switch to the context of the parent
-		// view with a `nextContext` expression. This context switching operation itself declares a
+		// view with a `nextContext` expression. This context switching operations itself declares a
 		// variable, because the context of the view may be referenced directly.
 		newOps = append(newOps, ops_shared.NewVariableOp(
 			view.Job.AllocateXrefId(),

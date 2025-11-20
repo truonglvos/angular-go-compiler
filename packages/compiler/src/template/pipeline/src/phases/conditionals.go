@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -59,7 +59,7 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 				xref := job.AllocateXrefId()
 				tmp = expression.NewAssignTemporaryExpr(conditionalOp.Processed, xref)
 			}
-			var caseExpressionTemporaryXref ir_operation.XrefId = 0
+			var caseExpressionTemporaryXref operations.XrefId = 0
 			hasCaseExpressionTemporary := false
 
 			// For each remaining condition, test whether the temporary satisfies the check. (If no temp is
@@ -158,7 +158,7 @@ func GenerateConditionalExpressions(job *pipeline.ComponentCompilationJob) {
 				xref := job.AllocateXrefId()
 				tmp = expression.NewAssignTemporaryExpr(conditionalOp.Processed, xref)
 			}
-			var caseExpressionTemporaryXref ir_operation.XrefId = 0
+			var caseExpressionTemporaryXref operations.XrefId = 0
 			hasCaseExpressionTemporary := false
 
 			// For each remaining condition, test whether the temporary satisfies the check. (If no temp is

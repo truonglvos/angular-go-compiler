@@ -7,7 +7,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
@@ -93,7 +93,7 @@ func ExtractAttributes(job *pipeline.CompilationJob) {
 				// mode.
 				if job.Compatibility == ir.CompatibilityModeTemplateDefinitionBuilder {
 					var name string
-					var target ir_operation.XrefId
+					var target operations.XrefId
 					if stylePropOp, ok := op.(*ops_update.StylePropOp); ok {
 						name = stylePropOp.Name
 						target = stylePropOp.Target
@@ -247,7 +247,7 @@ func ExtractAttributes(job *pipeline.CompilationJob) {
 			case ir.OpKindStyleProp, ir.OpKindClassProp:
 				if job.Compatibility == ir.CompatibilityModeTemplateDefinitionBuilder {
 					var name string
-					var target ir_operation.XrefId
+					var target operations.XrefId
 					if stylePropOp, ok := op.(*ops_update.StylePropOp); ok {
 						name = stylePropOp.Name
 						target = stylePropOp.Target
@@ -336,8 +336,8 @@ func ExtractAttributes(job *pipeline.CompilationJob) {
 
 // lookupElement looks up an element in the given map by xref ID.
 func lookupElement(
-	elements map[ir_operation.XrefId]pipeline_util.OpXrefMapEntry,
-	xref ir_operation.XrefId,
+	elements map[operations.XrefId]pipeline_util.OpXrefMapEntry,
+	xref operations.XrefId,
 ) pipeline_util.OpXrefMapEntry {
 	el, exists := elements[xref]
 	if !exists {
@@ -349,8 +349,8 @@ func lookupElement(
 // extractAttributeOp extracts an attribute binding.
 func extractAttributeOp(
 	unit pipeline.CompilationUnit,
-	op ir_operation.Op,
-	elements map[ir_operation.XrefId]pipeline_util.OpXrefMapEntry,
+	op operations.Op,
+	elements map[operations.XrefId]pipeline_util.OpXrefMapEntry,
 	job *pipeline.CompilationJob,
 ) {
 	attributeOp, ok := op.(*ops_update.AttributeOp)

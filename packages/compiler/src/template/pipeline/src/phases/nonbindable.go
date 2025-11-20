@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -10,9 +10,9 @@ import (
 
 // lookupElementNonBindAble looks up an element in the given map by xref ID
 func lookupElementNonBindAble(
-	elements map[ir_operation.XrefId]ir_operation.CreateOp,
-	xref ir_operation.XrefId,
-) ir_operation.CreateOp {
+	elements map[operations.XrefId]operations.CreateOp,
+	xref operations.XrefId,
+) operations.CreateOp {
 	el, ok := elements[xref]
 	if !ok {
 		panic("All attributes should have an element-like target.")
@@ -21,7 +21,7 @@ func lookupElementNonBindAble(
 }
 
 // isElementOrContainerOp checks if an op is an element or container op
-func isElementOrContainerOp(op ir_operation.Op) bool {
+func isElementOrContainerOp(op operations.Op) bool {
 	kind := op.GetKind()
 	return kind == ir.OpKindElement || kind == ir.OpKindElementStart ||
 		kind == ir.OpKindContainer || kind == ir.OpKindContainerStart ||
@@ -34,13 +34,13 @@ func isElementOrContainerOp(op ir_operation.Op) bool {
 // all descendants of that container. Therefore, we must emit `disableBindings` and `enableBindings`
 // instructions for every such container.
 func DisableBindings(job *pipeline.CompilationJob) {
-	elements := make(map[ir_operation.XrefId]ir_operation.CreateOp)
+	elements := make(map[operations.XrefId]operations.CreateOp)
 	for _, view := range job.GetUnits() {
 		for op := view.GetCreate().Head(); op != nil; op = op.Next() {
 			if !isElementOrContainerOp(op) {
 				continue
 			}
-			if createOp, ok := op.(ir_operation.CreateOp); ok {
+			if createOp, ok := op.(operations.CreateOp); ok {
 				elements[createOp.GetXref()] = createOp
 			}
 		}
@@ -58,7 +58,7 @@ func DisableBindings(job *pipeline.CompilationJob) {
 				}
 
 				if nonBindable {
-					if createOp, ok := op.(ir_operation.CreateOp); ok {
+					if createOp, ok := op.(operations.CreateOp); ok {
 						disableOp := ops_create.NewDisableBindingsOp(createOp.GetXref())
 						unit.GetCreate().InsertAfter(op, disableOp)
 					}
@@ -66,7 +66,7 @@ func DisableBindings(job *pipeline.CompilationJob) {
 			}
 
 			if kind == ir.OpKindElementEnd || kind == ir.OpKindContainerEnd {
-				if createOp, ok := op.(ir_operation.CreateOp); ok {
+				if createOp, ok := op.(operations.CreateOp); ok {
 					element := lookupElementNonBindAble(elements, createOp.GetXref())
 					var nonBindable bool
 					if elementStart, ok := element.(*ops_create.ElementStartOp); ok {

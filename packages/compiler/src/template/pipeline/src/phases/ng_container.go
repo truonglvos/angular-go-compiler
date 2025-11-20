@@ -1,7 +1,7 @@
 package phases
 
 import (
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -12,7 +12,7 @@ const containerTag = "ng-container"
 // GenerateNgContainerOps replaces an `Element` or `ElementStart` whose tag is `ng-container` with a specific op.
 func GenerateNgContainerOps(job *pipeline.CompilationJob) {
 	for _, unit := range job.GetUnits() {
-		updatedElementXrefs := make(map[ir_operation.XrefId]bool)
+		updatedElementXrefs := make(map[operations.XrefId]bool)
 
 		for op := unit.GetCreate().Head(); op != nil; op = op.Next() {
 			if elementStart, ok := op.(*ops_create.ElementStartOp); ok && elementStart.Tag != nil && *elementStart.Tag == containerTag {

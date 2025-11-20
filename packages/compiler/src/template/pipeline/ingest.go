@@ -457,7 +457,7 @@ func convertExpressions(
 func OpListInsertBefore(newOp ir_operations.Op, op ir_operations.Op) {
 	// Get the list from the op's debug list ID
 	if op.GetDebugListId() == nil {
-		panic("operation is not owned by a list")
+		panic("operations is not owned by a list")
 	}
 	// Note: In a real implementation, we'd need to track which list owns which op
 	// For now, we'll assume the op knows its list context
@@ -469,7 +469,7 @@ func OpListInsertBefore(newOp ir_operations.Op, op ir_operations.Op) {
 func OpListInsertAfter(newOp ir_operations.Op, op ir_operations.Op) {
 	// Get the list from the op's debug list ID
 	if op.GetDebugListId() == nil {
-		panic("operation is not owned by a list")
+		panic("operations is not owned by a list")
 	}
 	// Note: In a real implementation, we'd need to track which list owns which op
 	// For now, we'll assume the op knows its list context

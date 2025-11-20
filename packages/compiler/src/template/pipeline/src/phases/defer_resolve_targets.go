@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
 
@@ -16,7 +16,7 @@ type ScopeDefer struct {
 
 // TargetInfo contains information about a target
 type TargetInfo struct {
-	Xref ir_operation.XrefId
+	Xref operations.XrefId
 	Slot *ir.SlotHandle
 }
 
@@ -25,7 +25,7 @@ type TargetInfo struct {
 // names. However, the semantics are quite different from the normal local reference system: in
 // particular, we need to look at local reference names in enclosing views.
 func ResolveDeferTargetNames(job *pipeline.ComponentCompilationJob) {
-	scopes := make(map[ir_operation.XrefId]*ScopeDefer)
+	scopes := make(map[operations.XrefId]*ScopeDefer)
 
 	getScopeForView := func(view *pipeline.ViewCompilationUnit) *ScopeDefer {
 		if scope, exists := scopes[view.Xref]; exists {
@@ -37,7 +37,7 @@ func ResolveDeferTargetNames(job *pipeline.ComponentCompilationJob) {
 		}
 		for op := view.Create.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 
-			createOp, convertOk := op.(ir_operation.CreateOp)
+			createOp, convertOk := op.(operations.CreateOp)
 			if !convertOk {
 				continue
 			}
@@ -90,7 +90,7 @@ func ResolveDeferTargetNames(job *pipeline.ComponentCompilationJob) {
 					continue
 				}
 				// Type assert to CreateOp to access GetXref()
-				createOp, ok := op.(ir_operation.CreateOp)
+				createOp, ok := op.(operations.CreateOp)
 				if !ok {
 					continue
 				}
@@ -108,7 +108,7 @@ func ResolveDeferTargetNames(job *pipeline.ComponentCompilationJob) {
 	resolveTrigger := func(
 		deferOwnerView *pipeline.ViewCompilationUnit,
 		onOp *ops_create.DeferOnOp,
-		placeholderView ir_operation.XrefId,
+		placeholderView operations.XrefId,
 	) {
 		trigger := onOp.Trigger
 		switch trigger.GetKind() {
@@ -138,7 +138,7 @@ func ResolveDeferTargetNames(job *pipeline.ComponentCompilationJob) {
 				}
 				for op := placeholder.Create.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 					if ir_traits.HasConsumesSlotTrait(op) {
-						createOp, ok := op.(ir_operation.CreateOp)
+						createOp, ok := op.(operations.CreateOp)
 						if !ok {
 							continue
 						}
@@ -194,7 +194,7 @@ func ResolveDeferTargetNames(job *pipeline.ComponentCompilationJob) {
 		if !ok {
 			continue
 		}
-		defers := make(map[ir_operation.XrefId]*ops_create.DeferOp)
+		defers := make(map[operations.XrefId]*ops_create.DeferOp)
 		for op := viewUnit.Create.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 			switch op.GetKind() {
 			case ir.OpKindDefer:

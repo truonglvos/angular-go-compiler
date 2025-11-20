@@ -94,7 +94,7 @@ func NewElementStartOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (e *ElementStartOp) GetKind() ir.OpKind {
 	return ir.OpKindElementStart
 }
@@ -135,7 +135,7 @@ func NewElementOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (e *ElementOp) GetKind() ir.OpKind {
 	return ir.OpKindElement
 }
@@ -156,7 +156,7 @@ func NewElementEndOp(xref ir_operations.XrefId, sourceSpan *util.ParseSourceSpan
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (e *ElementEndOp) GetKind() ir.OpKind {
 	return ir.OpKindElementEnd
 }
@@ -197,7 +197,7 @@ func NewContainerStartOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ContainerStartOp) GetKind() ir.OpKind {
 	return ir.OpKindContainerStart
 }
@@ -228,7 +228,7 @@ func NewContainerOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ContainerOp) GetKind() ir.OpKind {
 	return ir.OpKindContainer
 }
@@ -249,7 +249,7 @@ func NewContainerEndOp(xref ir_operations.XrefId, sourceSpan *util.ParseSourceSp
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ContainerEndOp) GetKind() ir.OpKind {
 	return ir.OpKindContainerEnd
 }
@@ -278,7 +278,7 @@ func NewDisableBindingsOp(xref ir_operations.XrefId) *DisableBindingsOp {
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (d *DisableBindingsOp) GetKind() ir.OpKind {
 	return ir.OpKindDisableBindings
 }
@@ -307,7 +307,7 @@ func NewEnableBindingsOp(xref ir_operations.XrefId) *EnableBindingsOp {
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (e *EnableBindingsOp) GetKind() ir.OpKind {
 	return ir.OpKindEnableBindings
 }
@@ -351,7 +351,7 @@ func NewTextOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (t *TextOp) GetKind() ir.OpKind {
 	return ir.OpKindText
 }
@@ -420,7 +420,7 @@ func NewTemplateOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (t *TemplateOp) GetKind() ir.OpKind {
 	return ir.OpKindTemplate
 }
@@ -470,7 +470,7 @@ func NewConditionalCreateOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ConditionalCreateOp) GetKind() ir.OpKind {
 	return ir.OpKindConditionalCreate
 }
@@ -520,7 +520,7 @@ func NewConditionalBranchCreateOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ConditionalBranchCreateOp) GetKind() ir.OpKind {
 	return ir.OpKindConditionalBranchCreate
 }
@@ -602,7 +602,7 @@ func NewRepeaterCreateOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (r *RepeaterCreateOp) GetKind() ir.OpKind {
 	return ir.OpKindRepeaterCreate
 }
@@ -621,7 +621,7 @@ func (r *RepeaterCreateOp) GetConsumesSlotTrait() *ir_traits.ConsumesSlotOpTrait
 	}
 }
 
-// IsElementOrContainerOp checks whether the given operation represents the creation of an element or container
+// IsElementOrContainerOp checks whether the given operations represents the creation of an element or container
 func IsElementOrContainerOp(op ir_operations.CreateOp) bool {
 	kind := op.GetKind()
 	return kind == ir.OpKindElement ||
@@ -683,7 +683,7 @@ func NewListenerOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (l *ListenerOp) GetKind() ir.OpKind {
 	return ir.OpKindListener
 }
@@ -734,7 +734,7 @@ func NewTwoWayListenerOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (t *TwoWayListenerOp) GetKind() ir.OpKind {
 	return ir.OpKindTwoWayListener
 }
@@ -749,7 +749,7 @@ func (t *TwoWayListenerOp) SetXref(xref ir_operations.XrefId) {
 	t.Target = xref
 }
 
-// PipeOp represents a pipe operation
+// PipeOp represents a pipe operations
 type PipeOp struct {
 	ir_operations.OpBase
 	Xref         ir_operations.XrefId
@@ -769,7 +769,7 @@ func NewPipeOp(xref ir_operations.XrefId, slot *ir.SlotHandle, name string) *Pip
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (p *PipeOp) GetKind() ir.OpKind {
 	return ir.OpKindPipe
 }
@@ -807,7 +807,7 @@ func NewNamespaceOp(namespace ir.Namespace) *NamespaceOp {
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (n *NamespaceOp) GetKind() ir.OpKind {
 	return ir.OpKindNamespace
 }
@@ -836,7 +836,7 @@ func NewProjectionDefOp(def output.OutputExpression) *ProjectionDefOp {
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (p *ProjectionDefOp) GetKind() ir.OpKind {
 	return ir.OpKindProjectionDef
 }
@@ -895,7 +895,7 @@ func NewProjectionOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (p *ProjectionOp) GetKind() ir.OpKind {
 	return ir.OpKindProjection
 }
@@ -958,7 +958,7 @@ func NewExtractedAttributeOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (e *ExtractedAttributeOp) GetKind() ir.OpKind {
 	return ir.OpKindExtractedAttribute
 }
@@ -1109,7 +1109,7 @@ func NewDeferOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (d *DeferOp) GetKind() ir.OpKind {
 	return ir.OpKindDefer
 }
@@ -1158,7 +1158,7 @@ func NewDeferOnOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (d *DeferOnOp) GetKind() ir.OpKind {
 	return ir.OpKindDeferOn
 }
@@ -1199,7 +1199,7 @@ func NewDeclareLetOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (d *DeclareLetOp) GetKind() ir.OpKind {
 	return ir.OpKindDeclareLet
 }
@@ -1272,7 +1272,7 @@ func NewI18nMessageOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *I18nMessageOp) GetKind() ir.OpKind {
 	return ir.OpKindI18nMessage
 }
@@ -1351,7 +1351,7 @@ func NewI18nOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *I18nOp) GetKind() ir.OpKind {
 	return ir.OpKindI18n
 }
@@ -1387,7 +1387,7 @@ func NewI18nStartOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *I18nStartOp) GetKind() ir.OpKind {
 	return ir.OpKindI18nStart
 }
@@ -1408,7 +1408,7 @@ func NewI18nEndOp(xref ir_operations.XrefId, sourceSpan *util.ParseSourceSpan) *
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *I18nEndOp) GetKind() ir.OpKind {
 	return ir.OpKindI18nEnd
 }
@@ -1450,7 +1450,7 @@ func NewIcuStartOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *IcuStartOp) GetKind() ir.OpKind {
 	return ir.OpKindIcuStart
 }
@@ -1479,7 +1479,7 @@ func NewIcuEndOp(xref ir_operations.XrefId) *IcuEndOp {
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *IcuEndOp) GetKind() ir.OpKind {
 	return ir.OpKindIcuEnd
 }
@@ -1518,7 +1518,7 @@ func NewIcuPlaceholderOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *IcuPlaceholderOp) GetKind() ir.OpKind {
 	return ir.OpKindIcuPlaceholder
 }
@@ -1568,7 +1568,7 @@ func NewI18nContextOp(
 	}, nil
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *I18nContextOp) GetKind() ir.OpKind {
 	return ir.OpKindI18nContext
 }
@@ -1609,7 +1609,7 @@ func NewI18nAttributesOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (i *I18nAttributesOp) GetKind() ir.OpKind {
 	return ir.OpKindI18nAttributes
 }
@@ -1660,7 +1660,7 @@ func NewSourceLocationOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (s *SourceLocationOp) GetKind() ir.OpKind {
 	return ir.OpKindSourceLocation
 }
@@ -1689,7 +1689,7 @@ func NewControlCreateOp(sourceSpan *util.ParseSourceSpan) *ControlCreateOp {
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (c *ControlCreateOp) GetKind() ir.OpKind {
 	return ir.OpKindControlCreate
 }
@@ -1739,7 +1739,7 @@ func NewAnimationStringOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (a *AnimationStringOp) GetKind() ir.OpKind {
 	return ir.OpKindAnimationString
 }
@@ -1794,7 +1794,7 @@ func NewAnimationOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (a *AnimationOp) GetKind() ir.OpKind {
 	return ir.OpKindAnimation
 }
@@ -1856,7 +1856,7 @@ func NewAnimationListenerOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (a *AnimationListenerOp) GetKind() ir.OpKind {
 	return ir.OpKindAnimationListener
 }

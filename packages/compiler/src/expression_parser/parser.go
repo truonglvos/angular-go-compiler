@@ -1009,8 +1009,8 @@ func (p *parseAST) parseExponentiation() AST {
 	result := p.parsePrefix()
 	for p.next().Type == TokenTypeOperator && p.next().StrValue == "**" {
 		// This aligns with Javascript semantics which require any unary operator preceeding the
-		// exponentiation operation to be explicitly grouped as either applying to the base or result
-		// of the exponentiation operation.
+		// exponentiation operations to be explicitly grouped as either applying to the base or result
+		// of the exponentiation operations.
 		if _, ok := result.(*Unary); ok {
 			p.error("Unary operator used immediately before exponentiation expression. Parenthesis must be used to disambiguate operator precedence")
 		} else if _, ok := result.(*PrefixNot); ok {
@@ -1262,7 +1262,7 @@ func (p *parseAST) parseAccessMember(readReceiver AST, start int, isSafe bool) A
 		)
 	}
 	if p.isAssignmentOperator(p.next()) {
-		operation := p.next().StrValue
+		operations := p.next().StrValue
 
 		if p.parseFlags&ParseFlagsAction == 0 {
 			p.advance()
@@ -1278,7 +1278,7 @@ func (p *parseAST) parseAccessMember(readReceiver AST, start int, isSafe bool) A
 		)
 		p.advance()
 		value := p.parseConditional()
-		return NewBinary(p.span(start), p.sourceSpan(start), operation, receiver, value)
+		return NewBinary(p.span(start), p.sourceSpan(start), operations, receiver, value)
 	}
 	return NewPropertyRead(
 		p.span(start),
@@ -1320,7 +1320,7 @@ func (p *parseAST) parseCallArguments() []AST {
 	return positionals
 }
 
-// parseKeyedReadOrWrite parses a keyed read or write operation
+// parseKeyedReadOrWrite parses a keyed read or write operations
 func (p *parseAST) parseKeyedReadOrWrite(receiver AST, start int, isSafe bool) AST {
 	return p.withContext(ParseContextFlagsWritable, func() interface{} {
 		p.rbracketsExpected++
@@ -1331,7 +1331,7 @@ func (p *parseAST) parseKeyedReadOrWrite(receiver AST, start int, isSafe bool) A
 		p.rbracketsExpected--
 		p.expectCharacter(core.CharRBRACKET)
 		if p.isAssignmentOperator(p.next()) {
-			operation := p.next().StrValue
+			operations := p.next().StrValue
 
 			if isSafe {
 				p.advance()
@@ -1349,7 +1349,7 @@ func (p *parseAST) parseKeyedReadOrWrite(receiver AST, start int, isSafe bool) A
 			return NewBinary(
 				p.span(start),
 				p.sourceSpan(start),
-				operation,
+				operations,
 				binaryReceiver,
 				value,
 			)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	"ngc-go/packages/compiler/src/util"
@@ -15,7 +15,7 @@ import (
 // ConvertI18nBindings converts some binding instructions in the update block that may actually correspond to i18n bindings.
 // In that case, they should be replaced with i18nExp instructions for the dynamic portions.
 func ConvertI18nBindings(job *pipeline.CompilationJob) {
-	i18nAttributesByElem := make(map[ir_operation.XrefId]*ops_create.I18nAttributesOp)
+	i18nAttributesByElem := make(map[operations.XrefId]*ops_create.I18nAttributesOp)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 			if op.GetKind() == ir.OpKindI18nAttributes {
@@ -53,9 +53,9 @@ func ConvertI18nBindings(job *pipeline.CompilationJob) {
 
 func convertI18nBindingOpForProperty(
 	unit pipeline.CompilationUnit,
-	op ir_operation.Op,
+	op operations.Op,
 	propertyOp *ops_update.PropertyOp,
-	i18nAttributesByElem map[ir_operation.XrefId]*ops_create.I18nAttributesOp,
+	i18nAttributesByElem map[operations.XrefId]*ops_create.I18nAttributesOp,
 ) {
 	if propertyOp.I18nContext == 0 {
 		return
@@ -76,7 +76,7 @@ func convertI18nBindingOpForProperty(
 		panic("AssertionError: Expected i18nAttributes target element to match binding target element")
 	}
 
-	var i18nExprOps []ir_operation.Op
+	var i18nExprOps []operations.Op
 	for i, expr := range interpolation.Expressions {
 		if len(interpolation.I18nPlaceholders) != len(interpolation.Expressions) {
 			panic(fmt.Sprintf(
@@ -123,9 +123,9 @@ func convertI18nBindingOpForProperty(
 
 func convertI18nBindingOpForAttribute(
 	unit pipeline.CompilationUnit,
-	op ir_operation.Op,
+	op operations.Op,
 	attributeOp *ops_update.AttributeOp,
-	i18nAttributesByElem map[ir_operation.XrefId]*ops_create.I18nAttributesOp,
+	i18nAttributesByElem map[operations.XrefId]*ops_create.I18nAttributesOp,
 ) {
 	if attributeOp.I18nContext == 0 {
 		return
@@ -146,7 +146,7 @@ func convertI18nBindingOpForAttribute(
 		panic("AssertionError: Expected i18nAttributes target element to match binding target element")
 	}
 
-	var i18nExprOps []ir_operation.Op
+	var i18nExprOps []operations.Op
 	for i, expr := range interpolation.Expressions {
 		if len(interpolation.I18nPlaceholders) != len(interpolation.Expressions) {
 			panic(fmt.Sprintf(

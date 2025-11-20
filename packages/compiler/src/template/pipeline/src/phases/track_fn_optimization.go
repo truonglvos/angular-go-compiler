@@ -5,7 +5,7 @@ import (
 	r3_identifiers "ngc-go/packages/compiler/src/render3/r3_identifiers"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
@@ -89,7 +89,7 @@ func OptimizeTrackFns(job *pipeline.CompilationJob) {
 
 				// Also create an OpList for the tracking expression since it may need
 				// additional ops when generating the final code (e.g. temporary variables).
-				trackOpList := ir_operation.NewOpList()
+				trackOpList := operations.NewOpList()
 				returnStmt := output.NewReturnStatement(repeaterOp.Track, repeaterOp.Track.GetSourceSpan(), nil)
 				stmtOp := ops_shared.NewStatementOp(returnStmt)
 				trackOpList.Push(stmtOp)
@@ -102,9 +102,9 @@ func OptimizeTrackFns(job *pipeline.CompilationJob) {
 // isTrackByFunctionCall checks if an expression is a track-by function call in the form
 // `fn($index, item)` where `fn` is a method on the component context.
 func isTrackByFunctionCall(
-	rootView ir_operation.XrefId,
+	rootView operations.XrefId,
 	expr output.OutputExpression,
-	unitXref ir_operation.XrefId,
+	unitXref operations.XrefId,
 ) bool {
 	invokeExpr, ok := expr.(*output.InvokeFunctionExpr)
 	if !ok || len(invokeExpr.Args) == 0 || len(invokeExpr.Args) > 2 {

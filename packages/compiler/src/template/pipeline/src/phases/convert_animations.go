@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
@@ -13,10 +13,10 @@ import (
 
 // ConvertAnimations converts animation binding operations to animation creation operations.
 func ConvertAnimations(job *pipeline.CompilationJob) {
-	elements := make(map[ir_operation.XrefId]ir_operation.CreateOp)
+	elements := make(map[operations.XrefId]operations.CreateOp)
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			createOp, ok := op.(ir_operation.CreateOp)
+			createOp, ok := op.(operations.CreateOp)
 			if !ok {
 				continue
 			}
@@ -66,9 +66,9 @@ func ConvertAnimations(job *pipeline.CompilationJob) {
 
 // lookupElementConvert looks up an element in the given map by xref ID.
 func lookupElementConvert(
-	elements map[ir_operation.XrefId]ir_operation.CreateOp,
-	xref ir_operation.XrefId,
-) ir_operation.CreateOp {
+	elements map[operations.XrefId]operations.CreateOp,
+	xref operations.XrefId,
+) operations.CreateOp {
 	el, exists := elements[xref]
 	if !exists {
 		panic("All attributes should have an element-like target.")
@@ -76,7 +76,7 @@ func lookupElementConvert(
 	return el
 }
 
-func getAnimationOp(op *ops_update.AnimationBindingOp) ir_operation.CreateOp {
+func getAnimationOp(op *ops_update.AnimationBindingOp) operations.CreateOp {
 	// Check if expression is a string (Interpolation with single string) or an Expression
 	var expr output.OutputExpression
 	var isString bool
@@ -126,7 +126,7 @@ func getAnimationOp(op *ops_update.AnimationBindingOp) ir_operation.CreateOp {
 	} else {
 		// Expression case - create AnimationOp with handler ops
 		returnStmt := output.NewReturnStatement(expr, expr.GetSourceSpan(), nil)
-		handlerOps := []ir_operation.UpdateOp{ops_shared.NewStatementOp(returnStmt)}
+		handlerOps := []operations.UpdateOp{ops_shared.NewStatementOp(returnStmt)}
 		return ops_create.NewAnimationOp(
 			op.Name,
 			op.Target,

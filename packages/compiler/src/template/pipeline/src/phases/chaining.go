@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	render3 "ngc-go/packages/compiler/src/render3/r3_identifiers"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	"ngc-go/packages/compiler/src/util"
 
@@ -80,7 +80,7 @@ type chain struct {
 	length      int
 }
 
-func chainOperationsInList(opList *ir_operation.OpList) {
+func chainOperationsInList(opList *operations.OpList) {
 	var currentChain *chain = nil
 
 	for op := opList.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {

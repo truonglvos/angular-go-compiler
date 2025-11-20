@@ -1,4 +1,4 @@
-package ir_operation
+package operations
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
@@ -53,29 +53,29 @@ func NewOpList() *OpList {
 	}
 }
 
-// ListEndOp is a special operation type used to represent the beginning and end nodes of a linked list
+// ListEndOp is a special operations type used to represent the beginning and end nodes of a linked list
 type ListEndOp struct {
 	prev        Op
 	next        Op
 	debugListId int
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (l *ListEndOp) GetKind() ir.OpKind {
 	return ir.OpKindListEnd
 }
 
-// GetPrev returns the previous operation
+// GetPrev returns the previous operations
 func (l *ListEndOp) GetPrev() Op {
 	return l.prev
 }
 
-// SetPrev sets the previous operation
+// SetPrev sets the previous operations
 func (l *ListEndOp) SetPrev(op Op) {
 	l.prev = op
 }
 
-// GetNext returns the next operation
+// GetNext returns the next operations
 func (l *ListEndOp) GetNext() Op {
 	return l.next
 }
@@ -85,7 +85,7 @@ func (l *ListEndOp) Next() Op {
 	return l.GetNext()
 }
 
-// SetNext sets the next operation
+// SetNext sets the next operations
 func (l *ListEndOp) SetNext(op Op) {
 	l.next = op
 }
@@ -135,17 +135,17 @@ func NewOpBase() OpBase {
 	}
 }
 
-// GetPrev returns the previous operation
+// GetPrev returns the previous operations
 func (o *OpBase) GetPrev() Op {
 	return o.prev
 }
 
-// SetPrev sets the previous operation
+// SetPrev sets the previous operations
 func (o *OpBase) SetPrev(op Op) {
 	o.prev = op
 }
 
-// GetNext returns the next operation
+// GetNext returns the next operations
 func (o *OpBase) GetNext() Op {
 	return o.next
 }
@@ -155,7 +155,7 @@ func (o *OpBase) Next() Op {
 	return o.GetNext()
 }
 
-// SetNext sets the next operation
+// SetNext sets the next operations
 func (o *OpBase) SetNext(op Op) {
 	o.next = op
 }
@@ -180,13 +180,13 @@ func (l *OpList) Tail() Op {
 	return l.tail
 }
 
-// Push adds an operation to the tail of the list
+// Push adds an operations to the tail of the list
 func (l *OpList) Push(op Op) {
 	if op.GetKind() == ir.OpKindListEnd {
 		panic("cannot push list end node")
 	}
 	if op.GetDebugListId() != nil {
-		panic("operation is already owned by a list")
+		panic("operations is already owned by a list")
 	}
 
 	listId := l.debugListId
@@ -199,16 +199,16 @@ func (l *OpList) Push(op Op) {
 	l.tail.SetPrev(op)
 }
 
-// InsertBefore inserts a new operation before a given Op
+// InsertBefore inserts a new operations before a given Op
 func (l *OpList) InsertBefore(op Op, newOp Op) {
 	if newOp.GetKind() == ir.OpKindListEnd {
 		panic("cannot insert list end node")
 	}
 	if newOp.GetDebugListId() != nil {
-		panic("operation is already owned by a list")
+		panic("operations is already owned by a list")
 	}
 	if op.GetDebugListId() == nil || *op.GetDebugListId() != l.debugListId {
-		panic("operation is not owned by this list")
+		panic("operations is not owned by this list")
 	}
 
 	listId := l.debugListId
@@ -221,16 +221,16 @@ func (l *OpList) InsertBefore(op Op, newOp Op) {
 	op.SetPrev(newOp)
 }
 
-// InsertAfter inserts a new operation after a given Op
+// InsertAfter inserts a new operations after a given Op
 func (l *OpList) InsertAfter(op Op, newOp Op) {
 	if newOp.GetKind() == ir.OpKindListEnd {
 		panic("cannot insert list end node")
 	}
 	if newOp.GetDebugListId() != nil {
-		panic("operation is already owned by a list")
+		panic("operations is already owned by a list")
 	}
 	if op.GetDebugListId() == nil || *op.GetDebugListId() != l.debugListId {
-		panic("operation is not owned by this list")
+		panic("operations is not owned by this list")
 	}
 
 	listId := l.debugListId
@@ -243,13 +243,13 @@ func (l *OpList) InsertAfter(op Op, newOp Op) {
 	next.SetPrev(newOp)
 }
 
-// Remove removes an operation from the list
+// Remove removes an operations from the list
 func (l *OpList) Remove(op Op) {
 	if op.GetKind() == ir.OpKindListEnd {
 		panic("cannot remove list end node")
 	}
 	if op.GetDebugListId() == nil || *op.GetDebugListId() != l.debugListId {
-		panic("operation is not owned by this list")
+		panic("operations is not owned by this list")
 	}
 
 	prev := op.GetPrev()
@@ -261,19 +261,19 @@ func (l *OpList) Remove(op Op) {
 	op.SetDebugListId(nil)
 }
 
-// Replace replaces an operation with a new one
+// Replace replaces an operations with a new one
 func (l *OpList) Replace(oldOp Op, newOp Op) {
 	if newOp.GetKind() == ir.OpKindListEnd {
 		panic("cannot replace with list end node")
 	}
 	if newOp.GetDebugListId() != nil {
-		panic("new operation is already owned by a list")
+		panic("new operations is already owned by a list")
 	}
 	if oldOp.GetKind() == ir.OpKindListEnd {
 		panic("cannot replace list end node")
 	}
 	if oldOp.GetDebugListId() == nil || *oldOp.GetDebugListId() != l.debugListId {
-		panic("old operation is not owned by this list")
+		panic("old operations is not owned by this list")
 	}
 
 	listId := l.debugListId
@@ -299,7 +299,7 @@ func (l *OpList) Prepend(ops []Op) {
 			panic("cannot prepend list end node")
 		}
 		if op.GetDebugListId() != nil {
-			panic("operation is already owned by a list")
+			panic("operations is already owned by a list")
 		}
 
 		listId := l.debugListId

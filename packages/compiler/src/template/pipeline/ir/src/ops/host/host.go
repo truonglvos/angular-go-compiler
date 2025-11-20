@@ -7,7 +7,7 @@ import (
 	"ngc-go/packages/compiler/src/util"
 )
 
-// DomPropertyOp is a logical operation representing a binding to a native DOM property
+// DomPropertyOp is a logical operations representing a binding to a native DOM property
 type DomPropertyOp struct {
 	ir_operations.OpBase
 	Name            string
@@ -40,7 +40,7 @@ func NewDomPropertyOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (d *DomPropertyOp) GetKind() ir.OpKind {
 	return ir.OpKindDomProperty
 }

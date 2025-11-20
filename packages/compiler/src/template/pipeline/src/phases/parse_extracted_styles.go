@@ -8,7 +8,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -122,11 +122,11 @@ func hyphenateStyleProperty(value string) string {
 // ParseExtractedStyles parses extracted style and class attributes into separate ExtractedAttributeOps per style or
 // class property.
 func ParseExtractedStyles(job *pipeline.CompilationJob) {
-	elements := make(map[ir_operation.XrefId]ir_operation.CreateOp)
+	elements := make(map[operations.XrefId]operations.CreateOp)
 
 	for _, unit := range job.GetUnits() {
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
-			createOp, ok := op.(ir_operation.CreateOp)
+			createOp, ok := op.(operations.CreateOp)
 			if !ok {
 				continue
 			}

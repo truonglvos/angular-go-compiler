@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -12,8 +12,8 @@ import (
 
 // OptimizeStoreLet removes any `storeLet` calls that aren't referenced outside of the current view.
 func OptimizeStoreLet(job *pipeline.CompilationJob) {
-	letUsedExternally := make(map[ir_operation.XrefId]bool)
-	declareLetOps := make(map[ir_operation.XrefId]*ops_create.DeclareLetOp)
+	letUsedExternally := make(map[operations.XrefId]bool)
+	declareLetOps := make(map[operations.XrefId]*ops_create.DeclareLetOp)
 
 	// Since `@let` declarations can be referenced in child views, both in
 	// the creation block (via listeners) and in the update block, we have

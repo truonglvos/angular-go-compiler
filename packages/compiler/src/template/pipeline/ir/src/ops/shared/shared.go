@@ -22,7 +22,7 @@ func NewStatementOp(statement output.OutputStatement) *StatementOp {
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (s *StatementOp) GetKind() ir.OpKind {
 	return ir.OpKindStatement
 }
@@ -62,7 +62,7 @@ func NewVariableOp(
 	}
 }
 
-// GetKind returns the operation kind
+// GetKind returns the operations kind
 func (v *VariableOp) GetKind() ir.OpKind {
 	return ir.OpKindVariable
 }

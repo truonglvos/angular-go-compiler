@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
@@ -41,9 +41,9 @@ func MergeNextContextExpressions(job *pipeline.CompilationJob) {
 	}
 }
 
-func mergeNextContextsInOps(opsList *ir_operation.OpList) {
+func mergeNextContextsInOps(opsList *operations.OpList) {
 	for op := opsList.Head(); op != nil; op = op.Next() {
-		// Look for a candidate operation to maybe merge.
+		// Look for a candidate operations to maybe merge.
 		if op.GetKind() != ir.OpKindStatement {
 			continue
 		}

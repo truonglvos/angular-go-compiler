@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	"ngc-go/packages/compiler/src/util"
@@ -19,9 +19,9 @@ func ConvertI18nText(job *pipeline.CompilationJob) {
 		// message.
 		var currentI18n *ops_create.I18nStartOp = nil
 		var currentIcu *ops_create.IcuStartOp = nil
-		textNodeI18nBlocks := make(map[ir_operation.XrefId]*ops_create.I18nStartOp)
-		textNodeIcus := make(map[ir_operation.XrefId]*ops_create.IcuStartOp)
-		icuPlaceholderByText := make(map[ir_operation.XrefId]*ops_create.IcuPlaceholderOp)
+		textNodeI18nBlocks := make(map[operations.XrefId]*ops_create.I18nStartOp)
+		textNodeIcus := make(map[operations.XrefId]*ops_create.IcuStartOp)
+		icuPlaceholderByText := make(map[operations.XrefId]*ops_create.IcuPlaceholderOp)
 		for op := unit.GetCreate().Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 			switch op.GetKind() {
 			case ir.OpKindI18nStart:
@@ -99,11 +99,11 @@ func ConvertI18nText(job *pipeline.CompilationJob) {
 				if hasIcu {
 					resolutionTime = ir.I18nParamResolutionTimePostprocessing
 				}
-				var i18nExprOps []ir_operation.Op
+				var i18nExprOps []operations.Op
 				for i, expr := range interpolateTextOp.Interpolation.Expressions {
 					// For now, this i18nExpression depends on the slot context of the enclosing i18n block.
 					// Later, we will modify this, and advance to a different point.
-					var icuPlaceholderXref *ir_operation.XrefId
+					var icuPlaceholderXref *operations.XrefId
 					if hasIcuPlaceholder {
 						icuPlaceholderXref = &icuPlaceholder.Xref
 					}

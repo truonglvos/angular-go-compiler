@@ -19,33 +19,33 @@ const ConsumesVarsTrait = "ConsumesVars"
 // UsesVarOffset is a marker symbol for UsesVarOffset trait
 const UsesVarOffset = "UsesVarOffset"
 
-// ConsumesSlotOpTrait marks an operation as requiring allocation of one or more data slots for storage
+// ConsumesSlotOpTrait marks an operations as requiring allocation of one or more data slots for storage
 type ConsumesSlotOpTrait struct {
-	// Assigned data slot (the starting index, if more than one slot is needed) for this operation, or
+	// Assigned data slot (the starting index, if more than one slot is needed) for this operations, or
 	// `null` if slots have not yet been assigned.
 	Handle *ir.SlotHandle
 
-	// The number of slots which will be used by this operation. By default 1, but can be increased if
+	// The number of slots which will be used by this operations. By default 1, but can be increased if
 	// necessary.
 	NumSlotsUsed int
 
-	// `XrefId` of this operation (e.g. the element stored in the assigned slot). This `XrefId` is
-	// used to link this `ConsumesSlotOpTrait` operation with `DependsOnSlotContextTrait` or
+	// `XrefId` of this operations (e.g. the element stored in the assigned slot). This `XrefId` is
+	// used to link this `ConsumesSlotOpTrait` operations with `DependsOnSlotContextTrait` or
 	// `UsesSlotIndexExprTrait` implementors and ensure that the assigned slot is propagated through
 	// the IR to all consumers.
 	Xref ir_operations.XrefId
 }
 
-// DependsOnSlotContextOpTrait marks an operation as depending on the runtime's implicit slot context being set to a particular slot
+// DependsOnSlotContextOpTrait marks an operations as depending on the runtime's implicit slot context being set to a particular slot
 type DependsOnSlotContextOpTrait struct {
 	// `XrefId` of the `ConsumesSlotOpTrait` which the implicit slot context must reference before
-	// this operation can be executed.
+	// this operations can be executed.
 	Target ir_operations.XrefId
 
 	SourceSpan *util.ParseSourceSpan
 }
 
-// ConsumesVarsTraitInterface is a marker trait indicating that an operation or expression consumes variable storage space
+// ConsumesVarsTraitInterface is a marker trait indicating that an operations or expression consumes variable storage space
 type ConsumesVarsTraitInterface interface {
 	HasConsumesVarsTrait() bool
 }
@@ -57,7 +57,7 @@ type UsesVarOffsetTraitInterface interface {
 	SetVarOffset(offset int)
 }
 
-// HasConsumesSlotTrait tests whether an operation implements `ConsumesSlotOpTrait`
+// HasConsumesSlotTrait tests whether an operations implements `ConsumesSlotOpTrait`
 func HasConsumesSlotTrait(op ir_operations.Op) bool {
 	_, ok := op.(interface {
 		GetConsumesSlotTrait() *ConsumesSlotOpTrait
@@ -65,7 +65,7 @@ func HasConsumesSlotTrait(op ir_operations.Op) bool {
 	return ok
 }
 
-// HasDependsOnSlotContextTrait tests whether an operation or expression implements `DependsOnSlotContextOpTrait`
+// HasDependsOnSlotContextTrait tests whether an operations or expression implements `DependsOnSlotContextOpTrait`
 func HasDependsOnSlotContextTrait(value interface{}) bool {
 	_, ok := value.(interface {
 		GetDependsOnSlotContextTrait() *DependsOnSlotContextOpTrait
@@ -73,7 +73,7 @@ func HasDependsOnSlotContextTrait(value interface{}) bool {
 	return ok
 }
 
-// HasConsumesVarsTrait tests whether an operation or expression implements `ConsumesVarsTrait`
+// HasConsumesVarsTrait tests whether an operations or expression implements `ConsumesVarsTrait`
 func HasConsumesVarsTrait(value interface{}) bool {
 	if trait, ok := value.(ConsumesVarsTraitInterface); ok {
 		return trait.HasConsumesVarsTrait()

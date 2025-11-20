@@ -35,7 +35,7 @@ func LiftLocalRefs(job *pipeline.ComponentCompilationJob) {
 	}
 }
 
-// handleLocalRefs processes local refs for an operation
+// handleLocalRefs processes local refs for an operations
 func handleLocalRefs(
 	localRefs interface{},
 	op interface{},
@@ -47,7 +47,7 @@ func handleLocalRefs(
 		panic("AssertionError: expected localRefs to be an array still")
 	}
 
-	// Get the operation that has NumSlotsUsed field
+	// Get the operations that has NumSlotsUsed field
 	var numSlotsUsed *int
 	switch o := op.(type) {
 	case *ops_create.ElementStartOp:

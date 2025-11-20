@@ -2,7 +2,7 @@ package phases
 
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
@@ -12,13 +12,13 @@ import (
 
 // Rule represents a rule for ordering operations
 type Rule struct {
-	Test      func(op ir_operation.Op) bool
-	Transform func(ops []ir_operation.Op) []ir_operation.Op
+	Test      func(op operations.Op) bool
+	Transform func(ops []operations.Op) []operations.Op
 }
 
 // kindTest creates a test function for a specific OpKind
-func kindTest(kind ir.OpKind) func(op ir_operation.Op) bool {
-	return func(op ir_operation.Op) bool {
+func kindTest(kind ir.OpKind) func(op operations.Op) bool {
+	return func(op operations.Op) bool {
 		return op.GetKind() == kind
 	}
 }
@@ -27,8 +27,8 @@ func kindTest(kind ir.OpKind) func(op ir_operation.Op) bool {
 func kindWithInterpolationTest(
 	kind ir.OpKind,
 	interpolation bool,
-) func(op ir_operation.Op) bool {
-	return func(op ir_operation.Op) bool {
+) func(op operations.Op) bool {
+	return func(op operations.Op) bool {
 		if op.GetKind() != kind {
 			return false
 		}
@@ -52,7 +52,7 @@ func kindWithInterpolationTest(
 }
 
 // basicListenerKindTest tests if an op is a basic listener kind
-func basicListenerKindTest(op ir_operation.Op) bool {
+func basicListenerKindTest(op operations.Op) bool {
 	kind := op.GetKind()
 	if kind == ir.OpKindListener {
 		if listenerOp, ok := op.(*ops_create.ListenerOp); ok {
@@ -65,7 +65,7 @@ func basicListenerKindTest(op ir_operation.Op) bool {
 }
 
 // nonInterpolationPropertyKindTest tests if an op is a non-interpolation property
-func nonInterpolationPropertyKindTest(op ir_operation.Op) bool {
+func nonInterpolationPropertyKindTest(op operations.Op) bool {
 	kind := op.GetKind()
 	if kind != ir.OpKindProperty && kind != ir.OpKindTwoWayProperty {
 		return false
@@ -87,7 +87,7 @@ func nonInterpolationPropertyKindTest(op ir_operation.Op) bool {
 // CREATE_ORDERING defines the ordering rules for create operations
 var CREATE_ORDERING = []Rule{
 	{
-		Test: func(op ir_operation.Op) bool {
+		Test: func(op operations.Op) bool {
 			if op.GetKind() != ir.OpKindListener {
 				return false
 			}
@@ -160,17 +160,17 @@ func OrderOps(job *pipeline.CompilationJob) {
 }
 
 // orderWithin orders all the ops within the specified group
-func orderWithin(opList *ir_operation.OpList, ordering []Rule) {
-	var opsToOrder []ir_operation.Op
+func orderWithin(opList *operations.OpList, ordering []Rule) {
+	var opsToOrder []operations.Op
 	// Only reorder ops that target the same xref; do not mix ops that target different xrefs.
-	var firstTargetInGroup *ir_operation.XrefId
+	var firstTargetInGroup *operations.XrefId
 
 	for op := opList.Head(); op != nil; op = op.Next() {
 		if op.GetKind() == ir.OpKindListEnd {
 			break
 		}
 
-		var currentTarget *ir_operation.XrefId
+		var currentTarget *operations.XrefId
 		if ir_traits.HasDependsOnSlotContextTrait(op) {
 			if trait := getDependsOnSlotContextTrait(op); trait != nil {
 				target := trait.Target
@@ -210,11 +210,11 @@ func orderWithin(opList *ir_operation.OpList, ordering []Rule) {
 }
 
 // reorder reorders the given list of ops according to the ordering defined by rules
-func reorder(ops []ir_operation.Op, ordering []Rule) []ir_operation.Op {
+func reorder(ops []operations.Op, ordering []Rule) []operations.Op {
 	// Break the ops list into groups based on OpKind
-	groups := make([][]ir_operation.Op, len(ordering))
+	groups := make([][]operations.Op, len(ordering))
 	for i := range groups {
-		groups[i] = []ir_operation.Op{}
+		groups[i] = []operations.Op{}
 	}
 
 	for _, op := range ops {
@@ -231,7 +231,7 @@ func reorder(ops []ir_operation.Op, ordering []Rule) []ir_operation.Op {
 	}
 
 	// Reassemble the groups into a single list, in the correct order
-	var result []ir_operation.Op
+	var result []operations.Op
 	for i, group := range groups {
 		transform := ordering[i].Transform
 		if transform != nil {
@@ -243,15 +243,15 @@ func reorder(ops []ir_operation.Op, ordering []Rule) []ir_operation.Op {
 }
 
 // keepLast keeps only the last op in a list of ops
-func keepLast(ops []ir_operation.Op) []ir_operation.Op {
+func keepLast(ops []operations.Op) []operations.Op {
 	if len(ops) == 0 {
 		return ops
 	}
-	return []ir_operation.Op{ops[len(ops)-1]}
+	return []operations.Op{ops[len(ops)-1]}
 }
 
 // getDependsOnSlotContextTrait gets the DependsOnSlotContextOpTrait from an op
-func getDependsOnSlotContextTrait(op ir_operation.Op) *ir_traits.DependsOnSlotContextOpTrait {
+func getDependsOnSlotContextTrait(op operations.Op) *ir_traits.DependsOnSlotContextOpTrait {
 	if updateOp, ok := op.(interface {
 		GetDependsOnSlotContextTrait() *ir_traits.DependsOnSlotContextOpTrait
 	}); ok {

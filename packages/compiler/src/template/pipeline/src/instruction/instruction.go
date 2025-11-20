@@ -43,7 +43,7 @@ func elementOrContainerBase(
 	return call(instruction, args, sourceSpan)
 }
 
-// Element creates an element operation
+// Element creates an element operations
 func Element(
 	slot int,
 	tag string,
@@ -61,7 +61,7 @@ func Element(
 	)
 }
 
-// ElementStart creates an element start operation
+// ElementStart creates an element start operations
 func ElementStart(
 	slot int,
 	tag string,
@@ -79,12 +79,12 @@ func ElementStart(
 	)
 }
 
-// ElementEnd creates an element end operation
+// ElementEnd creates an element end operations
 func ElementEnd(sourceSpan *util.ParseSourceSpan) ir_operations.CreateOp {
 	return call(*r3_identifiers.ElementEnd, []output.OutputExpression{}, sourceSpan)
 }
 
-// ElementContainerStart creates an element container start operation
+// ElementContainerStart creates an element container start operations
 func ElementContainerStart(
 	slot int,
 	constIndex *int,
@@ -101,7 +101,7 @@ func ElementContainerStart(
 	)
 }
 
-// ElementContainer creates an element container operation
+// ElementContainer creates an element container operations
 func ElementContainer(
 	slot int,
 	constIndex *int,
@@ -118,7 +118,7 @@ func ElementContainer(
 	)
 }
 
-// ElementContainerEnd creates an element container end operation
+// ElementContainerEnd creates an element container end operations
 func ElementContainerEnd() ir_operations.CreateOp {
 	return call(*r3_identifiers.ElementContainerEnd, []output.OutputExpression{}, nil)
 }
@@ -169,7 +169,7 @@ func templateBase(
 	return call(instruction, args, sourceSpan)
 }
 
-// Template creates a template operation
+// Template creates a template operations
 func Template(
 	slot int,
 	templateFnRef output.OutputExpression,
@@ -193,12 +193,12 @@ func Template(
 	)
 }
 
-// DisableBindings creates a disable bindings operation
+// DisableBindings creates a disable bindings operations
 func DisableBindings() ir_operations.CreateOp {
 	return call(*r3_identifiers.DisableBindings, []output.OutputExpression{}, nil)
 }
 
-// EnableBindings creates an enable bindings operation
+// EnableBindings creates an enable bindings operations
 func EnableBindings() ir_operations.CreateOp {
 	return call(*r3_identifiers.EnableBindings, []output.OutputExpression{}, nil)
 }
@@ -232,7 +232,7 @@ func propertyBase(
 	return call(instruction, args, sourceSpan)
 }
 
-// Listener creates a listener operation
+// Listener creates a listener operations
 func Listener(
 	name string,
 	handlerFn output.OutputExpression,
@@ -265,7 +265,7 @@ func TwoWayBindingSet(target output.OutputExpression, value output.OutputExpress
 	)
 }
 
-// TwoWayListener creates a two-way listener operation
+// TwoWayListener creates a two-way listener operations
 func TwoWayListener(
 	name string,
 	handlerFn output.OutputExpression,
@@ -281,7 +281,7 @@ func TwoWayListener(
 	)
 }
 
-// Pipe creates a pipe operation
+// Pipe creates a pipe operations
 func Pipe(slot int, name string) ir_operations.CreateOp {
 	return call(
 		*r3_identifiers.Pipe,
@@ -293,22 +293,22 @@ func Pipe(slot int, name string) ir_operations.CreateOp {
 	)
 }
 
-// NamespaceHTML creates a namespace HTML operation
+// NamespaceHTML creates a namespace HTML operations
 func NamespaceHTML() ir_operations.CreateOp {
 	return call(*r3_identifiers.NamespaceHTML, []output.OutputExpression{}, nil)
 }
 
-// NamespaceSVG creates a namespace SVG operation
+// NamespaceSVG creates a namespace SVG operations
 func NamespaceSVG() ir_operations.CreateOp {
 	return call(*r3_identifiers.NamespaceSVG, []output.OutputExpression{}, nil)
 }
 
-// NamespaceMath creates a namespace MathML operation
+// NamespaceMath creates a namespace MathML operations
 func NamespaceMath() ir_operations.CreateOp {
 	return call(*r3_identifiers.NamespaceMathML, []output.OutputExpression{}, nil)
 }
 
-// Advance creates an advance operation
+// Advance creates an advance operations
 func Advance(delta int, sourceSpan *util.ParseSourceSpan) ir_operations.UpdateOp {
 	args := []output.OutputExpression{}
 	if delta > 1 {
@@ -376,7 +376,7 @@ func ResetView(returnValue output.OutputExpression) output.OutputExpression {
 	)
 }
 
-// Text creates a text operation
+// Text creates a text operations
 func Text(
 	slot int,
 	initialValue string,
@@ -391,7 +391,7 @@ func Text(
 	return call(*r3_identifiers.Text, args, sourceSpan)
 }
 
-// call is a helper function to create a statement operation from an instruction call
+// call is a helper function to create a statement operations from an instruction call
 func call(
 	instruction output.ExternalReference,
 	args []output.OutputExpression,
@@ -408,7 +408,7 @@ func call(
 	return ops_shared.NewStatementOp(stmt)
 }
 
-// Property creates a property operation
+// Property creates a property operations
 func Property(
 	name string,
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
@@ -418,7 +418,7 @@ func Property(
 	return propertyBase(*r3_identifiers.Property, name, expression, sanitizer, sourceSpan)
 }
 
-// AriaProperty creates an aria property operation
+// AriaProperty creates an aria property operations
 func AriaProperty(
 	name string,
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
@@ -427,7 +427,7 @@ func AriaProperty(
 	return propertyBase(*r3_identifiers.AriaProperty, name, expression, nil, sourceSpan)
 }
 
-// DomProperty creates a DOM property operation
+// DomProperty creates a DOM property operations
 func DomProperty(
 	name string,
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
@@ -437,7 +437,7 @@ func DomProperty(
 	return propertyBase(*r3_identifiers.DomProperty, name, expression, sanitizer, sourceSpan)
 }
 
-// Control creates a control operation
+// Control creates a control operations
 func Control(
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
 	sanitizer output.OutputExpression,
@@ -459,12 +459,12 @@ func Control(
 	return call(*r3_identifiers.Control, args, sourceSpan)
 }
 
-// ControlCreate creates a control create operation
+// ControlCreate creates a control create operations
 func ControlCreate(sourceSpan *util.ParseSourceSpan) ir_operations.CreateOp {
 	return call(*r3_identifiers.ControlCreate, []output.OutputExpression{}, sourceSpan)
 }
 
-// TwoWayProperty creates a two-way property operation
+// TwoWayProperty creates a two-way property operations
 func TwoWayProperty(
 	name string,
 	expression output.OutputExpression,
@@ -481,7 +481,7 @@ func TwoWayProperty(
 	return call(*r3_identifiers.TwoWayProperty, args, sourceSpan)
 }
 
-// Attribute creates an attribute operation
+// Attribute creates an attribute operations
 func Attribute(
 	name string,
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
@@ -517,7 +517,7 @@ func Attribute(
 	return call(*r3_identifiers.Attribute, args, nil)
 }
 
-// StyleProp creates a style property operation
+// StyleProp creates a style property operations
 func StyleProp(
 	name string,
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
@@ -545,7 +545,7 @@ func StyleProp(
 	return call(*r3_identifiers.StyleProp, args, sourceSpan)
 }
 
-// ClassProp creates a class property operation
+// ClassProp creates a class property operations
 func ClassProp(
 	name string,
 	expression output.OutputExpression,
@@ -561,7 +561,7 @@ func ClassProp(
 	)
 }
 
-// StyleMap creates a style map operation
+// StyleMap creates a style map operations
 func StyleMap(
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
 	sourceSpan *util.ParseSourceSpan,
@@ -577,7 +577,7 @@ func StyleMap(
 	return call(*r3_identifiers.StyleMap, []output.OutputExpression{value}, sourceSpan)
 }
 
-// ClassMap creates a class map operation
+// ClassMap creates a class map operations
 func ClassMap(
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
 	sourceSpan *util.ParseSourceSpan,
@@ -636,7 +636,7 @@ func interpolationToExpression(
 	)
 }
 
-// TextInterpolate creates a text interpolate operation
+// TextInterpolate creates a text interpolate operations
 func TextInterpolate(
 	strings []string,
 	expressions []output.OutputExpression,
@@ -768,7 +768,7 @@ func callVariadicInstructionExpr(
 	}
 }
 
-// callVariadicInstruction calls a variadic instruction and returns an update operation
+// callVariadicInstruction calls a variadic instruction and returns an update operations
 func callVariadicInstruction(
 	config VariadicInstructionConfig,
 	baseArgs []output.OutputExpression,
@@ -781,7 +781,7 @@ func callVariadicInstruction(
 	return ops_shared.NewStatementOp(stmt)
 }
 
-// Defer creates a defer operation
+// Defer creates a defer operations
 func Defer(
 	selfSlot int,
 	primarySlot int,
@@ -892,7 +892,7 @@ var deferTriggerToR3TriggerInstructionsMap = map[ir.DeferTriggerKind]map[ir.Defe
 	},
 }
 
-// DeferOn creates a defer on operation
+// DeferOn creates a defer on operations
 func DeferOn(
 	trigger ir.DeferTriggerKind,
 	args []output.OutputExpression,
@@ -910,7 +910,7 @@ func DeferOn(
 	return call(instructionToCall, args, sourceSpan)
 }
 
-// ProjectionDef creates a projection definition operation
+// ProjectionDef creates a projection definition operations
 func ProjectionDef(def output.OutputExpression) ir_operations.CreateOp {
 	args := []output.OutputExpression{}
 	if def != nil {
@@ -919,7 +919,7 @@ func ProjectionDef(def output.OutputExpression) ir_operations.CreateOp {
 	return call(*r3_identifiers.ProjectionDef, args, nil)
 }
 
-// Projection creates a projection operation
+// Projection creates a projection operations
 func Projection(
 	slot int,
 	projectionSlotIndex int,
@@ -951,7 +951,7 @@ func Projection(
 	return call(*r3_identifiers.Projection, args, sourceSpan)
 }
 
-// I18nStart creates an i18n start operation
+// I18nStart creates an i18n start operations
 func I18nStart(
 	slot int,
 	constIndex int,
@@ -968,7 +968,7 @@ func I18nStart(
 	return call(*r3_identifiers.I18nStart, args, sourceSpan)
 }
 
-// ConditionalCreate creates a conditional create operation
+// ConditionalCreate creates a conditional create operations
 func ConditionalCreate(
 	slot int,
 	templateFnRef output.OutputExpression,
@@ -992,7 +992,7 @@ func ConditionalCreate(
 	)
 }
 
-// ConditionalBranchCreate creates a conditional branch create operation
+// ConditionalBranchCreate creates a conditional branch create operations
 func ConditionalBranchCreate(
 	slot int,
 	templateFnRef output.OutputExpression,
@@ -1016,7 +1016,7 @@ func ConditionalBranchCreate(
 	)
 }
 
-// RepeaterCreate creates a repeater create operation
+// RepeaterCreate creates a repeater create operations
 func RepeaterCreate(
 	slot int,
 	viewFnName string,
@@ -1073,7 +1073,7 @@ func RepeaterCreate(
 	return call(*r3_identifiers.RepeaterCreate, args, sourceSpan)
 }
 
-// Repeater creates a repeater operation
+// Repeater creates a repeater operations
 func Repeater(
 	collection output.OutputExpression,
 	sourceSpan *util.ParseSourceSpan,
@@ -1081,7 +1081,7 @@ func Repeater(
 	return call(*r3_identifiers.Repeater, []output.OutputExpression{collection}, sourceSpan)
 }
 
-// DeferWhen creates a defer when operation
+// DeferWhen creates a defer when operations
 func DeferWhen(
 	modifier ir.DeferOpModifierKind,
 	expr output.OutputExpression,
@@ -1095,7 +1095,7 @@ func DeferWhen(
 	return call(*r3_identifiers.DeferWhen, []output.OutputExpression{expr}, sourceSpan)
 }
 
-// DeclareLet creates a declare let operation
+// DeclareLet creates a declare let operations
 func DeclareLet(slot int, sourceSpan *util.ParseSourceSpan) ir_operations.CreateOp {
 	return call(*r3_identifiers.DeclareLet, []output.OutputExpression{output.NewLiteralExpr(slot, nil, nil)}, sourceSpan)
 }
@@ -1122,7 +1122,7 @@ func ReadContextLet(slot int) output.OutputExpression {
 	)
 }
 
-// I18n creates an i18n operation
+// I18n creates an i18n operations
 func I18n(
 	slot int,
 	constIndex int,
@@ -1139,12 +1139,12 @@ func I18n(
 	return call(*r3_identifiers.I18n, args, sourceSpan)
 }
 
-// I18nEnd creates an i18n end operation
+// I18nEnd creates an i18n end operations
 func I18nEnd(endSourceSpan *util.ParseSourceSpan) ir_operations.CreateOp {
 	return call(*r3_identifiers.I18nEnd, []output.OutputExpression{}, endSourceSpan)
 }
 
-// I18nAttributes creates an i18n attributes operation
+// I18nAttributes creates an i18n attributes operations
 func I18nAttributes(slot int, i18nAttributesConfig int) ir_operations.CreateOp {
 	args := []output.OutputExpression{
 		output.NewLiteralExpr(slot, nil, nil),
@@ -1153,17 +1153,17 @@ func I18nAttributes(slot int, i18nAttributesConfig int) ir_operations.CreateOp {
 	return call(*r3_identifiers.I18nAttributes, args, nil)
 }
 
-// I18nExp creates an i18n expression operation
+// I18nExp creates an i18n expression operations
 func I18nExp(expr output.OutputExpression, sourceSpan *util.ParseSourceSpan) ir_operations.UpdateOp {
 	return call(*r3_identifiers.I18nExp, []output.OutputExpression{expr}, sourceSpan)
 }
 
-// I18nApply creates an i18n apply operation
+// I18nApply creates an i18n apply operations
 func I18nApply(slot int, sourceSpan *util.ParseSourceSpan) ir_operations.UpdateOp {
 	return call(*r3_identifiers.I18nApply, []output.OutputExpression{output.NewLiteralExpr(slot, nil, nil)}, sourceSpan)
 }
 
-// Conditional creates a conditional operation
+// Conditional creates a conditional operations
 func Conditional(
 	condition output.OutputExpression,
 	contextValue output.OutputExpression,
@@ -1194,7 +1194,7 @@ func PureFunction(
 	)
 }
 
-// AttachSourceLocation creates an attach source location operation
+// AttachSourceLocation creates an attach source location operations
 func AttachSourceLocation(
 	templatePath string,
 	locations *output.LiteralArrayExpr,
@@ -1209,7 +1209,7 @@ func AttachSourceLocation(
 	)
 }
 
-// DomElement creates a DOM element operation
+// DomElement creates a DOM element operations
 func DomElement(
 	slot int,
 	tag string,
@@ -1227,7 +1227,7 @@ func DomElement(
 	)
 }
 
-// DomElementStart creates a DOM element start operation
+// DomElementStart creates a DOM element start operations
 func DomElementStart(
 	slot int,
 	tag string,
@@ -1245,12 +1245,12 @@ func DomElementStart(
 	)
 }
 
-// DomElementEnd creates a DOM element end operation
+// DomElementEnd creates a DOM element end operations
 func DomElementEnd(sourceSpan *util.ParseSourceSpan) ir_operations.CreateOp {
 	return call(*r3_identifiers.DomElementEnd, []output.OutputExpression{}, sourceSpan)
 }
 
-// DomElementContainerStart creates a DOM element container start operation
+// DomElementContainerStart creates a DOM element container start operations
 func DomElementContainerStart(
 	slot int,
 	constIndex *int,
@@ -1267,7 +1267,7 @@ func DomElementContainerStart(
 	)
 }
 
-// DomElementContainer creates a DOM element container operation
+// DomElementContainer creates a DOM element container operations
 func DomElementContainer(
 	slot int,
 	constIndex *int,
@@ -1284,12 +1284,12 @@ func DomElementContainer(
 	)
 }
 
-// DomElementContainerEnd creates a DOM element container end operation
+// DomElementContainerEnd creates a DOM element container end operations
 func DomElementContainerEnd() ir_operations.CreateOp {
 	return call(*r3_identifiers.DomElementContainerEnd, []output.OutputExpression{}, nil)
 }
 
-// DomListener creates a DOM listener operation
+// DomListener creates a DOM listener operations
 func DomListener(
 	name string,
 	handlerFn output.OutputExpression,
@@ -1306,7 +1306,7 @@ func DomListener(
 	return call(*r3_identifiers.DomListener, args, sourceSpan)
 }
 
-// DomTemplate creates a DOM template operation
+// DomTemplate creates a DOM template operations
 func DomTemplate(
 	slot int,
 	templateFnRef output.OutputExpression,
@@ -1374,7 +1374,7 @@ func PipeBindV(slot int, varOffset int, args output.OutputExpression) output.Out
 	)
 }
 
-// Animation creates an animation operation
+// Animation creates an animation operations
 func Animation(
 	animationKind ir.AnimationKind,
 	handlerFn output.OutputExpression,
@@ -1394,7 +1394,7 @@ func Animation(
 	return call(identifier, args, sourceSpan)
 }
 
-// AnimationString creates an animation string operation
+// AnimationString creates an animation string operations
 func AnimationString(
 	animationKind ir.AnimationKind,
 	expression interface{}, // output.OutputExpression | *ops.Interpolation
@@ -1422,7 +1422,7 @@ func AnimationString(
 	return call(identifier, args, sourceSpan)
 }
 
-// AnimationListener creates an animation listener operation
+// AnimationListener creates an animation listener operations
 func AnimationListener(
 	animationKind ir.AnimationKind,
 	handlerFn output.OutputExpression,
@@ -1442,7 +1442,7 @@ func AnimationListener(
 	return call(identifier, args, sourceSpan)
 }
 
-// SyntheticHostProperty creates a synthetic host property operation
+// SyntheticHostProperty creates a synthetic host property operations
 func SyntheticHostProperty(
 	name string,
 	expression output.OutputExpression,

@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ir_operation "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
@@ -41,12 +41,12 @@ func SaveAndRestoreView(job *pipeline.ComponentCompilationJob) {
 				continue
 			}
 
-			// Embedded views always need the save/restore view operation.
+			// Embedded views always need the save/restore view operations.
 			needsRestoreView := viewUnit != job.Root
 
 			if !needsRestoreView {
 				// Check if listener references local refs
-				var handlerOps *ir_operation.OpList
+				var handlerOps *operations.OpList
 				if listenerOp, ok := op.(*ops_create.ListenerOp); ok {
 					handlerOps = listenerOp.HandlerOps
 				} else if twoWayOp, ok := op.(*ops_create.TwoWayListenerOp); ok {
@@ -70,7 +70,7 @@ func SaveAndRestoreView(job *pipeline.ComponentCompilationJob) {
 
 			if needsRestoreView {
 				// Type assertion: op is already checked to be a listener/animation op, so it implements CreateOp
-				if createOp, ok := op.(ir_operation.CreateOp); ok {
+				if createOp, ok := op.(operations.CreateOp); ok {
 					addSaveRestoreViewOperationToListener(viewUnit, createOp)
 				}
 			}
@@ -80,9 +80,9 @@ func SaveAndRestoreView(job *pipeline.ComponentCompilationJob) {
 
 func addSaveRestoreViewOperationToListener(
 	unit *pipeline.ViewCompilationUnit,
-	op ir_operation.CreateOp,
+	op operations.CreateOp,
 ) {
-	var handlerOps *ir_operation.OpList
+	var handlerOps *operations.OpList
 	if listenerOp, ok := op.(*ops_create.ListenerOp); ok {
 		handlerOps = listenerOp.HandlerOps
 	} else if twoWayOp, ok := op.(*ops_create.TwoWayListenerOp); ok {
@@ -107,8 +107,8 @@ func addSaveRestoreViewOperationToListener(
 	)
 	handlerOps.InsertBefore(restoreViewVarOp, handlerOps.Head())
 
-	// The "restore view" operation in listeners requires a call to `resetView` to reset the
-	// context prior to returning from the listener operation. Find any `return` statements in
+	// The "restore view" operations in listeners requires a call to `resetView` to reset the
+	// context prior to returning from the listener operations. Find any `return` statements in
 	// the listener body and wrap them in a call to reset the view.
 	for handlerOp := handlerOps.Head(); handlerOp != nil; handlerOp = handlerOp.Next() {
 		if handlerOp.GetKind() == ir.OpKindStatement {

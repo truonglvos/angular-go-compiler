@@ -23,7 +23,7 @@ type VisitorContextFlag int
 const (
 	// VisitorContextFlagNone - No flags
 	VisitorContextFlagNone VisitorContextFlag = 0
-	// VisitorContextFlagInChildOperation - In child operation
+	// VisitorContextFlagInChildOperation - In child operations
 	VisitorContextFlagInChildOperation VisitorContextFlag = 0b0001
 )
 
@@ -115,7 +115,7 @@ func (l *LexicalReadExpr) TransformInternalExpressions(transform ExpressionTrans
 	// No nested expressions
 }
 
-// ReferenceExpr is a runtime operation to retrieve the value of a local reference
+// ReferenceExpr is a runtime operations to retrieve the value of a local reference
 type ReferenceExpr struct {
 	*ExpressionBase
 	Target     ir_operations.XrefId
@@ -245,7 +245,7 @@ func (t *TrackContextExpr) TransformInternalExpressions(transform ExpressionTran
 	// No nested expressions
 }
 
-// NextContextExpr is a runtime operation to navigate to the next view context
+// NextContextExpr is a runtime operations to navigate to the next view context
 type NextContextExpr struct {
 	*ExpressionBase
 	Steps int
@@ -289,7 +289,7 @@ func (n *NextContextExpr) TransformInternalExpressions(transform ExpressionTrans
 	// No nested expressions
 }
 
-// GetCurrentViewExpr is a runtime operation to snapshot the current view context
+// GetCurrentViewExpr is a runtime operations to snapshot the current view context
 type GetCurrentViewExpr struct {
 	*ExpressionBase
 }
@@ -327,7 +327,7 @@ func (g *GetCurrentViewExpr) TransformInternalExpressions(transform ExpressionTr
 	// No nested expressions
 }
 
-// RestoreViewExpr is a runtime operation to restore a snapshotted view
+// RestoreViewExpr is a runtime operations to restore a snapshotted view
 type RestoreViewExpr struct {
 	*ExpressionBase
 	View interface{} // XrefId | output.OutputExpression
@@ -401,7 +401,7 @@ func (r *RestoreViewExpr) TransformInternalExpressions(transform ExpressionTrans
 	}
 }
 
-// ResetViewExpr is a runtime operation to reset the current view context after `RestoreView`
+// ResetViewExpr is a runtime operations to reset the current view context after `RestoreView`
 type ResetViewExpr struct {
 	*ExpressionBase
 	Expr output.OutputExpression
@@ -586,7 +586,7 @@ func IsStringLiteral(expr output.OutputExpression) bool {
 	return false
 }
 
-// TwoWayBindingSetExpr is an operation that sets the value of a two-way binding
+// TwoWayBindingSetExpr is an operations that sets the value of a two-way binding
 type TwoWayBindingSetExpr struct {
 	*ExpressionBase
 	Target output.OutputExpression
@@ -1480,7 +1480,7 @@ func transformExpressionsInInterpolation(
 	}
 }
 
-// TransformExpressionsInOp transforms all expressions in an operation
+// TransformExpressionsInOp transforms all expressions in an operations
 func TransformExpressionsInOp(
 	op ir_operations.Op,
 	transform ExpressionTransform,
@@ -1629,7 +1629,7 @@ func TransformExpressionsInOp(
 	}
 }
 
-// VisitExpressionsInOp visits all expressions in an operation
+// VisitExpressionsInOp visits all expressions in an operations
 func VisitExpressionsInOp(
 	op ir_operations.Op,
 	visitor func(expr output.OutputExpression, flags VisitorContextFlag),
