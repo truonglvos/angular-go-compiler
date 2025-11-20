@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -48,7 +48,7 @@ func mergeNextContextsInOps(opsList *operations.OpList) {
 			continue
 		}
 
-		stmtOp, ok := op.(*ops_shared.StatementOp)
+		stmtOp, ok := op.(*shared.StatementOp)
 		if !ok {
 			continue
 		}

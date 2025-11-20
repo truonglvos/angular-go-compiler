@@ -8,7 +8,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
 	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -38,7 +38,7 @@ func processLexicalScope(
 	for op := opsList.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 		switch op.GetKind() {
 		case ir.OpKindVariable:
-			if varOp, ok := op.(*ops_shared.VariableOp); ok {
+			if varOp, ok := op.(*shared.VariableOp); ok {
 				if contextVar, ok := varOp.Variable.(*ir_variable.ContextVariable); ok {
 					scope[contextVar.View] = expression.NewReadVariableExpr(varOp.Xref)
 				}

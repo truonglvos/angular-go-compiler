@@ -10,7 +10,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
@@ -226,7 +226,7 @@ func processOpForNaming(
 			}
 		}
 	case ir.OpKindVariable:
-		if varOp, ok := op.(*ops_shared.VariableOp); ok {
+		if varOp, ok := op.(*shared.VariableOp); ok {
 			varName := getVariableName(unit, varOp.Variable, state, compatibility)
 			varNames[varOp.Xref] = varName
 		}

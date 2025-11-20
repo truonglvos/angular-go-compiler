@@ -8,7 +8,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_traits "ngc-go/packages/compiler/src/template/pipeline/ir/src/traits"
 	"ngc-go/packages/compiler/src/util"
@@ -1525,11 +1525,11 @@ func TransformExpressionsInOp(
 			transformExpressionsInInterpolation(interpolateOp.Interpolation, transform, flags)
 		}
 	case ir.OpKindStatement:
-		if stmtOp, ok := op.(*ops_shared.StatementOp); ok {
+		if stmtOp, ok := op.(*shared.StatementOp); ok {
 			TransformExpressionsInStatement(stmtOp.Statement, transform, flags)
 		}
 	case ir.OpKindVariable:
-		if varOp, ok := op.(*ops_shared.VariableOp); ok {
+		if varOp, ok := op.(*shared.VariableOp); ok {
 			varOp.Initializer = TransformExpressionsInExpression(varOp.Initializer, transform, flags)
 		}
 	case ir.OpKindConditional:

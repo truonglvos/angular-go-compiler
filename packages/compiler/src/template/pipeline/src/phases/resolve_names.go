@@ -8,7 +8,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
 	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -53,7 +53,7 @@ func processLexicalScopeResolveName(
 	for op := opsList.Head(); op != nil && op.GetKind() != ir.OpKindListEnd; op = op.Next() {
 		switch op.GetKind() {
 		case ir.OpKindVariable:
-			if varOp, ok := op.(*ops_shared.VariableOp); ok {
+			if varOp, ok := op.(*shared.VariableOp); ok {
 				processVariableForResolveNames(varOp, scope, localDefinitions, &savedView)
 			}
 		case ir.OpKindAnimation, ir.OpKindAnimationListener, ir.OpKindListener, ir.OpKindTwoWayListener:
@@ -144,7 +144,7 @@ func processLexicalScopeResolveName(
 }
 
 func processVariableForResolveNames(
-	varOp *ops_shared.VariableOp,
+	varOp *shared.VariableOp,
 	scope map[string]ir_operations.XrefId,
 	localDefinitions map[string]ir_operations.XrefId,
 	savedView **SavedView,

@@ -7,7 +7,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -91,7 +91,7 @@ func OptimizeTrackFns(job *pipeline.CompilationJob) {
 				// additional ops when generating the final code (e.g. temporary variables).
 				trackOpList := operations.NewOpList()
 				returnStmt := output.NewReturnStatement(repeaterOp.Track, repeaterOp.Track.GetSourceSpan(), nil)
-				stmtOp := ops_shared.NewStatementOp(returnStmt)
+				stmtOp := shared.NewStatementOp(returnStmt)
 				trackOpList.Push(stmtOp)
 				repeaterOp.TrackByOps = trackOpList
 			}

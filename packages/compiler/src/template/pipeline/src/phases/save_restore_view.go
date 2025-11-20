@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -25,7 +25,7 @@ func SaveAndRestoreView(job *pipeline.ComponentCompilationJob) {
 
 		// Prepend a variable to save the current view
 		savedViewVar := ir_variable.NewSavedViewVariable(viewUnit.Xref)
-		savedViewVarOp := ops_shared.NewVariableOp(
+		savedViewVarOp := shared.NewVariableOp(
 			job.AllocateXrefId(),
 			savedViewVar,
 			expression.NewGetCurrentViewExpr(),
@@ -99,7 +99,7 @@ func addSaveRestoreViewOperationToListener(
 
 	// Prepend a variable to restore the view
 	contextVar := ir_variable.NewContextVariable(unit.Xref)
-	restoreViewVarOp := ops_shared.NewVariableOp(
+	restoreViewVarOp := shared.NewVariableOp(
 		unit.Job.AllocateXrefId(),
 		contextVar,
 		expression.NewRestoreViewExpr(unit.Xref),
@@ -112,7 +112,7 @@ func addSaveRestoreViewOperationToListener(
 	// the listener body and wrap them in a call to reset the view.
 	for handlerOp := handlerOps.Head(); handlerOp != nil; handlerOp = handlerOp.Next() {
 		if handlerOp.GetKind() == ir.OpKindStatement {
-			if stmtOp, ok := handlerOp.(*ops_shared.StatementOp); ok {
+			if stmtOp, ok := handlerOp.(*shared.StatementOp); ok {
 				if returnStmt, ok := stmtOp.Statement.(*output.ReturnStatement); ok {
 					returnStmt.Value = expression.NewResetViewExpr(returnStmt.Value)
 				}

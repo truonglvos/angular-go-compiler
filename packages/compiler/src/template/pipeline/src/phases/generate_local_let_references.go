@@ -3,7 +3,7 @@ package phases
 import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
@@ -18,7 +18,7 @@ func GenerateLocalLetReferences(job *pipeline.ComponentCompilationJob) {
 			if storeLetOp, ok := op.(*ops_update.StoreLetOp); ok {
 				varDecl := ir_variable.NewIdentifierVariable(storeLetOp.DeclaredName, true)
 
-				variableOp := ops_shared.NewVariableOp(
+				variableOp := shared.NewVariableOp(
 					job.AllocateXrefId(),
 					varDecl,
 					expression.NewStoreLetExpr(storeLetOp.Target, storeLetOp.Value, storeLetOp.SourceSpan),

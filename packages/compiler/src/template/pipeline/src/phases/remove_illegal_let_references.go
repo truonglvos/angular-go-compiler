@@ -4,7 +4,7 @@ import (
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -24,7 +24,7 @@ func RemoveIllegalLetReferences(job *pipeline.CompilationJob) {
 				continue
 			}
 
-			variableOp, ok := op.(*ops_shared.VariableOp)
+			variableOp, ok := op.(*shared.VariableOp)
 			if !ok {
 				continue
 			}

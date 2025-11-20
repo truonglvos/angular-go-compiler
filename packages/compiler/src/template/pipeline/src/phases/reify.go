@@ -9,7 +9,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
@@ -478,7 +478,7 @@ func reifyCreateOperations(unit pipeline.CompilationUnit, ops *ir_operations.OpL
 				twoWayListenerOp.SourceSpan,
 			))
 		case ir.OpKindVariable:
-			variableOp, ok := op.(*ops_shared.VariableOp)
+			variableOp, ok := op.(*shared.VariableOp)
 			if !ok {
 				panic("expected VariableOp")
 			}
@@ -486,7 +486,7 @@ func reifyCreateOperations(unit pipeline.CompilationUnit, ops *ir_operations.OpL
 			if varName == nil {
 				panic(fmt.Sprintf("AssertionError: unnamed variable %d", variableOp.Xref))
 			}
-			ops.Replace(op, ops_shared.NewStatementOp(
+			ops.Replace(op, shared.NewStatementOp(
 				output.NewDeclareVarStmt(
 					*varName,
 					variableOp.Initializer,
@@ -1020,7 +1020,7 @@ func reifyUpdateOperations(unit pipeline.CompilationUnit, ops *ir_operations.OpL
 				}
 			}
 		case ir.OpKindVariable:
-			variableOp, ok := op.(*ops_shared.VariableOp)
+			variableOp, ok := op.(*shared.VariableOp)
 			if !ok {
 				panic("expected VariableOp")
 			}
@@ -1028,7 +1028,7 @@ func reifyUpdateOperations(unit pipeline.CompilationUnit, ops *ir_operations.OpL
 			if varName == nil {
 				panic(fmt.Sprintf("AssertionError: unnamed variable %d", variableOp.Xref))
 			}
-			ops.Replace(op, ops_shared.NewStatementOp(
+			ops.Replace(op, shared.NewStatementOp(
 				output.NewDeclareVarStmt(
 					*varName,
 					variableOp.Initializer,
@@ -1280,7 +1280,7 @@ func reifyListenerHandler(
 		if op.GetKind() != ir.OpKindStatement {
 			panic(fmt.Sprintf("AssertionError: expected reified statements, but found op %v", op.GetKind()))
 		}
-		statementOp, ok := op.(*ops_shared.StatementOp)
+		statementOp, ok := op.(*shared.StatementOp)
 		if !ok {
 			panic("expected StatementOp")
 		}
@@ -1335,7 +1335,7 @@ func reifyTrackBy(unit pipeline.CompilationUnit, op *ops_create.RepeaterCreateOp
 			if trackOp.GetKind() != ir.OpKindStatement {
 				panic(fmt.Sprintf("AssertionError: expected reified statements, but found op %v", trackOp.GetKind()))
 			}
-			statementOp, ok := trackOp.(*ops_shared.StatementOp)
+			statementOp, ok := trackOp.(*shared.StatementOp)
 			if !ok {
 				panic("expected StatementOp")
 			}

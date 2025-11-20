@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -270,14 +270,14 @@ func generateVariablesInScopeForView(
 	view *pipeline.ViewCompilationUnit,
 	scope *Scope,
 	isCallback bool,
-) []*ops_shared.VariableOp {
-	newOps := []*ops_shared.VariableOp{}
+) []*shared.VariableOp {
+	newOps := []*shared.VariableOp{}
 
 	if scope.View != view.Xref {
 		// Before generating variables for a parent view, we need to switch to the context of the parent
 		// view with a `nextContext` expression. This context switching operations itself declares a
 		// variable, because the context of the view may be referenced directly.
-		newOps = append(newOps, ops_shared.NewVariableOp(
+		newOps = append(newOps, shared.NewVariableOp(
 			view.Job.AllocateXrefId(),
 			scope.ViewContextVariable,
 			expression.NewNextContextExpr(),
@@ -297,7 +297,7 @@ func generateVariablesInScopeForView(
 			variable = output.NewReadPropExpr(context, value, nil, nil)
 		}
 		// Add the variable declaration.
-		newOps = append(newOps, ops_shared.NewVariableOp(
+		newOps = append(newOps, shared.NewVariableOp(
 			view.Job.AllocateXrefId(),
 			scope.ContextVariables[name],
 			variable,
@@ -308,7 +308,7 @@ func generateVariablesInScopeForView(
 	for alias := range scopeView.Aliases {
 		// Create a copy of alias to avoid modifying the map key
 		aliasCopy := alias
-		newOps = append(newOps, ops_shared.NewVariableOp(
+		newOps = append(newOps, shared.NewVariableOp(
 			view.Job.AllocateXrefId(),
 			&aliasCopy,
 			aliasCopy.Expression.Clone(),
@@ -318,7 +318,7 @@ func generateVariablesInScopeForView(
 
 	// Add variables for all local references declared for elements in this scope.
 	for _, ref := range scope.References {
-		newOps = append(newOps, ops_shared.NewVariableOp(
+		newOps = append(newOps, shared.NewVariableOp(
 			view.Job.AllocateXrefId(),
 			ref.Variable,
 			expression.NewReferenceExpr(ref.TargetId, ref.TargetSlot, ref.Offset),
@@ -328,7 +328,7 @@ func generateVariablesInScopeForView(
 
 	if scope.View != view.Xref || isCallback {
 		for _, decl := range scope.LetDeclarations {
-			newOps = append(newOps, ops_shared.NewVariableOp(
+			newOps = append(newOps, shared.NewVariableOp(
 				view.Job.AllocateXrefId(),
 				decl.Variable,
 				expression.NewContextLetReferenceExpr(decl.TargetId, decl.TargetSlot),

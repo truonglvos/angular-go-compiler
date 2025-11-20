@@ -6,7 +6,7 @@ import (
 	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
 	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 	"ngc-go/packages/compiler/src/template/pipeline/src/phases"
@@ -166,7 +166,7 @@ func emitView(view *compilation.ViewCompilationUnit) *output.FunctionExpr {
 				op.GetKind(),
 			))
 		}
-		stmtOp, ok := op.(*ops_shared.StatementOp)
+		stmtOp, ok := op.(*shared.StatementOp)
 		if !ok {
 			panic(fmt.Sprintf("AssertionError: expected StatementOp, but got %T", op))
 		}
@@ -181,7 +181,7 @@ func emitView(view *compilation.ViewCompilationUnit) *output.FunctionExpr {
 				op.GetKind(),
 			))
 		}
-		stmtOp, ok := op.(*ops_shared.StatementOp)
+		stmtOp, ok := op.(*shared.StatementOp)
 		if !ok {
 			panic(fmt.Sprintf("AssertionError: expected StatementOp, but got %T", op))
 		}
@@ -239,7 +239,7 @@ func EmitHostBindingFunction(job *compilation.HostBindingCompilationJob) *output
 				op.GetKind(),
 			))
 		}
-		stmtOp, ok := op.(*ops_shared.StatementOp)
+		stmtOp, ok := op.(*shared.StatementOp)
 		if !ok {
 			panic(fmt.Sprintf("AssertionError: expected StatementOp, but got %T", op))
 		}
@@ -254,7 +254,7 @@ func EmitHostBindingFunction(job *compilation.HostBindingCompilationJob) *output
 				op.GetKind(),
 			))
 		}
-		stmtOp, ok := op.(*ops_shared.StatementOp)
+		stmtOp, ok := op.(*shared.StatementOp)
 		if !ok {
 			panic(fmt.Sprintf("AssertionError: expected StatementOp, but got %T", op))
 		}

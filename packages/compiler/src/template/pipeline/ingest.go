@@ -17,7 +17,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	ir_variable "ngc-go/packages/compiler/src/template/pipeline/ir/src/variable"
 	"ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -1447,13 +1447,13 @@ func makeListenerHandlerOps(
 
 	// Add expression statements for all but the last
 	for _, expr := range expressions {
-		handlerOps = append(handlerOps, ops_shared.NewStatementOp(
+		handlerOps = append(handlerOps, shared.NewStatementOp(
 			output.NewExpressionStatement(expr, expr.GetSourceSpan(), nil),
 		))
 	}
 
 	// Add return statement
-	handlerOps = append(handlerOps, ops_shared.NewStatementOp(
+	handlerOps = append(handlerOps, shared.NewStatementOp(
 		output.NewReturnStatement(returnExpr, returnExpr.GetSourceSpan(), nil),
 	))
 
@@ -1483,10 +1483,10 @@ func makeTwoWayListenerHandlerOps(
 	eventReference := expression.NewLexicalReadExpr("$event")
 	twoWaySetExpr := expression.NewTwoWayBindingSetExpr(handlerExpr, eventReference)
 
-	handlerOps = append(handlerOps, ops_shared.NewStatementOp(
+	handlerOps = append(handlerOps, shared.NewStatementOp(
 		output.NewExpressionStatement(twoWaySetExpr, nil, nil),
 	))
-	handlerOps = append(handlerOps, ops_shared.NewStatementOp(
+	handlerOps = append(handlerOps, shared.NewStatementOp(
 		output.NewReturnStatement(eventReference, nil, nil),
 	))
 

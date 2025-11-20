@@ -7,7 +7,7 @@ import (
 	r3_identifiers "ngc-go/packages/compiler/src/render3/r3_identifiers"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 	"ngc-go/packages/compiler/src/util"
 )
@@ -405,7 +405,7 @@ func call(
 		false,
 	)
 	stmt := output.NewExpressionStatement(expr, sourceSpan, nil)
-	return ops_shared.NewStatementOp(stmt)
+	return shared.NewStatementOp(stmt)
 }
 
 // Property creates a property operations
@@ -778,7 +778,7 @@ func callVariadicInstruction(
 ) ir_operations.UpdateOp {
 	expr := callVariadicInstructionExpr(config, baseArgs, interpolationArgs, extraArgs, sourceSpan)
 	stmt := output.NewExpressionStatement(expr, sourceSpan, nil)
-	return ops_shared.NewStatementOp(stmt)
+	return shared.NewStatementOp(stmt)
 }
 
 // Defer creates a defer operations

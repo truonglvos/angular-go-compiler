@@ -8,7 +8,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
 )
@@ -34,9 +34,9 @@ func GenerateTemporaryVariables(job *pipeline.CompilationJob) {
 	}
 }
 
-func generateTemporaries(opsList *operations.OpList) []*ops_shared.StatementOp {
+func generateTemporaries(opsList *operations.OpList) []*shared.StatementOp {
 	opCount := 0
-	var generatedStatements []*ops_shared.StatementOp
+	var generatedStatements []*shared.StatementOp
 
 	// For each op, search for any variables that are assigned or read. For each variable, generate a
 	// name and produce a `DeclareVarStmt` to the beginning of the block.
@@ -87,7 +87,7 @@ func generateTemporaries(opsList *operations.OpList) []*ops_shared.StatementOp {
 			if !uniqueNames[name] {
 				uniqueNames[name] = true
 				stmt := output.NewDeclareVarStmt(name, nil, nil, output.StmtModifierNone, nil, nil)
-				generatedStatements = append(generatedStatements, ops_shared.NewStatementOp(stmt))
+				generatedStatements = append(generatedStatements, shared.NewStatementOp(stmt))
 			}
 		}
 		opCount++

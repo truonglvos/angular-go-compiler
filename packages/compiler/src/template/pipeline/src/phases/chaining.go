@@ -5,7 +5,7 @@ import (
 	render3 "ngc-go/packages/compiler/src/render3/r3_identifiers"
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	"ngc-go/packages/compiler/src/util"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -74,7 +74,7 @@ func Chain(job *pipeline.CompilationJob) {
 }
 
 type chain struct {
-	op          *ops_shared.StatementOp
+	op          *shared.StatementOp
 	instruction output.ExternalReference
 	expression  output.OutputExpression
 	length      int
@@ -89,7 +89,7 @@ func chainOperationsInList(opList *operations.OpList) {
 			continue
 		}
 
-		stmtOp, ok := op.(*ops_shared.StatementOp)
+		stmtOp, ok := op.(*shared.StatementOp)
 		if !ok {
 			currentChain = nil
 			continue

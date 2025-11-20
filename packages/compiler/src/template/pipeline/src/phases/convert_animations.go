@@ -5,7 +5,7 @@ import (
 	"ngc-go/packages/compiler/src/template/pipeline/ir"
 	"ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
 	ops_create "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/create"
-	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
+	"ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 	ops_update "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/update"
 
 	pipeline "ngc-go/packages/compiler/src/template/pipeline/src/compilation"
@@ -126,7 +126,7 @@ func getAnimationOp(op *ops_update.AnimationBindingOp) operations.CreateOp {
 	} else {
 		// Expression case - create AnimationOp with handler ops
 		returnStmt := output.NewReturnStatement(expr, expr.GetSourceSpan(), nil)
-		handlerOps := []operations.UpdateOp{ops_shared.NewStatementOp(returnStmt)}
+		handlerOps := []operations.UpdateOp{shared.NewStatementOp(returnStmt)}
 		return ops_create.NewAnimationOp(
 			op.Name,
 			op.Target,

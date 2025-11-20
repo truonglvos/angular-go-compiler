@@ -1,4 +1,4 @@
-package ops
+package shared
 
 import (
 	"ngc-go/packages/compiler/src/output"
