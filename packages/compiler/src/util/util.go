@@ -63,21 +63,45 @@ func EscapeRegExp(s string) string {
 type Byte = uint8
 
 // UTF8Encode encodes a string to UTF-8 bytes
+// This matches JavaScript's utf8Encode behavior, including WTF-8 handling for invalid UTF-8
+// JavaScript processes strings as UTF-16 (charCodeAt), so we need to handle surrogates correctly
 func UTF8Encode(str string) []Byte {
 	var encoded []Byte
+	bytes := []byte(str)
+	
+	// Check if string contains invalid UTF-8 surrogates (WTF-8)
+	// Invalid surrogates are encoded as 0xED 0xA0-0xBF 0x80-0xBF in UTF-8
+	// These are invalid UTF-8 sequences that should be passed through as-is
+	hasInvalidUTF8 := false
+	for i := 0; i < len(bytes); i++ {
+		if bytes[i] == 0xED && i+2 < len(bytes) {
+			// Check if this is a surrogate sequence (0xED 0xA0-0xBF 0x80-0xBF)
+			if (bytes[i+1] >= 0xA0 && bytes[i+1] <= 0xBF) && 
+			   (bytes[i+2] >= 0x80 && bytes[i+2] <= 0xBF) {
+				hasInvalidUTF8 = true
+				break
+			}
+		}
+	}
+	
+	// If we detect invalid UTF-8 surrogates, pass through bytes directly (WTF-8)
+	if hasInvalidUTF8 {
+		for i := 0; i < len(bytes); i++ {
+			encoded = append(encoded, Byte(bytes[i]))
+		}
+		return encoded
+	}
+	
+	// Process rune-by-rune for valid UTF-8
+	// Note: Go already combines valid surrogate pairs into single code points
+	// So we just need to encode the code points
 	runes := []rune(str)
-
 	for i := 0; i < len(runes); i++ {
 		codePoint := int(runes[i])
 
-		// Handle UTF-16 surrogate pairs (if needed)
-		if codePoint >= 0xD800 && codePoint <= 0xDBFF && i+1 < len(runes) {
-			low := int(runes[i+1])
-			if low >= 0xDC00 && low <= 0xDFFF {
-				i++
-				codePoint = ((codePoint - 0xD800) << 10) + low - 0xDC00 + 0x10000
-			}
-		}
+		// Go already handles surrogate pair combination, so codePoint might be > 0xFFFF
+		// for valid pairs (e.g., 0x10000 for \uD800\uDC00)
+		// We just need to encode it correctly
 
 		if codePoint <= 0x7F {
 			encoded = append(encoded, Byte(codePoint))

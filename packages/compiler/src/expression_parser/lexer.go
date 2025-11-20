@@ -54,6 +54,8 @@ type Token struct {
 	Type     TokenType
 	NumValue float64
 	StrValue string
+	// StringKind is only valid for String tokens
+	StringKind StringTokenKind
 }
 
 // NewToken creates a new Token
@@ -192,8 +194,7 @@ func (t *Token) IsTemplateLiteralInterpolationStart() bool {
 
 // Kind returns the kind of the string token (only valid for StringToken)
 func (t *Token) Kind() StringTokenKind {
-	// This is a placeholder - StringToken will override this
-	return StringTokenKindPlain
+	return t.StringKind
 }
 
 // String returns the string representation of the token
@@ -216,8 +217,10 @@ type StringToken struct {
 
 // NewStringToken creates a new StringToken
 func NewStringToken(index, end int, strValue string, kind StringTokenKind) *StringToken {
+	token := NewToken(index, end, TokenTypeString, 0, strValue)
+	token.StringKind = kind
 	return &StringToken{
-		Token: NewToken(index, end, TokenTypeString, 0, strValue),
+		Token: token,
 		kind:  kind,
 	}
 }
