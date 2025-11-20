@@ -3,8 +3,8 @@ package phases
 import (
 	"fmt"
 
+	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
-	constant_pool "ngc-go/packages/compiler/src/pool"
 	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
 	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 
@@ -43,7 +43,7 @@ func ExtractPureFunctions(job *pipeline.CompilationJob) {
 
 // PureFunctionConstant is a shared constant definition for pure functions
 type PureFunctionConstant struct {
-	constant_pool.GenericKeyFn
+	constant.GenericKeyFn
 	numArgs int
 }
 

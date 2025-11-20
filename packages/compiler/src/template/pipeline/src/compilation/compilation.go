@@ -1,8 +1,8 @@
 package compilation
 
 import (
+	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
-	constant_pool "ngc-go/packages/compiler/src/pool"
 	"ngc-go/packages/compiler/src/render3/view"
 	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
 	ir_operations "ngc-go/packages/compiler/src/template/pipeline/ir/src/operations"
@@ -35,7 +35,7 @@ const (
 // Contains one or more corresponding compilation units.
 type CompilationJob struct {
 	ComponentName string
-	Pool          *constant_pool.ConstantPool
+	Pool          *constant.ConstantPool
 	Compatibility ir.CompatibilityMode
 	Mode          TemplateCompilationMode
 	Kind          CompilationJobKind
@@ -45,7 +45,7 @@ type CompilationJob struct {
 // NewCompilationJob creates a new CompilationJob
 func NewCompilationJob(
 	componentName string,
-	pool *constant_pool.ConstantPool,
+	pool *constant.ConstantPool,
 	compatibility ir.CompatibilityMode,
 	mode TemplateCompilationMode,
 ) *CompilationJob {
@@ -104,7 +104,7 @@ type ComponentCompilationJob struct {
 // NewComponentCompilationJob creates a new ComponentCompilationJob
 func NewComponentCompilationJob(
 	componentName string,
-	pool *constant_pool.ConstantPool,
+	pool *constant.ConstantPool,
 	compatibility ir.CompatibilityMode,
 	mode TemplateCompilationMode,
 	relativeContextFilePath string,
@@ -265,7 +265,7 @@ type HostBindingCompilationJob struct {
 // NewHostBindingCompilationJob creates a new HostBindingCompilationJob
 func NewHostBindingCompilationJob(
 	componentName string,
-	pool *constant_pool.ConstantPool,
+	pool *constant.ConstantPool,
 	compatibility ir.CompatibilityMode,
 	mode TemplateCompilationMode,
 ) *HostBindingCompilationJob {

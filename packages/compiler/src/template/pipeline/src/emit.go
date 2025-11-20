@@ -3,8 +3,8 @@ package pipeline
 import (
 	"fmt"
 
+	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
-	constant_pool "ngc-go/packages/compiler/src/pool"
 	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
 	ops_shared "ngc-go/packages/compiler/src/template/pipeline/ir/src/ops/shared"
 
@@ -124,13 +124,13 @@ func Transform(job interface{}, kind pipeline_compilation.CompilationJobKind) {
 
 // EmitTemplateFn compiles all views in the given ComponentCompilationJob into the final template function,
 // which may reference constants defined in a ConstantPool.
-func EmitTemplateFn(tpl *pipeline_compilation.ComponentCompilationJob, pool *constant_pool.ConstantPool) *output.FunctionExpr {
+func EmitTemplateFn(tpl *pipeline_compilation.ComponentCompilationJob, pool *constant.ConstantPool) *output.FunctionExpr {
 	rootFn := emitView(tpl.Root)
 	emitChildViews(tpl.Root, pool)
 	return rootFn
 }
 
-func emitChildViews(parent *pipeline_compilation.ViewCompilationUnit, pool *constant_pool.ConstantPool) {
+func emitChildViews(parent *pipeline_compilation.ViewCompilationUnit, pool *constant.ConstantPool) {
 	for _, unit := range parent.Job.GetUnits() {
 		viewUnit, ok := unit.(*pipeline_compilation.ViewCompilationUnit)
 		if !ok {

@@ -3,8 +3,8 @@ package phases
 import (
 	"strings"
 
+	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/output"
-	constant_pool "ngc-go/packages/compiler/src/pool"
 	ir "ngc-go/packages/compiler/src/template/pipeline/ir/src"
 	ir_expression "ngc-go/packages/compiler/src/template/pipeline/ir/src/expression"
 
@@ -53,7 +53,7 @@ func OptimizeRegularExpressions(job *pipeline.CompilationJob) {
 
 // RegularExpressionConstant is a shared constant definition for regular expressions
 type RegularExpressionConstant struct {
-	constant_pool.GenericKeyFn
+	constant.GenericKeyFn
 }
 
 // KeyOf generates a key for a regular expression

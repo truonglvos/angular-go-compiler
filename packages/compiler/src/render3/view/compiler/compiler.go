@@ -4,10 +4,10 @@ import (
 	"regexp"
 	"strings"
 
+	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/core"
 	"ngc-go/packages/compiler/src/css"
 	"ngc-go/packages/compiler/src/output"
-	constant "ngc-go/packages/compiler/src/pool"
 	"ngc-go/packages/compiler/src/render3"
 	"ngc-go/packages/compiler/src/render3/r3_identifiers"
 	"ngc-go/packages/compiler/src/render3/view"

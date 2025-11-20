@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"ngc-go/packages/compiler/src/constant"
 	"ngc-go/packages/compiler/src/expression_parser"
 	"ngc-go/packages/compiler/src/i18n"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/output"
-	constant_pool "ngc-go/packages/compiler/src/pool"
 	"ngc-go/packages/compiler/src/render3"
 	"ngc-go/packages/compiler/src/render3/view"
 	view_i18n "ngc-go/packages/compiler/src/render3/view/i18n"
@@ -62,7 +62,7 @@ func IsSingleI18nIcu(meta interface{}) bool {
 func IngestComponent(
 	componentName string,
 	template []render3.Node,
-	constantPool *constant_pool.ConstantPool,
+	constantPool *constant.ConstantPool,
 	compilationMode pipeline_compilation.TemplateCompilationMode,
 	relativeContextFilePath string,
 	i18nUseExternalIds bool,
@@ -100,7 +100,7 @@ type HostBindingInput struct {
 func IngestHostBinding(
 	input *HostBindingInput,
 	bindingParser interface{}, // TODO: BindingParser type
-	constantPool *constant_pool.ConstantPool,
+	constantPool *constant.ConstantPool,
 ) *pipeline_compilation.HostBindingCompilationJob {
 	job := pipeline_compilation.NewHostBindingCompilationJob(
 		input.ComponentName,
