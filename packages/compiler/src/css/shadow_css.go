@@ -64,12 +64,16 @@ type ShadowCss struct {
 
 // NewShadowCss creates a new ShadowCss instance
 func NewShadowCss() *ShadowCss {
-	// Note: Go regexp doesn't support lookahead (?=), so we match trailing comma, space, or end explicitly
-	// Pattern: (^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))(?=[,\s]|$)
-	// We'll match: (^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))([,\s]|$)
-	animationRe := regexp.MustCompile(`(^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))([,\s]|$)`)
+	// Regex to match potential keyframe names:
+	// 1. Double quoted string: "((?:[^"\\]|\\.)*)"
+	// 2. Single quoted string: '((?:[^'\\]|\\.)*)'
+	// 3. Identifier: ([-a-zA-Z0-9_]+)
+	// We use this to find candidates and then manually check boundaries
+	animationRe := regexp.MustCompile(`"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|([-a-zA-Z0-9_]+)`)
 
 	return &ShadowCss{
+		safeSelector:                    nil,
+		shouldScopeIndicator:            nil,
 		animationDeclarationKeyframesRe: animationRe,
 	}
 }
@@ -168,34 +172,47 @@ func (sc *ShadowCss) scopeLocalKeyframeDeclarations(rule *CssRule, scopeSelector
 }
 
 func (sc *ShadowCss) scopeAnimationKeyframe(keyframe string, scopeSelector string, unscopedKeyframesSet map[string]bool) string {
-	// Pattern: ^(\s*)(['"]?)(.+?)\2(\s*)$
-	keyframeRe := regexp.MustCompile(`^(\s*)(['"]?)(.+?)(['"]?)(\s*)$`)
+	// Remove leading/trailing whitespace
+	trimmed := strings.TrimSpace(keyframe)
+	if trimmed == "" {
+		return keyframe
+	}
 
-	return keyframeRe.ReplaceAllStringFunc(keyframe, func(match string) string {
-		matches := keyframeRe.FindStringSubmatch(match)
-		if len(matches) < 6 {
-			return match
-		}
-		spaces1 := matches[1]
-		quote1 := matches[2]
-		name := matches[3]
-		quote2 := matches[4]
-		spaces2 := matches[5]
+	// Check for quotes
+	var quote string
+	var name string
+	if strings.HasPrefix(trimmed, `"`) && strings.HasSuffix(trimmed, `"`) {
+		quote = `"`
+		name = trimmed[1 : len(trimmed)-1]
+	} else if strings.HasPrefix(trimmed, `'`) && strings.HasSuffix(trimmed, `'`) {
+		quote = `'`
+		name = trimmed[1 : len(trimmed)-1]
+	} else {
+		name = trimmed
+	}
 
-		isQuoted := (quote1 == `"` || quote1 == `'`) && quote1 == quote2
-		unescapedName := unescapeQuotes(name, isQuoted)
+	// Unescape quotes in name if necessary to check against unscoped set
+	unescaped := name
+	if quote != "" {
+		isQuoted := quote == `"` || quote == `'`
+		unescaped = unescapeQuotes(name, isQuoted)
+	}
 
-		prefix := ""
-		if unscopedKeyframesSet[unescapedName] {
-			prefix = scopeSelector + "_"
-		}
+	prefix := ""
+	if unscopedKeyframesSet[unescaped] {
+		prefix = scopeSelector + "_"
+	}
 
-		quote := quote1
-		if quote == "" {
-			quote = quote2
-		}
-		return fmt.Sprintf("%s%s%s%s%s%s", spaces1, quote, prefix, name, quote, spaces2)
-	})
+	// Reconstruct
+	// Preserve original whitespace
+	startSpace := ""
+	endSpace := ""
+	if len(keyframe) > len(trimmed) {
+		startSpace = keyframe[:strings.Index(keyframe, trimmed)]
+		endSpace = keyframe[strings.Index(keyframe, trimmed)+len(trimmed):]
+	}
+
+	return fmt.Sprintf("%s%s%s%s%s%s", startSpace, quote, prefix, name, quote, endSpace)
 }
 
 func (sc *ShadowCss) scopeAnimationRule(rule *CssRule, scopeSelector string, unscopedKeyframesSet map[string]bool) *CssRule {
@@ -211,38 +228,75 @@ func (sc *ShadowCss) scopeAnimationRule(rule *CssRule, scopeSelector string, uns
 		animationDeclarations := matches[2]
 
 		// Process each keyframe in animation declarations
-		// Note: Go regexp doesn't support lookahead, so we match trailing comma, space, or end explicitly
-		// Pattern: (^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))(?=[,\s]|$)
-		// We'll use: (^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))([,\s]|$)
-		keyframeRe := regexp.MustCompile(`(^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))([,\s]|$)`)
+		// We use the token regex to find candidates and then check boundaries manually
+		keyframeRe := sc.animationDeclarationKeyframesRe
 
-		processed := keyframeRe.ReplaceAllStringFunc(animationDeclarations, func(keyframeMatch string) string {
-			keyframeMatches := keyframeRe.FindStringSubmatch(keyframeMatch)
-			if len(keyframeMatches) < 7 {
-				return keyframeMatch
-			}
-			leadingSpaces := keyframeMatches[1]
-			quote1 := keyframeMatches[2]
-			quotedName := keyframeMatches[3]
-			nonQuotedName := keyframeMatches[4]
-			trailing := keyframeMatches[5]
+		tokenMatches := keyframeRe.FindAllStringIndex(animationDeclarations, -1)
+		if tokenMatches == nil {
+			return match
+		}
 
-			if quotedName != "" {
-				quote := quote1
-				quotedKeyframe := fmt.Sprintf("%s%s%s", quote, quotedName, quote)
-				scoped := sc.scopeAnimationKeyframe(quotedKeyframe, scopeSelector, unscopedKeyframesSet)
-				return leadingSpaces + scoped + trailing
-			} else if nonQuotedName != "" {
-				if animationKeywords[nonQuotedName] {
-					return keyframeMatch
+		var sb strings.Builder
+		lastIndex := 0
+
+		for _, loc := range tokenMatches {
+			tokenStart := loc[0]
+			tokenEnd := loc[1]
+			token := animationDeclarations[tokenStart:tokenEnd]
+
+			// Append everything before this token
+			sb.WriteString(animationDeclarations[lastIndex:tokenStart])
+			lastIndex = tokenEnd
+
+			// Check boundaries
+			// Preceded by: start of string, whitespace, or comma
+			validPrefix := false
+			if tokenStart == 0 {
+				validPrefix = true
+			} else {
+				charBefore := animationDeclarations[tokenStart-1]
+				if charBefore == ' ' || charBefore == '\t' || charBefore == '\n' || charBefore == '\r' || charBefore == ',' {
+					validPrefix = true
 				}
-				scoped := sc.scopeAnimationKeyframe(nonQuotedName, scopeSelector, unscopedKeyframesSet)
-				return leadingSpaces + scoped + trailing
 			}
-			return keyframeMatch
-		})
 
-		return start + processed
+			// Followed by: end of string, whitespace, or comma
+			validSuffix := false
+			if tokenEnd == len(animationDeclarations) {
+				validSuffix = true
+			} else {
+				charAfter := animationDeclarations[tokenEnd]
+				if charAfter == ' ' || charAfter == '\t' || charAfter == '\n' || charAfter == '\r' || charAfter == ',' {
+					validSuffix = true
+				}
+			}
+
+			if validPrefix && validSuffix {
+				// It's a candidate keyframe
+				// Determine if it's quoted or unquoted
+				if strings.HasPrefix(token, `"`) || strings.HasPrefix(token, `'`) {
+					// Quoted
+					scoped := sc.scopeAnimationKeyframe(token, scopeSelector, unscopedKeyframesSet)
+					sb.WriteString(scoped)
+				} else {
+					// Unquoted
+					if animationKeywords[token] {
+						sb.WriteString(token)
+					} else {
+						scoped := sc.scopeAnimationKeyframe(token, scopeSelector, unscopedKeyframesSet)
+						sb.WriteString(scoped)
+					}
+				}
+			} else {
+				// Not a keyframe (part of something else?)
+				sb.WriteString(token)
+			}
+		}
+
+		// Append remaining
+		sb.WriteString(animationDeclarations[lastIndex:])
+
+		return start + sb.String()
 	})
 
 	// Replace animation-name property
@@ -258,7 +312,7 @@ func (sc *ShadowCss) scopeAnimationRule(rule *CssRule, scopeSelector string, uns
 		keyframes := strings.Split(commaSeparatedKeyframes, ",")
 		scopedKeyframes := make([]string, len(keyframes))
 		for i, keyframe := range keyframes {
-			scopedKeyframes[i] = sc.scopeAnimationKeyframe(strings.TrimSpace(keyframe), scopeSelector, unscopedKeyframesSet)
+			scopedKeyframes[i] = sc.scopeAnimationKeyframe(keyframe, scopeSelector, unscopedKeyframesSet)
 		}
 		return start + strings.Join(scopedKeyframes, ",")
 	})
@@ -271,33 +325,79 @@ func (sc *ShadowCss) scopeAnimationRule(rule *CssRule, scopeSelector string, uns
 
 func (sc *ShadowCss) insertPolyfillDirectivesInCssText(cssText string) string {
 	// Pattern: polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){
-	// Go doesn't support backreferences, so we match double-quoted and single-quoted separately
-	cssContentNextSelectorRe := regexp.MustCompile(`polyfill-next-selector[^}]*content:[\s]*?(["'])(.*?)\1[;\s]*}([^{]*?){`)
+	// Go doesn't support backreferences (\1), so we match double-quoted and single-quoted separately
+	// Pattern breakdown:
+	// - polyfill-next-selector[^}]*content:[\s]*? - prefix
+	// - (['"]) - quote character (group 1 in TS, but we'll split)
+	// - (.*?) - content (group 2 in TS)
+	// - \1 - backreference to quote (not supported in Go)
+	// - [;\s]*}([^{]*?){ - suffix with selector (group 3 in TS)
+	// We'll create two patterns: one for double quotes, one for single quotes
+	// Combined pattern: polyfill-next-selector[^}]*content:[\s]*?("(.*?)"|'(.*?)')[;\s]*}([^{]*?){
+	doubleQuotedRe := regexp.MustCompile(`polyfill-next-selector[^}]*content:[\s]*?"(.*?)"[;\s]*}([^{]*?){`)
+	singleQuotedRe := regexp.MustCompile(`polyfill-next-selector[^}]*content:[\s]*?'(.*?)'[;\s]*}([^{]*?){`)
 
-	return cssContentNextSelectorRe.ReplaceAllStringFunc(cssText, func(match string) string {
-		matches := cssContentNextSelectorRe.FindStringSubmatch(match)
-		if len(matches) >= 4 {
-			return matches[2] + "{"
+	// Process double-quoted matches
+	cssText = doubleQuotedRe.ReplaceAllStringFunc(cssText, func(match string) string {
+		matches := doubleQuotedRe.FindStringSubmatch(match)
+		if len(matches) >= 3 {
+			return matches[1] + "{"
 		}
 		return match
 	})
+
+	// Process single-quoted matches
+	cssText = singleQuotedRe.ReplaceAllStringFunc(cssText, func(match string) string {
+		matches := singleQuotedRe.FindStringSubmatch(match)
+		if len(matches) >= 3 {
+			return matches[1] + "{"
+		}
+		return match
+	})
+
+	return cssText
 }
 
 func (sc *ShadowCss) insertPolyfillRulesInCssText(cssText string) string {
 	// Pattern: (polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}
-	// Go doesn't support backreferences, so we match double-quoted and single-quoted separately
-	cssContentRuleRe := regexp.MustCompile(`(polyfill-rule)[^}]*(content:[\s]*(["'])(.*?)\3)[;\s]*[^}]*}`)
+	// Go doesn't support backreferences (\3), so we match double-quoted and single-quoted separately
+	// Pattern breakdown:
+	// - (polyfill-rule) - group 1
+	// - [^}]* - any chars except }
+	// - (content:[\s]*(['"])(.*?)\3) - group 2: content with quote and value
+	//   - (['"]) - group 3: quote character
+	//   - (.*?) - group 4: content value
+	//   - \3 - backreference to quote (not supported in Go)
+	// - [;\s]*[^}]*} - suffix
+	// We'll create two patterns: one for double quotes, one for single quotes
+	doubleQuotedRe := regexp.MustCompile(`(polyfill-rule)[^}]*(content:[\s]*"(.*?)")[;\s]*[^}]*}`)
+	singleQuotedRe := regexp.MustCompile(`(polyfill-rule)[^}]*(content:[\s]*'(.*?)')[;\s]*[^}]*}`)
 
-	return cssContentRuleRe.ReplaceAllStringFunc(cssText, func(match string) string {
-		matches := cssContentRuleRe.FindStringSubmatch(match)
-		if len(matches) >= 5 {
+	// Process double-quoted matches
+	cssText = doubleQuotedRe.ReplaceAllStringFunc(cssText, func(match string) string {
+		matches := doubleQuotedRe.FindStringSubmatch(match)
+		if len(matches) >= 4 {
 			rule := match
 			rule = strings.Replace(rule, matches[1], "", 1)
 			rule = strings.Replace(rule, matches[2], "", 1)
-			return matches[4] + rule
+			return matches[3] + rule
 		}
 		return match
 	})
+
+	// Process single-quoted matches
+	cssText = singleQuotedRe.ReplaceAllStringFunc(cssText, func(match string) string {
+		matches := singleQuotedRe.FindStringSubmatch(match)
+		if len(matches) >= 4 {
+			rule := match
+			rule = strings.Replace(rule, matches[1], "", 1)
+			rule = strings.Replace(rule, matches[2], "", 1)
+			return matches[3] + rule
+		}
+		return match
+	})
+
+	return cssText
 }
 
 func (sc *ShadowCss) scopeCssText(cssText string, scopeSelector string, hostSelector string) string {
@@ -320,19 +420,43 @@ func (sc *ShadowCss) scopeCssText(cssText string, scopeSelector string, hostSele
 
 func (sc *ShadowCss) extractUnscopedRulesFromCssText(cssText string) string {
 	// Pattern: (polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}
-	// Go doesn't support backreferences, so we match double-quoted and single-quoted separately
-	cssContentUnscopedRuleRe := regexp.MustCompile(`(polyfill-unscoped-rule)[^}]*(content:[\s]*(["'])(.*?)\3)[;\s]*[^}]*}`)
+	// Go doesn't support backreferences (\3), so we match double-quoted and single-quoted separately
+	// Pattern breakdown:
+	// - (polyfill-unscoped-rule) - group 1
+	// - [^}]* - any chars except }
+	// - (content:[\s]*(['"])(.*?)\3) - group 2: content with quote and value
+	//   - (['"]) - group 3: quote character
+	//   - (.*?) - group 4: content value
+	//   - \3 - backreference to quote (not supported in Go)
+	// - [;\s]*[^}]*} - suffix
+	// We'll create two patterns: one for double quotes, one for single quotes
+	doubleQuotedRe := regexp.MustCompile(`(polyfill-unscoped-rule)[^}]*(content:[\s]*"(.*?)")[;\s]*[^}]*}`)
+	singleQuotedRe := regexp.MustCompile(`(polyfill-unscoped-rule)[^}]*(content:[\s]*'(.*?)')[;\s]*[^}]*}`)
 
 	result := ""
-	matches := cssContentUnscopedRuleRe.FindAllStringSubmatch(cssText, -1)
-	for _, match := range matches {
-		if len(match) >= 5 {
+
+	// Process double-quoted matches
+	doubleMatches := doubleQuotedRe.FindAllStringSubmatch(cssText, -1)
+	for _, match := range doubleMatches {
+		if len(match) >= 4 {
 			rule := match[0]
 			rule = strings.Replace(rule, match[2], "", 1)
-			rule = strings.Replace(rule, match[1], match[4], 1)
+			rule = strings.Replace(rule, match[1], match[3], 1)
 			result += rule + "\n\n"
 		}
 	}
+
+	// Process single-quoted matches
+	singleMatches := singleQuotedRe.FindAllStringSubmatch(cssText, -1)
+	for _, match := range singleMatches {
+		if len(match) >= 4 {
+			rule := match[0]
+			rule = strings.Replace(rule, match[2], "", 1)
+			rule = strings.Replace(rule, match[1], match[3], 1)
+			result += rule + "\n\n"
+		}
+	}
+
 	return result
 }
 
@@ -483,6 +607,11 @@ func (sc *ShadowCss) scopeSelectors(cssText string, scopeSelector string, hostSe
 
 		if len(selector) == 0 || selector[0] != '@' {
 			selector = sc.scopeSelector(scopeSelector, hostSelector, selector, true)
+
+			// Debug log for test case
+			if strings.Contains(rule.Selector, ".foo:not") && strings.Contains(rule.Selector, ".bar") {
+				fmt.Printf("  Scoped selector: %q\n", selector)
+			}
 		} else {
 			// Check if it's a scoped at-rule
 			isScopedAtRule := false
@@ -543,12 +672,72 @@ func (sc *ShadowCss) scopeSelector(scopeSelector string, hostSelector string, se
 		}
 	}
 
-	return strings.Join(scopedParts, ", ")
+	// Join parts, preserving newlines after commas from original selector
+	// TypeScript uses .join(', ') but preserves newlines that were in the original
+	// We need to find comma positions in the original selector and check for newlines
+	result := ""
+	parens := 0
+
+	// Find all comma positions in original selector (outside parentheses)
+	commaPositions := []int{}
+	for i := 0; i < len(selector); i++ {
+		if selector[i] == '(' {
+			parens++
+		} else if selector[i] == ')' {
+			parens--
+		} else if selector[i] == ',' && parens == 0 {
+			commaPositions = append(commaPositions, i)
+		}
+	}
+
+	// Join parts, using original separator pattern
+	// In TypeScript, .join(', ') adds space after comma, but newlines in parts are preserved
+	// So if a part starts with newline, we don't need to add newline in separator
+	for i, part := range scopedParts {
+		if i > 0 {
+			// Check if the current part starts with newline
+			// If it does, we just add ", " (comma + space), and the newline in part will be preserved
+			// If it doesn't, we check if original had newline after comma
+			if len(part) > 0 && part[0] == '\n' {
+				// Part already has newline at start, just add ", " (comma + space)
+				result += ", "
+			} else {
+				// Check if there's a newline after the comma at position i-1
+				if i-1 < len(commaPositions) {
+					commaPos := commaPositions[i-1]
+					hasNewline := false
+					// Check for newline after comma (after optional spaces)
+					for j := commaPos + 1; j < len(selector); j++ {
+						if selector[j] == '\n' {
+							hasNewline = true
+							break
+						} else if selector[j] != ' ' && selector[j] != '\t' {
+							break
+						}
+					}
+					if hasNewline {
+						result += ", \n"
+					} else {
+						result += ", "
+					}
+				} else {
+					result += ", "
+				}
+			}
+		}
+		result += part
+	}
+
+	return result
 }
 
 func (sc *ShadowCss) splitSelectorByComma(selector string) []string {
 	// Simple implementation: split by comma, but respect parentheses
 	// This is a simplified version - the full TypeScript version uses negative lookahead
+	// In TypeScript, the regex / ?,(?!(?:...)) ?/ matches optional spaces before and after comma,
+	// which means when split, those spaces are removed. But we need to preserve newlines.
+	// The regex matches: optional space before comma, comma, optional space after comma
+	// We need to preserve newlines after comma to match TypeScript behavior for multiline selectors
 	result := []string{}
 	parens := 0
 	start := 0
@@ -560,11 +749,27 @@ func (sc *ShadowCss) splitSelectorByComma(selector string) []string {
 		} else if char == ')' {
 			parens--
 		} else if char == ',' && parens == 0 {
-			result = append(result, selector[start:i])
+			// Trim spaces before comma, but preserve newlines and spaces after comma
+			part := selector[start:i]
+			// Remove trailing spaces (but not newlines) from the part before comma
+			part = strings.TrimRight(part, " \t")
+			if part != "" {
+				result = append(result, part)
+			}
+			// Skip comma and optional spaces after comma, but preserve newlines
 			start = i + 1
+			// Skip spaces after comma, but keep newlines
+			for start < len(selector) && (selector[start] == ' ' || selector[start] == '\t') {
+				start++
+			}
 		}
 	}
-	result = append(result, selector[start:])
+	finalPart := selector[start:]
+	// Remove leading spaces (but not newlines) from final part
+	finalPart = strings.TrimLeft(finalPart, " \t")
+	if finalPart != "" {
+		result = append(result, finalPart)
+	}
 	return result
 }
 
@@ -612,6 +817,9 @@ func (sc *ShadowCss) applySimpleSelectorScope(selector string, scopeSelector str
 }
 
 func (sc *ShadowCss) applySelectorScope(scopeSelector string, hostSelector string, selector string, isParentSelector bool) string {
+	// Reset shouldScopeIndicator at the start of each call
+	sc.shouldScopeIndicator = nil
+
 	// Remove [is=...] from scopeSelector
 	isRe := regexp.MustCompile(`\[is=([^\]]*)\]`)
 	scopeSelector = isRe.ReplaceAllStringFunc(scopeSelector, func(match string) string {
@@ -624,6 +832,16 @@ func (sc *ShadowCss) applySelectorScope(scopeSelector string, hostSelector strin
 
 	attrName := fmt.Sprintf("[%s]", scopeSelector)
 
+	// normalizeWhitespaceInSelector normalizes whitespace sequences in selector parts
+	// It replaces newlines, tabs, and multiple spaces with a single space,
+	// while preserving the structure of the selector
+	normalizeWhitespaceInSelector := func(s string) string {
+		// Replace all whitespace sequences (newlines, tabs, spaces) with a single space
+		whitespaceRe := regexp.MustCompile(`\s+`)
+		normalized := whitespaceRe.ReplaceAllString(s, " ")
+		return normalized
+	}
+
 	scopeSelectorPart := func(p string) string {
 		scopedP := strings.TrimSpace(p)
 		if scopedP == "" {
@@ -632,12 +850,29 @@ func (sc *ShadowCss) applySelectorScope(scopeSelector string, hostSelector strin
 
 		if strings.Contains(p, polyfillHostNoCombinator) {
 			scopedP = sc.applySimpleSelectorScope(p, scopeSelector, hostSelector)
-			if !polyfillHostNoCombinatorOutsidePseudoFunction.MatchString(p) {
+			if !isPolyfillHostNoCombinatorOutsidePseudoFunction(p) {
 				// Pattern: ([^:]*)(:*)([\s\S]*)
 				selRe := regexp.MustCompile(`([^:]*)(:*)([\s\S]*)`)
 				matches := selRe.FindStringSubmatch(scopedP)
 				if len(matches) >= 4 {
-					scopedP = matches[1] + attrName + matches[2] + matches[3]
+					// Normalize whitespace in the 'after' part (matches[3]) to match TypeScript behavior
+					// This ensures newlines and multiple spaces in pseudo-selector arguments are collapsed
+					normalizedAfter := normalizeWhitespaceInSelector(matches[3])
+					// Match TypeScript: scopedP = before + attrName + colon + after;
+					// When before is empty (selector starts with :), attrName will be prepended
+					// When before contains scopeSelector prefix (from _applySimpleSelectorScope when selector doesn't contain _polyfillHostRe),
+					// we need to remove it first
+					before := matches[1]
+					beforeTrimmed := strings.TrimSpace(before)
+					if beforeTrimmed != "" && (strings.HasPrefix(beforeTrimmed, scopeSelector+" ") || strings.HasPrefix(beforeTrimmed, "["+scopeSelector+"]")) {
+						// Remove scopeSelector prefix added by _applySimpleSelectorScope
+						// _applySimpleSelectorScope returns scopeSelector + " " + selector when selector doesn't contain _polyfillHostRe
+						// In this case, we want to prepend attrName instead
+						scopedP = attrName + matches[2] + normalizedAfter
+					} else {
+						// Match TypeScript: scopedP = before + attrName + colon + after;
+						scopedP = matches[1] + attrName + matches[2] + normalizedAfter
+					}
 				}
 			}
 		} else {
@@ -647,8 +882,21 @@ func (sc *ShadowCss) applySelectorScope(scopeSelector string, hostSelector strin
 				selRe := regexp.MustCompile(`([^:]*)(:*)([\s\S]*)`)
 				matches := selRe.FindStringSubmatch(t)
 				if len(matches) >= 4 {
-					scopedP = matches[1] + attrName + matches[2] + matches[3]
+					// Normalize whitespace in the 'after' part (matches[3]) to match TypeScript behavior
+					// This ensures newlines and multiple spaces in pseudo-selector arguments are collapsed
+					normalizedAfter := normalizeWhitespaceInSelector(matches[3])
+					// If matches[1] is empty (selector starts with :), prepend attrName
+					// Otherwise, insert attrName after matches[1]
+					// This matches TypeScript: matches[1] + attrName + matches[2] + matches[3]
+					// When matches[1] is empty, result is attrName + ":" + matches[3]
+					scopedP = matches[1] + attrName + matches[2] + normalizedAfter
+				} else {
+					// If no match, just prepend attrName
+					scopedP = attrName + t
 				}
+			} else {
+				// If t is empty after removing :host, just prepend attrName
+				scopedP = attrName + p
 			}
 		}
 
@@ -658,22 +906,40 @@ func (sc *ShadowCss) applySelectorScope(scopeSelector string, hostSelector strin
 	pseudoFunctionAwareScopeSelectorPart := func(selectorPart string) string {
 		scopedPart := ""
 
-		// Collect all outer :where() and :is() selectors
+		// Check if the selector consists ONLY of top-level :where() and :is() selectors
+		// We need to scan the string manually because regex FindAllStringIndex finds nested matches too
+		isPurePseudo := true
 		pseudoSelectorParts := []string{}
-		cssPrefixWithPseudoSelectorFunction := regexp.MustCompile(`:(?:where|is)\(`)
-		matches := cssPrefixWithPseudoSelectorFunction.FindAllStringIndex(selectorPart, -1)
+		cursor := 0
 
-		for _, match := range matches {
-			start := match[0]
-			index := match[1]
+		for cursor < len(selectorPart) {
+			// Skip leading whitespace if any (though splitSelectorByComma usually trims)
+			// But here we want to know if there are characters that are NOT part of the pseudo selector
+
+			// Check if starts with :where( or :is(
+			remaining := selectorPart[cursor:]
+			var match string
+			if strings.HasPrefix(remaining, ":where(") {
+				match = ":where("
+			} else if strings.HasPrefix(remaining, ":is(") {
+				match = ":is("
+			} else {
+				// Found something that is not a pseudo selector start
+				isPurePseudo = false
+				break
+			}
+
+			// Found a match, now find the closing parenthesis
+			start := cursor
+			cursor += len(match)
 			openedBrackets := 1
 
-			for index < len(selectorPart) {
-				currentSymbol := selectorPart[index]
-				index++
-				if currentSymbol == '(' {
+			for cursor < len(selectorPart) {
+				char := selectorPart[cursor]
+				cursor++
+				if char == '(' {
 					openedBrackets++
-				} else if currentSymbol == ')' {
+				} else if char == ')' {
 					openedBrackets--
 					if openedBrackets == 0 {
 						break
@@ -681,38 +947,65 @@ func (sc *ShadowCss) applySelectorScope(scopeSelector string, hostSelector strin
 				}
 			}
 
-			pseudoSelectorParts = append(pseudoSelectorParts, selectorPart[start:index])
+			if openedBrackets > 0 {
+				// Unbalanced parentheses
+				isPurePseudo = false
+				break
+			}
+
+			pseudoSelectorParts = append(pseudoSelectorParts, selectorPart[start:cursor])
 		}
 
 		// If selector consists of only :where() and :is() on the outer level
-		if strings.Join(pseudoSelectorParts, "") == selectorPart {
+		if isPurePseudo && len(pseudoSelectorParts) > 0 {
 			scopedParts := []string{}
 			for _, part := range pseudoSelectorParts {
-				cssPrefixWithPseudoSelectorFunction := regexp.MustCompile(`:(?:where|is)\(`)
+				cssPrefixWithPseudoSelectorFunction := regexp.MustCompile(`^:(?:where|is)\(`)
 				match := cssPrefixWithPseudoSelectorFunction.FindString(part)
-				if match != "" {
+				if match != "" && len(part) > len(match) && part[len(part)-1] == ')' {
+					// Unwrap the pseudo selector to scope its contents.
+					// For example,
+					// - `:where(selectorToScope)` -> `selectorToScope`;
+					// - `:is(.foo, .bar)` -> `.foo, .bar`.
 					selectorToScope := part[len(match) : len(part)-1]
 					if strings.Contains(selectorToScope, polyfillHostNoCombinator) {
 						scopedIndicator := true
 						sc.shouldScopeIndicator = &scopedIndicator
 					}
-					scopedInnerPart := sc.scopeSelector(scopeSelector, hostSelector, selectorToScope, false)
+					shouldScope := false
+					if sc.shouldScopeIndicator != nil {
+						shouldScope = *sc.shouldScopeIndicator
+					}
+					scopedInnerPart := sc.scopeSelector(scopeSelector, hostSelector, selectorToScope, shouldScope)
 					scopedParts = append(scopedParts, match+scopedInnerPart+")")
 				}
 			}
 			scopedPart = strings.Join(scopedParts, "")
 		} else {
-			shouldScope := sc.shouldScopeIndicator != nil && *sc.shouldScopeIndicator
-			if strings.Contains(selectorPart, polyfillHostNoCombinator) {
-				shouldScope = true
-			}
+			// Update _shouldScopeIndicator: if selectorPart contains polyfillHostNoCombinator, set it to true
+			// This matches TypeScript: this._shouldScopeIndicator = this._shouldScopeIndicator || selectorPart.includes(_polyfillHostNoCombinator);
+			// In TypeScript:
+			// - If _shouldScopeIndicator is undefined, it's falsy, so result is selectorPart.includes(...)
+			// - If _shouldScopeIndicator is false, result is selectorPart.includes(...)
+			// - If _shouldScopeIndicator is true, result is true
+			hasPolyfillHost := strings.Contains(selectorPart, polyfillHostNoCombinator)
 			if sc.shouldScopeIndicator == nil {
-				sc.shouldScopeIndicator = &shouldScope
+				// If undefined (falsy), set to hasPolyfillHost
+				if hasPolyfillHost {
+					sc.shouldScopeIndicator = &hasPolyfillHost
+				}
 			} else {
-				*sc.shouldScopeIndicator = *sc.shouldScopeIndicator || shouldScope
+				// If already set, use OR logic: keep true if already true, or set to true if hasPolyfillHost
+				*sc.shouldScopeIndicator = *sc.shouldScopeIndicator || hasPolyfillHost
 			}
 
-			if shouldScope {
+			// Only scope if _shouldScopeIndicator is true
+			// This matches TypeScript: scopedPart = this._shouldScopeIndicator ? _scopeSelectorPart(selectorPart) : selectorPart;
+			// In TypeScript, if _shouldScopeIndicator is undefined or false, selectorPart is returned as-is
+			// Note: _shouldScopeIndicator is set based on whether selectorPart contains _polyfillHostNoCombinator
+			// After convertColonHost, :host is converted to -shadowcsshost-no-combinator, so if selector contains :host,
+			// it will contain _polyfillHostNoCombinator and _shouldScopeIndicator will be true
+			if sc.shouldScopeIndicator != nil && *sc.shouldScopeIndicator {
 				scopedPart = scopeSelectorPart(selectorPart)
 			} else {
 				scopedPart = selectorPart
@@ -722,52 +1015,105 @@ func (sc *ShadowCss) applySelectorScope(scopeSelector string, hostSelector strin
 		return scopedPart
 	}
 
+	var oldSafeSelector *SafeSelector
 	if isParentSelector {
+		oldSafeSelector = sc.safeSelector
 		sc.safeSelector = NewSafeSelector(selector)
 		selector = sc.safeSelector.Content()
 	}
 
 	// Split by combinators (>, space, +, ~)
 	// Pattern: ( |>|\+|~(?!=))(?!([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)))
-	// Go doesn't support negative lookahead, so we'll use a simpler approach
-	sep := regexp.MustCompile(`( |>|\+|~)`)
-
+	// Go doesn't support negative lookahead, so we'll manually check parentheses
+	// Split by combinators but respect parentheses (similar to splitSelectorByComma)
 	scopedSelector := ""
 	startIndex := 0
-	allMatches := sep.FindAllStringIndex(selector, -1)
+	parens := 0
 
 	hasHost := strings.Contains(selector, polyfillHostNoCombinator)
+	// Only scope parts after or on the same level as the first `-shadowcsshost-no-combinator`
+	// when it is present. The selector has the same level when it is a part of a pseudo
+	// selector, like `:where()`, for example `:where(:host, .foo)` would result in `.foo`
+	// being scoped.
+	// In TypeScript: if (isParentSelector || this._shouldScopeIndicator)
+	// This means: if isParentSelector is true OR _shouldScopeIndicator is truthy (not undefined and not false)
 	if isParentSelector || (sc.shouldScopeIndicator != nil && *sc.shouldScopeIndicator) {
 		shouldScope := !hasHost
 		sc.shouldScopeIndicator = &shouldScope
 	}
 
-	for _, match := range allMatches {
-		separator := selector[match[0]:match[1]]
-		part := selector[startIndex:match[0]]
+	for i := 0; i < len(selector); i++ {
+		char := selector[i]
+		if char == '(' {
+			parens++
+		} else if char == ')' {
+			parens--
+		} else if parens == 0 {
+			// Check for combinators: >, space, +, ~
+			// Note: ~(?!=) means ~ not followed by = (to avoid matching ~= in attribute selectors)
+			isCombinator := false
+			separator := ""
+			separatorLen := 0
 
-		// Check for escaped hex value
-		escapedHexRe := regexp.MustCompile(`__esc-ph-(\d+)__`)
-		if escapedHexRe.MatchString(part) && match[1] < len(selector) {
-			nextChar := selector[match[1]]
-			if (nextChar >= 'a' && nextChar <= 'f') || (nextChar >= 'A' && nextChar <= 'F') || (nextChar >= '0' && nextChar <= '9') {
-				continue
+			if char == '>' {
+				isCombinator = true
+				separator = ">"
+				separatorLen = 1
+			} else if char == '+' {
+				isCombinator = true
+				separator = "+"
+				separatorLen = 1
+			} else if char == '~' {
+				// Check if it's ~ not followed by =
+				if i+1 < len(selector) && selector[i+1] != '=' {
+					isCombinator = true
+					separator = "~"
+					separatorLen = 1
+				}
+			} else if char == ' ' {
+				// Space is a combinator, but we need to check if it's not inside parentheses
+				// and not part of escaped hex value
+				isCombinator = true
+				separator = " "
+				separatorLen = 1
+			}
+
+			if isCombinator {
+				part := selector[startIndex:i]
+
+				// Check for escaped hex value
+				escapedHexRe := regexp.MustCompile(`__esc-ph-(\d+)__`)
+				if escapedHexRe.MatchString(part) && i+1 < len(selector) {
+					nextChar := selector[i+1]
+					if (nextChar >= 'a' && nextChar <= 'f') || (nextChar >= 'A' && nextChar <= 'F') || (nextChar >= '0' && nextChar <= '9') {
+						// This is not a separator, continue
+						continue
+					}
+				}
+
+				scopedPart := pseudoFunctionAwareScopeSelectorPart(part)
+				scopedSelector += scopedPart + " " + separator + " "
+				startIndex = i + separatorLen
 			}
 		}
-
-		scopedPart := pseudoFunctionAwareScopeSelectorPart(part)
-		scopedSelector += scopedPart + " " + separator + " "
-		startIndex = match[1]
 	}
 
 	part := selector[startIndex:]
 	scopedSelector += pseudoFunctionAwareScopeSelectorPart(part)
 
 	// Restore placeholders
+	var result string
 	if sc.safeSelector != nil {
-		return sc.safeSelector.Restore(scopedSelector)
+		result = sc.safeSelector.Restore(scopedSelector)
+	} else {
+		result = scopedSelector
 	}
-	return scopedSelector
+
+	if isParentSelector {
+		sc.safeSelector = oldSafeSelector
+	}
+
+	return result
 }
 
 func (sc *ShadowCss) insertPolyfillHostInCssText(selector string) string {
@@ -804,20 +1150,53 @@ func NewSafeSelector(selector string) *SafeSelector {
 	})
 
 	// Replace nth-child expressions
-	nthRe := regexp.MustCompile(`(:nth-[-\w]+)(\([^)]+\))`)
-	ss.content = nthRe.ReplaceAllStringFunc(selector, func(match string) string {
-		matches := nthRe.FindStringSubmatch(match)
-		if len(matches) >= 3 {
-			pseudo := matches[1]
-			exp := matches[2]
+	// The regex (:nth-[-\w]+)(\([^)]+\)) doesn't handle nested parentheses
+	// We need to scan manually
+	nthRe := regexp.MustCompile(`:nth-[-\w]+\(`)
+
+	// We need to loop until no more matches are found
+	for {
+		matchLoc := nthRe.FindStringIndex(selector)
+		if matchLoc == nil {
+			break
+		}
+
+		start := matchLoc[0]
+		// Find the matching closing parenthesis
+		parens := 1
+		end := -1
+		for i := matchLoc[1]; i < len(selector); i++ {
+			if selector[i] == '(' {
+				parens++
+			} else if selector[i] == ')' {
+				parens--
+				if parens == 0 {
+					end = i + 1
+					break
+				}
+			}
+		}
+
+		if end != -1 {
+			fullMatch := selector[start:end]
+			// Extract the pseudo part (e.g. :nth-child) and the expression part (e.g. (3n+1))
+			parenIdx := strings.Index(fullMatch, "(")
+			pseudo := fullMatch[:parenIdx]
+			exp := fullMatch[parenIdx:]
+
 			replaceBy := fmt.Sprintf("__ph-%d__", ss.index)
 			ss.placeholders = append(ss.placeholders, exp)
 			ss.index++
-			return pseudo + replaceBy
-		}
-		return match
-	})
 
+			selector = selector[:start] + pseudo + replaceBy + selector[end:]
+		} else {
+			// Unbalanced or no closing paren, skip this match to avoid infinite loop
+			// In a real compiler we might want to error, but here we just break or skip
+			break
+		}
+	}
+
+	ss.content = selector
 	return ss
 }
 
@@ -896,7 +1275,9 @@ func ProcessRules(input string, ruleCallback RuleCallback) string {
 		}
 
 		rule := ruleCallback(NewCssRule(selector, content))
-		return matches[1] + rule.Selector + matches[3] + contentPrefix + rule.Content + suffix
+		result := matches[1] + rule.Selector + matches[3] + contentPrefix + rule.Content + suffix
+
+		return result
 	})
 
 	return unescapeInStrings(escapedResult)
@@ -1017,9 +1398,56 @@ func unescapeQuotes(str string, isQuoted bool) string {
 	if !isQuoted {
 		return str
 	}
-	// Pattern: ((?:^|[^\\])(?:\\\\)*)\\(?=['"])
-	unescapeRe := regexp.MustCompile(`((?:^|[^\\])(?:\\\\)*)\\(['"])`)
-	return unescapeRe.ReplaceAllString(str, "${1}${2}")
+
+	var sb strings.Builder
+	sb.Grow(len(str))
+
+	i := 0
+	for i < len(str) {
+		char := str[i]
+		if char == '\\' {
+			// Count consecutive backslashes
+			backslashCount := 1
+			j := i + 1
+			for j < len(str) && str[j] == '\\' {
+				backslashCount++
+				j++
+			}
+
+			// Check what follows
+			if j < len(str) && (str[j] == '"' || str[j] == '\'') {
+				// Followed by a quote
+				if backslashCount%2 == 1 {
+					// Odd number of backslashes: the last one escapes the quote
+					// Keep N-1 backslashes
+					sb.WriteString(strings.Repeat("\\", backslashCount-1))
+					// Append the quote
+					sb.WriteByte(str[j])
+					i = j + 1
+					continue
+				} else {
+					// Even number of backslashes: quote is not escaped by them
+					// Keep all backslashes
+					sb.WriteString(strings.Repeat("\\", backslashCount))
+					// Append the quote
+					sb.WriteByte(str[j])
+					i = j + 1
+					continue
+				}
+			} else {
+				// Not followed by a quote (or end of string)
+				// Keep all backslashes
+				sb.WriteString(strings.Repeat("\\", backslashCount))
+				i = j
+				continue
+			}
+		} else {
+			sb.WriteByte(char)
+			i++
+		}
+	}
+
+	return sb.String()
 }
 
 func combineHostContextSelectors(contextSelectors []string, otherSelectors string, pseudoPrefix string) string {
@@ -1086,12 +1514,11 @@ const (
 )
 
 var (
-	polyfillHostRe                                = regexp.MustCompile(`-shadowcsshost`)
-	colonHostRe                                   = regexp.MustCompile(`:host`)
-	colonHostContextRe                            = regexp.MustCompile(`:host-context`)
-	polyfillHostNoCombinatorRe                    = regexp.MustCompile(`-shadowcsshost-no-combinator([^\s,]*)`)
-	polyfillHostNoCombinatorOutsidePseudoFunction = regexp.MustCompile(`-shadowcsshost-no-combinator(?!\([^)]*\))`)
-	shadowDOMSelectorsRe                          = []*regexp.Regexp{
+	polyfillHostRe             = regexp.MustCompile(`-shadowcsshost`)
+	colonHostRe                = regexp.MustCompile(`:host`)
+	colonHostContextRe         = regexp.MustCompile(`:host-context`)
+	polyfillHostNoCombinatorRe = regexp.MustCompile(`-shadowcsshost-no-combinator([^\s,]*)`)
+	shadowDOMSelectorsRe       = []*regexp.Regexp{
 		regexp.MustCompile(`::shadow`),
 		regexp.MustCompile(`::content`),
 		regexp.MustCompile(`/shadow-deep/`),
@@ -1102,3 +1529,42 @@ var (
 		"{": "}",
 	}
 )
+
+// isPolyfillHostNoCombinatorOutsidePseudoFunction checks if the string contains
+// `-shadowcsshost-no-combinator` that is NOT inside a pseudo function (i.e., not followed by `(...)`)
+// This replaces the TypeScript regex: `-shadowcsshost-no-combinator(?![^(]*\\))`
+// Pattern `(?![^(]*\\))` means: not followed by zero or more non-`(` characters, then `)`
+// In other words, it matches if it's NOT followed by `(` then some non-`(` chars, then `)`
+// The regex matches if the pattern `[^(]*\\)` does NOT match after `polyfillHostNoCombinator`
+func isPolyfillHostNoCombinatorOutsidePseudoFunction(s string) bool {
+	idx := strings.Index(s, polyfillHostNoCombinator)
+	if idx == -1 {
+		return false
+	}
+	// Check if it's followed by a pseudo function pattern: `(...)`
+	after := s[idx+len(polyfillHostNoCombinator):]
+
+	// Pattern `(?![^(]*\\))` means: not followed by `(` then some non-`(` chars, then `)`
+	// We need to check if `[^(]*\)` matches.
+	// `[^(]*` matches zero or more non-`(` chars.
+	// So we look for the first `)`. If we find one, and there are no `(` before it, then it matches.
+
+	openIdx := strings.Index(after, "(")
+	closeIdx := strings.Index(after, ")")
+
+	if closeIdx != -1 {
+		// Found a closing paren.
+		if openIdx == -1 || closeIdx < openIdx {
+			// No opening paren, or closing paren comes first.
+			// This means `[^(]*\)` matches.
+			// So negative lookahead fails.
+			// So it is INSIDE.
+			return false
+		}
+	}
+
+	// If no closing paren, or opening paren comes first, then `[^(]*\)` does not match.
+	// So negative lookahead succeeds.
+	// So it is OUTSIDE.
+	return true
+}
