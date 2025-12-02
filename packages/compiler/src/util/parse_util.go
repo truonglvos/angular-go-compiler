@@ -209,6 +209,9 @@ func (p *ParseError) Error() string {
 
 // ContextualMessage returns the error message with context
 func (p *ParseError) ContextualMessage() string {
+	if p.Span == nil || p.Span.Start == nil {
+		return p.Msg
+	}
 	ctx := p.Span.Start.GetContext(100, 3)
 	if ctx != nil {
 		levelStr := "ERROR"
@@ -222,9 +225,15 @@ func (p *ParseError) ContextualMessage() string {
 
 // String returns a string representation of the error
 func (p *ParseError) String() string {
+	if p.Span == nil {
+		return p.Msg
+	}
 	details := ""
 	if p.Span.Details != nil {
 		details = fmt.Sprintf(", %s", *p.Span.Details)
+	}
+	if p.Span.Start == nil {
+		return fmt.Sprintf("%s%s", p.ContextualMessage(), details)
 	}
 	return fmt.Sprintf("%s: %s%s", p.ContextualMessage(), p.Span.Start, details)
 }

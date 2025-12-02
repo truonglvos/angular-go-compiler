@@ -262,6 +262,24 @@ func initHtmlTagDefinitions() {
 		ContentType:   TagContentTypeESCAPABLE_RAW_TEXT,
 		IgnoreFirstLf: true,
 	})
+
+	// Add common HTML standard tags with canSelfClose=false
+	// This matches TypeScript's behavior where DomElementSchemaRegistry adds all known HTML tags
+	// with canSelfClose=false. We add the most common ones here.
+	commonHtmlTags := []string{"a", "abbr", "address", "article", "aside", "b", "bdi", "bdo", "blockquote",
+		"body", "button", "canvas", "caption", "cite", "code", "colgroup", "data", "datalist", "dd", "del",
+		"details", "dfn", "dialog", "div", "dl", "dt", "em", "fieldset", "figcaption", "figure", "footer",
+		"form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "html", "i", "iframe",
+		"ins", "kbd", "label", "legend", "main", "map", "mark", "menu", "meter", "nav", "noscript",
+		"object", "ol", "output", "progress", "q", "s", "samp", "section", "small", "span", "strong",
+		"sub", "summary", "sup", "table", "tbody", "tfoot", "thead", "time", "u", "ul", "var", "video"}
+	for _, tag := range commonHtmlTags {
+		if _, exists := tagDefinitions[tag]; !exists {
+			tagDefinitions[tag] = NewHtmlTagDefinition(HtmlTagDefinitionOptions{
+				CanSelfClose: boolPtr(false),
+			})
+		}
+	}
 }
 
 func boolPtr(b bool) *bool {

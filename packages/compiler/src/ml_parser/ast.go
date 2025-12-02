@@ -363,9 +363,23 @@ func VisitAll(visitor Visitor, nodes []Node, context interface{}) []interface{} 
 		if visitorWithVisit, ok := visitor.(interface {
 			Visit(node Node, context interface{}) interface{}
 		}); ok {
-			astResult = visitorWithVisit.Visit(ast, context)
-			if astResult == nil {
+			// Call visitor.Visit first, and if it returns nil (falsy), also call ast.Visit to visit children
+			// This matches TypeScript behavior: visitor.visit(ast, context) || ast.visit(visitor, context)
+			visitResult := visitorWithVisit.Visit(ast, context)
+			// In TypeScript, if visitor.visit returns falsy, it calls ast.visit(visitor, context)
+			// But if visitor.visit already called node.visit internally (like Humanizer.Visit does),
+			// we shouldn't call ast.Visit again. The key is: if visitResult is nil, we still need
+			// to call ast.Visit to ensure children are visited, but only if visitor.Visit didn't
+			// already handle the visiting internally.
+			// However, looking at TypeScript: visitor.visit!(ast, context) || ast.visit(visitor, context)
+			// This means: if visitor.visit returns truthy, use that; otherwise call ast.visit.
+			// So if visitor.visit returns nil/falsy, we should call ast.visit.
+			if visitResult == nil {
+				// If visitor.Visit returns nil, call ast.Visit to visit children
 				astResult = ast.Visit(visitor, context)
+			} else {
+				// If visitor.Visit returns non-nil, use that result (skips typed visit)
+				astResult = visitResult
 			}
 		} else {
 			astResult = ast.Visit(visitor, context)

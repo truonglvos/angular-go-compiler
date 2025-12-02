@@ -22,6 +22,7 @@ const (
 	TokenTypeCDATA_END
 	TokenTypeATTR_NAME
 	TokenTypeATTR_QUOTE
+	TokenTypeATTR_VALUE
 	TokenTypeATTR_VALUE_TEXT
 	TokenTypeATTR_VALUE_INTERPOLATION
 	TokenTypeDOC_TYPE
