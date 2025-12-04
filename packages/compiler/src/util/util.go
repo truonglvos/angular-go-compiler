@@ -157,6 +157,13 @@ func Stringify(token interface{}) string {
 		return named.OverriddenName()
 	}
 
+	// For maps (equivalent to Object.create(null) in JS - no prototype)
+	// return "object" to match TypeScript behavior
+	switch token.(type) {
+	case map[string]interface{}, map[string]string, map[interface{}]interface{}:
+		return "object"
+	}
+
 	// Fallback to string representation
 	return fmt.Sprintf("%v", token)
 }
