@@ -9,7 +9,7 @@ import (
 
 var (
 	singleQuoteEscapeStringRe = regexp.MustCompile(`'|\\|\n|\r|\$`)
-	legalIdentifierRe         = regexp.MustCompile(`^[$A-Z_][0-9A-Z_$]*$`)
+	legalIdentifierRe         = regexp.MustCompile(`(?i)^[$A-Z_][0-9A-Z_$]*$`)
 	indentWith                = "  "
 )
 

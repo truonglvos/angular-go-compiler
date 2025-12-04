@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"ngc-go/packages/compiler/src/util"
+	"sort"
 	"strings"
 )
 
@@ -114,13 +115,17 @@ func (smg *SourceMapGenerator) ToJSON() (*SourceMap, error) {
 	sources := []string{}
 	sourcesContent := []*string{}
 
-	i := 0
+	// Collect and sort sources for deterministic order
 	for url := range smg.sourcesContent {
-		sourcesIndex[url] = i
 		sources = append(sources, url)
+	}
+	sort.Strings(sources)
+
+	// Build index and content arrays in sorted order
+	for i, url := range sources {
+		sourcesIndex[url] = i
 		content := smg.sourcesContent[url]
 		sourcesContent = append(sourcesContent, content)
-		i++
 	}
 
 	mappings := ""
@@ -249,13 +254,16 @@ func toBase64VLQ(value int) string {
 	}
 
 	out := ""
-	for value > 0 {
+	for {
 		digit := value & 31
 		value = value >> 5
 		if value > 0 {
 			digit = digit | 32
 		}
 		out += string(toBase64Digit(digit))
+		if value == 0 {
+			break
+		}
 	}
 
 	return out

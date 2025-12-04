@@ -165,6 +165,37 @@ func (jev *JitEmitterVisitor) GetArgs() map[string]interface{} {
 	return result
 }
 
+// VisitAllStatements overrides the base implementation to ensure proper visitor dispatch
+func (jev *JitEmitterVisitor) VisitAllStatements(statements []OutputStatement, ctx *EmitterVisitorContext) {
+	for _, stmt := range statements {
+		stmt.VisitStatement(jev, ctx) // Pass jev, not the embedded visitor
+	}
+}
+
+// VisitAllExpressions overrides the base implementation to ensure proper visitor dispatch
+func (jev *JitEmitterVisitor) VisitAllExpressions(expressions []OutputExpression, ctx *EmitterVisitorContext, separator string) {
+	jev.VisitAllObjects(func(expr OutputExpression) {
+		expr.VisitExpression(jev, ctx) // Pass jev, not the embedded visitor
+	}, expressions, ctx, separator)
+}
+
+// VisitExpressionStmt overrides to ensure proper visitor dispatch
+func (jev *JitEmitterVisitor) VisitExpressionStmt(stmt *ExpressionStatement, context interface{}) interface{} {
+	ctx := jev.getContext(context)
+	stmt.Expr.VisitExpression(jev, ctx) // Use jev instead of base visitor
+	ctx.Println(stmt, ";")
+	return nil
+}
+
+// VisitLiteralArrayExpr overrides to ensure proper visitor dispatch
+func (jev *JitEmitterVisitor) VisitLiteralArrayExpr(ast *LiteralArrayExpr, context interface{}) interface{} {
+	ctx := jev.getContext(context)
+	ctx.Print(ast, "[", false)
+	jev.VisitAllExpressions(ast.Entries, ctx, ",") // This will now use our overridden version
+	ctx.Print(ast, "]", false)
+	return nil
+}
+
 // VisitExternalExpr visits an external expression
 func (jev *JitEmitterVisitor) VisitExternalExpr(ast *ExternalExpr, context interface{}) interface{} {
 	ctx := jev.getContext(context)
