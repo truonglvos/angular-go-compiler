@@ -1,0 +1,14 @@
+{
+  "name": "ngc-go-builder",
+  "version": "0.0.1",
+  "description": "Angular CLI builder using Go compiler",
+  "builders": "builders.json",
+  "main": "index.js",
+  "dependencies": {
+    "@angular-devkit/architect": "^0.2000.0",
+    "rxjs": "^7.8.0"
+  },
+  "peerDependencies": {
+    "@angular-devkit/architect": "^0.2000.0"
+  }
+}

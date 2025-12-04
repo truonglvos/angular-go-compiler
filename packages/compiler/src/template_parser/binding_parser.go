@@ -104,7 +104,15 @@ func (bp *BindingParser) ParseInterpolation(
 	sourceSpan *util.ParseSourceSpan,
 	interpolatedTokens interface{}, // []ml_parser.InterpolatedAttributeToken | []ml_parser.InterpolatedTextToken | nil
 ) *expression_parser.ASTWithSource {
+	// Calculate absoluteOffset from sourceSpan
+	// When HTML entities are decoded, sourceSpan might be from INTERPOLATION token
+	// which has the correct absolute offset in the original template
 	absoluteOffset := sourceSpan.FullStart.Offset
+
+	// If interpolatedTokens are provided and sourceSpan is from INTERPOLATION token,
+	// the absoluteOffset is already correct. Otherwise, we might need to adjust it.
+	// For now, use sourceSpan.FullStart.Offset which should be correct when sourceSpan
+	// is from the INTERPOLATION token (as set in r3_template_transform.go)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -170,7 +178,9 @@ func (bp *BindingParser) ParseInlineTemplateBinding(
 		absoluteValueOffset,
 	)
 
-	for _, binding := range bindings {
+	fmt.Printf("[DEBUG] ParseInlineTemplateBinding: processing %d bindings\n", len(bindings))
+	for i, binding := range bindings {
+		fmt.Printf("[DEBUG] ParseInlineTemplateBinding: binding[%d] type=%T\n", i, binding)
 		// sourceSpan is for the entire HTML attribute. bindingSpan is for a particular
 		// binding within the microsyntax expression so it's more narrow than sourceSpan.
 		bindingSpan := moveParseSourceSpan(sourceSpan, binding.SourceSpan())
@@ -179,6 +189,7 @@ func (bp *BindingParser) ParseInlineTemplateBinding(
 
 		switch b := binding.(type) {
 		case *expression_parser.VariableBinding:
+			fmt.Printf("[DEBUG] ParseInlineTemplateBinding: found VariableBinding, key=%q\n", b.Key.Source)
 			key = b.Key.Source
 			keySpan = moveParseSourceSpanFromAbsolute(sourceSpan, b.Key.Span)
 			value := "$implicit"
@@ -463,6 +474,7 @@ func (bp *BindingParser) parsePropertyAst(
 	propType := expression_parser.ParsedPropertyTypeDefault
 	if isPartOfAssignmentBinding {
 		propType = expression_parser.ParsedPropertyTypeTwoWay
+		fmt.Printf("[DEBUG] parsePropertyAst: setting propType to TwoWay for name=%q, isPartOfAssignmentBinding=%v\n", name, isPartOfAssignmentBinding)
 	}
 	*targetProps = append(*targetProps, expression_parser.NewParsedProperty(
 		name,
@@ -577,7 +589,13 @@ func (bp *BindingParser) parseBinding(
 	sourceSpan *util.ParseSourceSpan,
 	absoluteOffset int,
 ) *expression_parser.ASTWithSource {
-	return bp.ParseBinding(value, isHostBinding, sourceSpan, absoluteOffset)
+	fmt.Printf("[DEBUG] parseBinding: value=%q, isHostBinding=%v, absoluteOffset=%d\n", value, isHostBinding, absoluteOffset)
+	result := bp.ParseBinding(value, isHostBinding, sourceSpan, absoluteOffset)
+	fmt.Printf("[DEBUG] parseBinding: result=%v (nil=%v)\n", result != nil, result == nil)
+	if result != nil && result.AST != nil {
+		fmt.Printf("[DEBUG] parseBinding: AST type=%T\n", result.AST)
+	}
+	return result
 }
 
 // CreateBoundElementProperty creates a bound element property

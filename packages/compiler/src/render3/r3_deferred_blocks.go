@@ -1,6 +1,7 @@
 package render3
 
 import (
+	"fmt"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/util"
 	"regexp"
@@ -167,12 +168,16 @@ func parsePlaceholderBlock(ast *ml_parser.Block, visitor ml_parser.Visitor) *Def
 				panic(&ParseError{Message: `@placeholder block can only have one "minimum" parameter`})
 			}
 
-			parsedTime := ParseDeferredTime(
-				param.Expression[GetTriggerParametersStart(param.Expression, 0):],
-			)
+			start := GetTriggerParametersStart(param.Expression, 0)
+			if start == -1 {
+				panic(&ParseError{Message: fmt.Sprintf(`Could not parse time value of parameter "minimum" (expression: %q)`, param.Expression)})
+			}
+
+			timeValue := param.Expression[start:]
+			parsedTime := ParseDeferredTime(timeValue)
 
 			if parsedTime == nil {
-				panic(&ParseError{Message: `Could not parse time value of parameter "minimum"`})
+				panic(&ParseError{Message: fmt.Sprintf(`Could not parse time value of parameter "minimum" (expression: %q, timeValue: %q)`, param.Expression, timeValue)})
 			}
 
 			minimumTime = parsedTime
@@ -204,12 +209,16 @@ func parseLoadingBlock(ast *ml_parser.Block, visitor ml_parser.Visitor) *Deferre
 				panic(&ParseError{Message: `@loading block can only have one "after" parameter`})
 			}
 
-			parsedTime := ParseDeferredTime(
-				param.Expression[GetTriggerParametersStart(param.Expression, 0):],
-			)
+			start := GetTriggerParametersStart(param.Expression, 0)
+			if start == -1 {
+				panic(&ParseError{Message: fmt.Sprintf(`Could not parse time value of parameter "after" (expression: %q)`, param.Expression)})
+			}
+
+			timeValue := param.Expression[start:]
+			parsedTime := ParseDeferredTime(timeValue)
 
 			if parsedTime == nil {
-				panic(&ParseError{Message: `Could not parse time value of parameter "after"`})
+				panic(&ParseError{Message: fmt.Sprintf(`Could not parse time value of parameter "after" (expression: %q, timeValue: %q)`, param.Expression, timeValue)})
 			}
 
 			afterTime = parsedTime
@@ -218,12 +227,16 @@ func parseLoadingBlock(ast *ml_parser.Block, visitor ml_parser.Visitor) *Deferre
 				panic(&ParseError{Message: `@loading block can only have one "minimum" parameter`})
 			}
 
-			parsedTime := ParseDeferredTime(
-				param.Expression[GetTriggerParametersStart(param.Expression, 0):],
-			)
+			start := GetTriggerParametersStart(param.Expression, 0)
+			if start == -1 {
+				panic(&ParseError{Message: fmt.Sprintf(`Could not parse time value of parameter "minimum" (expression: %q)`, param.Expression)})
+			}
+
+			timeValue := param.Expression[start:]
+			parsedTime := ParseDeferredTime(timeValue)
 
 			if parsedTime == nil {
-				panic(&ParseError{Message: `Could not parse time value of parameter "minimum"`})
+				panic(&ParseError{Message: fmt.Sprintf(`Could not parse time value of parameter "minimum" (expression: %q, timeValue: %q)`, param.Expression, timeValue)})
 			}
 
 			minimumTime = parsedTime

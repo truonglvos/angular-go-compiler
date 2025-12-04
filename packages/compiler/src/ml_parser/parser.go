@@ -544,6 +544,8 @@ func (tb *TreeBuilder) _consumeAttributesAndDirectives(attributesResult *[]*Attr
 			// The loop condition will naturally check if peek is still ATTR_NAME or DIRECTIVE_NAME
 		} else {
 			attrNameToken := tb.advance().(*AttributeNameToken)
+			attrParts := attrNameToken.Parts()
+			fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: consuming attr, name parts=%v\n", attrParts)
 			peekBeforeConsume := tb.peek
 			fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: before consuming attr, peek.Type()=%d, index=%d\n", func() int {
 				if peekBeforeConsume == nil {
@@ -552,6 +554,7 @@ func (tb *TreeBuilder) _consumeAttributesAndDirectives(attributesResult *[]*Attr
 				return int(peekBeforeConsume.Type())
 			}(), tb.index)
 			attr := tb._consumeAttr(attrNameToken)
+			fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: adding attr.Name=%q, attr.Value=%q\n", attr.Name, attr.Value)
 			*attributesResult = append(*attributesResult, attr)
 			fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: after consuming attr, peek.Type()=%d, index=%d, peek==peekBeforeConsume=%v\n", func() int {
 				if tb.peek == nil {
@@ -560,31 +563,12 @@ func (tb *TreeBuilder) _consumeAttributesAndDirectives(attributesResult *[]*Attr
 				return int(tb.peek.Type())
 			}(), tb.index, tb.peek == peekBeforeConsume)
 			// Safety check: if peek hasn't changed after consuming attr, it means we didn't consume any token
-			// This can happen with attributes without values (e.g., [attr]).
-			// If we're at the end of tokens, break to avoid infinite loop
+			// This can happen with attributes without values (e.g., [attr], hasOutput).
+			// The loop will naturally continue to process the next ATTR_NAME or DIRECTIVE_NAME token
+			// No action needed - just let the loop continue
 			if tb.peek != nil && tb.peek == peekBeforeConsume {
-				if tb.index >= len(tb.tokens)-1 {
-					fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: at end of tokens, breaking\n")
-					break
-				}
-				// If peek is DIRECTIVE_NAME, don't force advance - let the loop naturally continue
-				// to consume the directive in the next iteration
-				if tb.peek.Type() == TokenTypeDIRECTIVE_NAME {
-					// Don't force advance - the loop will naturally continue and consume the directive
-					fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: peek is DIRECTIVE_NAME, continuing loop\n")
-					continue
-				}
-				// Only force advance if the next token is ATTR_NAME
-				// Otherwise, the loop condition will naturally break
-				if tb.peek.Type() == TokenTypeATTR_NAME {
-					// Force advance to consume the token and avoid infinite loop
-					fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: forcing advance, peek.Type()=%d\n", tb.peek.Type())
-					tb.advance()
-				} else {
-					// Next token is not ATTR_NAME or DIRECTIVE_NAME, so break the loop
-					fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: peek is not ATTR_NAME or DIRECTIVE_NAME (%d), breaking\n", tb.peek.Type())
-					break
-				}
+				fmt.Printf("[DEBUG] _consumeAttributesAndDirectives: peek unchanged after consuming attr (attr without value), continuing loop\n")
+				// Loop will continue and process the next token if it's ATTR_NAME or DIRECTIVE_NAME
 			}
 		}
 	}

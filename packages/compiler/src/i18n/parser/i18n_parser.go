@@ -160,9 +160,16 @@ func (v *I18nVisitor) VisitText(text *ml_parser.Text, context interface{}) inter
 	var node i18n.Node
 	if len(text.Tokens) == 1 {
 		span := text.SourceSpan()
-		// compiler.ParseSourceSpan should be the same as util.ParseSourceSpan
-		// We'll use type assertion to convert
-		node = i18n.NewText(text.Value, span)
+		// Get the text value from the token parts
+		// Don't use text.Value as it may be empty after whitespace processing
+		textValue := ""
+		if len(text.Tokens) > 0 {
+			parts := text.Tokens[0].Parts()
+			if len(parts) > 0 {
+				textValue = parts[0]
+			}
+		}
+		node = i18n.NewText(textValue, span)
 	} else {
 		tokens := make([]ml_parser.Token, len(text.Tokens))
 		for i, tok := range text.Tokens {
@@ -647,13 +654,18 @@ func getNodeType(node i18n.Node) string {
 	}
 }
 
-var customPhExp = regexp.MustCompile(`//[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)`)
+var customPhExpDouble = regexp.MustCompile(`//[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)`)
+var customPhExpSingle = regexp.MustCompile(`//[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*'([\s\S]*?)'[\s\S]*\)`)
 
 // extractPlaceholderName extracts placeholder name from expression
 func extractPlaceholderName(input string) string {
-	matches := customPhExp.FindStringSubmatch(input)
-	if len(matches) > 2 {
-		return matches[2]
+	matches := customPhExpDouble.FindStringSubmatch(input)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	matches = customPhExpSingle.FindStringSubmatch(input)
+	if len(matches) > 1 {
+		return matches[1]
 	}
 	return ""
 }

@@ -10,32 +10,27 @@ import (
 type SelectorRegexp int
 
 const (
-	SelectorRegexpAll SelectorRegexp = iota
-	SelectorRegexpNot
-	SelectorRegexpTag
-	SelectorRegexpPrefix
-	SelectorRegexpAttribute
-	SelectorRegexpAttributeDoubleQuote
-	SelectorRegexpAttributeSingleQuote
-	SelectorRegexpAttributeUnquotedValue
-	SelectorRegexpAttributeNoValue
-	SelectorRegexpNotEnd
-	SelectorRegexpSeparator
+	SelectorRegexpAll             SelectorRegexp = iota
+	SelectorRegexpNot                            // 1: ":not("
+	SelectorRegexpTag                            // 2: tag with prefix
+	SelectorRegexpPrefix                         // 3: prefix (. or #)
+	SelectorRegexpAttribute                      // 4: attribute name
+	SelectorRegexpAttributeValue                 // 5: attribute value (double quoted)
+	SelectorRegexpAttributeValue2                // 6: attribute value (single quoted)
+	SelectorRegexpAttributeValue3                // 7: attribute value (unquoted)
+	SelectorRegexpNotEnd                         // 8: ")"
+	SelectorRegexpSeparator                      // 9: ","
 )
 
 // selectorRegexp matches CSS selector patterns
-// Note: Go regexp doesn't support backreferences, so we match double-quoted, single-quoted, and unquoted values separately
+// Go doesn't support backreferences, so we accept any quote type and value without validating matching quotes
 var selectorRegexp = regexp.MustCompile(
 	`(\:not\()|` + // 1: ":not("
-		`(([\.\#]?)[-\w]+)|` + // 2: "tag"; 3: "."/"#";
-		// "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
-		// 4: attribute; 5: attribute_string (double quote); 6: attribute_value (double quote)
-		// 7: attribute_string (single quote); 8: attribute_value (single quote)
-		// 9: attribute_string (unquoted); 10: attribute_value (unquoted)
-		// 11: attribute (no value)
-		`(?:\[([-.\w*\\$]+)(?:=(")([^\]"]*)"|(')([^\]']*)'|(=)([^\]\s]+)|())\])|` + // "[name]", "[name=value]", "[name="value"]", "[name='value']"
-		`(\))|` + // 12: ")"
-		`(\s*,\s*)`, // 13: ","
+		`(([\.\#]?)[-\w]+)|` + // 2: "tag"; 3: "."/"#"
+		// 4: attribute name; 5: double quoted value; 6: single quoted value; 7: unquoted value
+		`(?:\[([-.\w*\\$]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\]\s]+)))?\])|` + // [name], [name=value], [name="value"], [name='value']
+		`(\))|` + // 8: ")"
+		`(\s*,\s*)`, // 9: ","
 )
 
 // CssSelector represents a CSS selector
@@ -58,7 +53,7 @@ func NewCssSelector() *CssSelector {
 // ParseCssSelector parses a CSS selector string into CssSelector array
 func ParseCssSelector(selector string) ([]*CssSelector, error) {
 	results := []*CssSelector{}
-	
+
 	addResult := func(res []*CssSelector, cssSel *CssSelector) []*CssSelector {
 		if len(cssSel.NotSelectors) > 0 &&
 			cssSel.Element == nil &&
@@ -69,33 +64,36 @@ func ParseCssSelector(selector string) ([]*CssSelector, error) {
 		}
 		return append(res, cssSel)
 	}
-	
+
 	cssSelector := NewCssSelector()
 	current := cssSelector
 	inNot := false
-	
+
 	matches := selectorRegexp.FindAllStringSubmatch(selector, -1)
-	for _, match := range matches {
+	fmt.Printf("[DEBUG ParseCssSelector] Parsing selector=%q, found %d matches\n", selector, len(matches))
+	for i, match := range matches {
+		fmt.Printf("[DEBUG ParseCssSelector] match[%d]: inNot=%v, match=%q\n", i, inNot, match[0])
 		if len(match) > int(SelectorRegexpNot) && match[SelectorRegexpNot] != "" {
 			if inNot {
 				return nil, fmt.Errorf("nesting :not in a selector is not allowed")
 			}
+			fmt.Printf("[DEBUG ParseCssSelector] Setting inNot=true\n")
 			inNot = true
 			current = NewCssSelector()
 			cssSelector.NotSelectors = append(cssSelector.NotSelectors, current)
 		}
-		
+
 		tag := ""
 		if len(match) > int(SelectorRegexpTag) && match[SelectorRegexpTag] != "" {
 			tag = match[SelectorRegexpTag]
 		}
-		
+
 		if tag != "" {
 			prefix := ""
 			if len(match) > int(SelectorRegexpPrefix) {
 				prefix = match[SelectorRegexpPrefix]
 			}
-			
+
 			if prefix == "#" {
 				// #hash
 				id := tag[1:]
@@ -109,83 +107,48 @@ func ParseCssSelector(selector string) ([]*CssSelector, error) {
 				current.SetElement(tag)
 			}
 		}
-		
-		// Check for attribute with double quote
-		if len(match) > int(SelectorRegexpAttributeDoubleQuote) && match[SelectorRegexpAttributeDoubleQuote] == `"` {
-			attribute := ""
-			if len(match) > int(SelectorRegexpAttribute) {
-				attribute = match[SelectorRegexpAttribute]
-			}
+
+		// Attribute handling: group 4 = name, groups 5/6/7 = value (one will match based on quote type)
+		if len(match) > int(SelectorRegexpAttribute) && match[SelectorRegexpAttribute] != "" {
+			attribute := match[SelectorRegexpAttribute] // Group 4: attribute name
 			attrValue := ""
-			if len(match) > int(SelectorRegexpAttributeUnquotedValue)+3 {
-				attrValue = match[SelectorRegexpAttributeUnquotedValue+3]
+
+			// Check which value group matched (only one will be non-empty)
+			// Group 5: double quoted, Group 6: single quoted, Group 7: unquoted
+			if len(match) > int(SelectorRegexpAttributeValue) && match[SelectorRegexpAttributeValue] != "" {
+				attrValue = match[SelectorRegexpAttributeValue] // Double quoted value
+			} else if len(match) > int(SelectorRegexpAttributeValue2) && match[SelectorRegexpAttributeValue2] != "" {
+				attrValue = match[SelectorRegexpAttributeValue2] // Single quoted value
+			} else if len(match) > int(SelectorRegexpAttributeValue3) && match[SelectorRegexpAttributeValue3] != "" {
+				attrValue = match[SelectorRegexpAttributeValue3] // Unquoted value
 			}
-			if attribute != "" {
-				unescapedAttr, err := current.UnescapeAttribute(attribute)
-				if err != nil {
-					return nil, err
-				}
-				current.AddAttribute(unescapedAttr, attrValue)
-			}
-		} else if len(match) > int(SelectorRegexpAttributeSingleQuote) && match[SelectorRegexpAttributeSingleQuote] == `'` {
-			// Check for attribute with single quote
-			attribute := ""
-			if len(match) > int(SelectorRegexpAttribute) {
-				attribute = match[SelectorRegexpAttribute]
-			}
-			attrValue := ""
-			if len(match) > int(SelectorRegexpAttributeUnquotedValue)+5 {
-				attrValue = match[SelectorRegexpAttributeUnquotedValue+5]
-			}
-			if attribute != "" {
-				unescapedAttr, err := current.UnescapeAttribute(attribute)
-				if err != nil {
-					return nil, err
-				}
-				current.AddAttribute(unescapedAttr, attrValue)
-			}
-		} else if len(match) > int(SelectorRegexpAttributeNoValue) && match[SelectorRegexpAttributeNoValue] != "" {
-			// Check for attribute with unquoted value or no value
-			attribute := ""
-			if len(match) > int(SelectorRegexpAttribute) {
-				attribute = match[SelectorRegexpAttribute]
-			}
-			attrValue := ""
-			if len(match) > int(SelectorRegexpAttributeUnquotedValue)+9 {
-				attrValue = match[SelectorRegexpAttributeUnquotedValue+9]
-			}
-			if attribute != "" {
-				unescapedAttr, err := current.UnescapeAttribute(attribute)
-				if err != nil {
-					return nil, err
-				}
-				current.AddAttribute(unescapedAttr, attrValue)
-			}
-		} else if len(match) > int(SelectorRegexpAttribute) && match[SelectorRegexpAttribute] != "" {
-			// Attribute without value
-			attribute := match[SelectorRegexpAttribute]
+			// else: no value, attrValue remains ""
+
 			unescapedAttr, err := current.UnescapeAttribute(attribute)
 			if err != nil {
 				return nil, err
 			}
-			current.AddAttribute(unescapedAttr, "")
+			current.AddAttribute(unescapedAttr, attrValue)
 		}
-		
+
 		if len(match) > int(SelectorRegexpNotEnd) && match[SelectorRegexpNotEnd] != "" {
+			fmt.Printf("[DEBUG ParseCssSelector] Found ), setting inNot=false\n")
 			inNot = false
 			current = cssSelector
 		}
-		
+
 		if len(match) > int(SelectorRegexpSeparator) && match[SelectorRegexpSeparator] != "" {
 			if inNot {
 				return nil, fmt.Errorf("multiple selectors in :not are not supported")
 			}
+			fmt.Printf("[DEBUG ParseCssSelector] Found separator, adding result and resetting\n")
 			results = addResult(results, cssSelector)
 			cssSelector = NewCssSelector()
 			current = cssSelector
+			inNot = false // Reset inNot for the next selector in the list
 		}
 	}
-	
+
 	results = addResult(results, cssSelector)
 	return results, nil
 }
@@ -258,17 +221,32 @@ func (cs *CssSelector) AddClassName(name string) {
 	cs.ClassNames = append(cs.ClassNames, strings.ToLower(name))
 }
 
+// GetElement returns the element name
+func (cs *CssSelector) GetElement() *string {
+	return cs.Element
+}
+
+// GetClassNames returns the class names
+func (cs *CssSelector) GetClassNames() []string {
+	return cs.ClassNames
+}
+
+// GetNotSelectors returns the :not selectors
+func (cs *CssSelector) GetNotSelectors() []*CssSelector {
+	return cs.NotSelectors
+}
+
 // String returns the string representation of the selector
 func (cs *CssSelector) String() string {
 	res := ""
 	if cs.Element != nil {
 		res = *cs.Element
 	}
-	
+
 	for _, klass := range cs.ClassNames {
 		res += "." + klass
 	}
-	
+
 	for i := 0; i < len(cs.Attrs); i += 2 {
 		name := cs.EscapeAttribute(cs.Attrs[i])
 		value := ""
@@ -281,11 +259,11 @@ func (cs *CssSelector) String() string {
 			res += fmt.Sprintf("[%s]", name)
 		}
 	}
-	
+
 	for _, notSelector := range cs.NotSelectors {
 		res += fmt.Sprintf(":not(%s)", notSelector.String())
 	}
-	
+
 	return res
 }
 
@@ -322,15 +300,22 @@ func CreateNotMatcher(notSelectors []*CssSelector) *SelectorMatcher[interface{}]
 
 // AddSelectables adds selectables to the matcher
 func (sm *SelectorMatcher[T]) AddSelectables(cssSelectors []*CssSelector, callbackCtxt *T) {
+	fmt.Printf("[DEBUG CSS AddSelectables] Adding %d selectors\n", len(cssSelectors))
 	var listContext *SelectorListContext
 	if len(cssSelectors) > 1 {
 		listContext = NewSelectorListContext(cssSelectors)
 		sm.listContexts = append(sm.listContexts, listContext)
 	}
-	
-	for _, cssSelector := range cssSelectors {
+
+	for i, cssSelector := range cssSelectors {
+		elem := ""
+		if cssSelector.Element != nil {
+			elem = *cssSelector.Element
+		}
+		fmt.Printf("[DEBUG CSS AddSelectables] selector[%d]: element=%q, attrs=%v, attrs_len=%d\n", i, elem, cssSelector.Attrs, len(cssSelector.Attrs))
 		sm.addSelectable(cssSelector, callbackCtxt, listContext)
 	}
+	fmt.Printf("[DEBUG CSS AddSelectables] Done adding selectors\n")
 }
 
 func (sm *SelectorMatcher[T]) addSelectable(cssSelector *CssSelector, callbackCtxt *T, listContext *SelectorListContext) {
@@ -339,7 +324,7 @@ func (sm *SelectorMatcher[T]) addSelectable(cssSelector *CssSelector, callbackCt
 	classNames := cssSelector.ClassNames
 	attrs := cssSelector.Attrs
 	selectable := NewSelectorContext(cssSelector, callbackCtxt, listContext)
-	
+
 	if element != nil {
 		isTerminal := len(attrs) == 0 && len(classNames) == 0
 		if isTerminal {
@@ -348,7 +333,7 @@ func (sm *SelectorMatcher[T]) addSelectable(cssSelector *CssSelector, callbackCt
 			matcher = sm.addPartial(sm.elementPartialMap, *element)
 		}
 	}
-	
+
 	for i, className := range classNames {
 		isTerminal := len(attrs) == 0 && i == len(classNames)-1
 		if isTerminal {
@@ -357,7 +342,7 @@ func (sm *SelectorMatcher[T]) addSelectable(cssSelector *CssSelector, callbackCt
 			matcher = sm.addPartial(matcher.classPartialMap, className)
 		}
 	}
-	
+
 	for i := 0; i < len(attrs); i += 2 {
 		isTerminal := i == len(attrs)-2
 		name := attrs[i]
@@ -365,7 +350,7 @@ func (sm *SelectorMatcher[T]) addSelectable(cssSelector *CssSelector, callbackCt
 		if i+1 < len(attrs) {
 			value = attrs[i+1]
 		}
-		
+
 		if isTerminal {
 			terminalMap := matcher.attrValueMap
 			terminalValuesMap, ok := terminalMap[name]
@@ -397,8 +382,11 @@ func (sm *SelectorMatcher[T]) addTerminal(map_ map[string][]*SelectorContext[T],
 func (sm *SelectorMatcher[T]) addPartial(map_ map[string]*SelectorMatcher[T], name string) *SelectorMatcher[T] {
 	matcher, ok := map_[name]
 	if !ok {
+		fmt.Printf("[DEBUG CSS addPartial] Creating new nested matcher for key=%q\n", name)
 		matcher = NewSelectorMatcher[T]()
 		map_[name] = matcher
+	} else {
+		fmt.Printf("[DEBUG CSS addPartial] Reusing existing nested matcher for key=%q\n", name)
 	}
 	return matcher
 }
@@ -415,61 +403,67 @@ func (sm *SelectorMatcher[T]) Match(cssSelector *CssSelector, matchedCallback Ma
 	}
 	classNames := cssSelector.ClassNames
 	attrs := cssSelector.Attrs
-	
+	fmt.Printf("[DEBUG CSS Match] element=%q, classNames=%v, attrs=%v, attrs_len=%d\n", element, classNames, attrs, len(attrs))
+
 	for _, listContext := range sm.listContexts {
 		listContext.AlreadyMatched = false
 	}
-	
+
 	result = sm.matchTerminal(sm.elementMap, element, cssSelector, matchedCallback) || result
 	result = sm.matchPartial(sm.elementPartialMap, element, cssSelector, matchedCallback) || result
-	
+
 	for _, className := range classNames {
 		result = sm.matchTerminal(sm.classMap, className, cssSelector, matchedCallback) || result
 		result = sm.matchPartial(sm.classPartialMap, className, cssSelector, matchedCallback) || result
 	}
-	
+
 	for i := 0; i < len(attrs); i += 2 {
 		name := attrs[i]
 		value := ""
 		if i+1 < len(attrs) {
 			value = attrs[i+1]
 		}
-		
+		fmt.Printf("[DEBUG CSS Match] Processing attr i=%d, name=%q, value=%q\n", i, name, value)
+
 		terminalValuesMap, ok := sm.attrValueMap[name]
+		fmt.Printf("[DEBUG CSS Match] attrValueMap[%q] exists=%v\n", name, ok)
 		if ok {
 			if value != "" {
 				result = sm.matchTerminal(terminalValuesMap, "", cssSelector, matchedCallback) || result
 			}
 			result = sm.matchTerminal(terminalValuesMap, value, cssSelector, matchedCallback) || result
 		}
-		
+
 		partialValuesMap, ok := sm.attrValuePartialMap[name]
+		fmt.Printf("[DEBUG CSS Match] attrValuePartialMap[%q] exists=%v\n", name, ok)
 		if ok {
+			fmt.Printf("[DEBUG CSS Match] Calling matchPartial for name=%q, value=%q\n", name, value)
 			if value != "" {
 				result = sm.matchPartial(partialValuesMap, "", cssSelector, matchedCallback) || result
 			}
 			result = sm.matchPartial(partialValuesMap, value, cssSelector, matchedCallback) || result
 		}
 	}
-	
+
 	return result
 }
 
 func (sm *SelectorMatcher[T]) matchTerminal(map_ map[string][]*SelectorContext[T], name string, cssSelector *CssSelector, matchedCallback MatchCallback[T]) bool {
-	if map_ == nil || name == "" {
+	if map_ == nil {
 		return false
 	}
-	
+	// Note: name can be "" (empty string) which is a valid attribute value, element name, or class name
+
 	selectables := map_[name]
 	starSelectables, ok := map_["*"]
 	if ok {
 		selectables = append(selectables, starSelectables...)
 	}
-	
+
 	if len(selectables) == 0 {
 		return false
 	}
-	
+
 	result := false
 	for _, selectable := range selectables {
 		if selectable.Finalize(cssSelector, matchedCallback) {
@@ -480,16 +474,21 @@ func (sm *SelectorMatcher[T]) matchTerminal(map_ map[string][]*SelectorContext[T
 }
 
 func (sm *SelectorMatcher[T]) matchPartial(map_ map[string]*SelectorMatcher[T], name string, cssSelector *CssSelector, matchedCallback MatchCallback[T]) bool {
-	if map_ == nil || name == "" {
+	if map_ == nil {
 		return false
 	}
-	
+	// Note: name can be "" (empty string) which is a valid attribute value, so don't reject it
+
 	nestedSelector, ok := map_[name]
 	if !ok {
+		fmt.Printf("[DEBUG CSS matchPartial] map_[%q] not found\n", name)
 		return false
 	}
-	
-	return nestedSelector.Match(cssSelector, matchedCallback)
+
+	fmt.Printf("[DEBUG CSS matchPartial] Found nested matcher for %q, calling nested.Match...\n", name)
+	result := nestedSelector.Match(cssSelector, matchedCallback)
+	fmt.Printf("[DEBUG CSS matchPartial] nested.Match returned %v\n", result)
+	return result
 }
 
 // SelectorListContext represents a list of selectors
@@ -508,9 +507,9 @@ func NewSelectorListContext(selectors []*CssSelector) *SelectorListContext {
 
 // SelectorContext represents a selector context
 type SelectorContext[T any] struct {
-	Selector    *CssSelector
-	CbContext   *T
-	ListContext *SelectorListContext
+	Selector     *CssSelector
+	CbContext    *T
+	ListContext  *SelectorListContext
 	NotSelectors []*CssSelector
 }
 
@@ -560,4 +559,3 @@ func (sm *SelectorlessMatcher[T]) Match(name string) []T {
 	}
 	return []T{}
 }
-

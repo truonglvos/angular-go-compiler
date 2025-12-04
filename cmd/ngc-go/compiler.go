@@ -22,7 +22,7 @@ type ComponentInfo struct {
 }
 
 // CompileProject compiles an Angular project
-func CompileProject(rootPath string) error {
+func CompileProject(rootPath string, outputPath string) error {
 	fmt.Printf("🔨 Compiling Angular project at: %s\n", rootPath)
 	fmt.Println("")
 
@@ -40,11 +40,27 @@ func CompileProject(rootPath string) error {
 	fmt.Printf("📦 Found %d component(s)\n", len(components))
 	fmt.Println("")
 
+	// Determine output directory
+	var outputDir string
+	if outputPath != "" {
+		// Use provided output path (can be absolute or relative)
+		if filepath.IsAbs(outputPath) {
+			outputDir = outputPath
+		} else {
+			outputDir = filepath.Join(rootPath, outputPath)
+		}
+	} else {
+		// Default output directory
+		outputDir = filepath.Join(rootPath, "dist", "ngc-go")
+	}
+
 	// Create output directory
-	outputDir := filepath.Join(rootPath, "dist", "ngc-go")
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("error creating output directory: %v", err)
 	}
+	
+	fmt.Printf("📁 Output directory: %s\n", outputDir)
+	fmt.Println("")
 
 	// Compile each component
 	successCount := 0
@@ -74,12 +90,15 @@ func CompileProject(rootPath string) error {
 func findComponents(rootPath string) ([]ComponentInfo, error) {
 	var components []ComponentInfo
 
+	// Improved regex patterns to handle various formats
 	compRe := regexp.MustCompile(`@Component\s*\(\s*\{([\s\S]*?)\}\s*\)`)
-	classRe := regexp.MustCompile(`export\s+class\s+(\w+)\s*(?:extends|implements)?`)
+	classRe := regexp.MustCompile(`export\s+(?:default\s+)?class\s+(\w+)\s*(?:extends|implements)?`)
 	templateRe := regexp.MustCompile(`template\s*:\s*` + "`" + `([\s\S]*?)` + "`")
+	// Support both single and double quotes, and handle ./ prefix
 	templateUrlRe := regexp.MustCompile(`templateUrl\s*:\s*['\"]([^'\"]+)['\"]`)
 	selectorRe := regexp.MustCompile(`selector\s*:\s*['\"]([^'\"]+)['\"]`)
 
+	var filesChecked int
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
@@ -97,6 +116,7 @@ func findComponents(rootPath string) ([]ComponentInfo, error) {
 			return nil
 		}
 
+		filesChecked++
 		data, err := os.ReadFile(path)
 		if err != nil {
 			return nil
@@ -109,15 +129,19 @@ func findComponents(rootPath string) ([]ComponentInfo, error) {
 			return nil
 		}
 
-		// Extract class name
+		// Extract class name - improved regex to handle default exports
 		classMatch := classRe.FindStringSubmatch(content)
 		if len(classMatch) < 2 {
+			fmt.Printf("   ⚠️  Found @Component in %s but could not extract class name\n", path)
 			return nil
 		}
 		className := classMatch[1]
 
 		// Extract component metadata
 		compMatch := compRe.FindStringSubmatch(content)
+		if len(compMatch) < 2 {
+			return nil
+		}
 		compBody := compMatch[1]
 
 		comp := ComponentInfo{
@@ -137,54 +161,120 @@ func findComponents(rootPath string) ([]ComponentInfo, error) {
 			comp.TemplateUrl = templateUrlMatch[1]
 		}
 
+		fmt.Printf("   ✓ Found component: %s (selector: %s, template: %s)\n", 
+			className, comp.Selector, 
+			func() string {
+				if comp.Template != "" {
+					return "inline"
+				}
+				if comp.TemplateUrl != "" {
+					return comp.TemplateUrl
+				}
+				return "none"
+			}())
+
 		components = append(components, comp)
 		return nil
 	})
+
+	if err == nil {
+		fmt.Printf("   📂 Scanned %d TypeScript files\n", filesChecked)
+	}
 
 	return components, err
 }
 
 // compileComponent compiles a single Angular component
 func compileComponent(comp ComponentInfo, outputDir string) error {
+	fmt.Printf("   🔍 Debug: Template='%s', TemplateUrl='%s'\n", 
+		func() string {
+			if comp.Template != "" {
+				return fmt.Sprintf("inline (%d chars)", len(comp.Template))
+			}
+			return "empty"
+		}(),
+		comp.TemplateUrl)
+
 	if comp.Template == "" && comp.TemplateUrl == "" {
 		return fmt.Errorf("component has no template")
 	}
 
-	// For now, we'll parse the template if it's inline
+	var templateContent string
+	var templatePath string
+
+	// Get template content - either inline or from file
 	if comp.Template != "" {
-		// Parse template using ml_parser
-		htmlParser := ml_parser.NewHtmlParser()
-		parseResult := htmlParser.Parse(comp.Template, comp.FilePath, nil)
-
-		if len(parseResult.Errors) > 0 {
-			return fmt.Errorf("error parsing template: %d errors found", len(parseResult.Errors))
+		// Inline template
+		templateContent = comp.Template
+		templatePath = comp.FilePath
+		fmt.Printf("   📝 Using inline template from: %s\n", templatePath)
+	} else if comp.TemplateUrl != "" {
+		// External template file - resolve path relative to component file
+		componentDir := filepath.Dir(comp.FilePath)
+		templatePath = filepath.Join(componentDir, comp.TemplateUrl)
+		
+		// Normalize path (handle ./ prefix)
+		templatePath = filepath.Clean(templatePath)
+		
+		fmt.Printf("   🔍 Attempting to read template from: %s\n", templatePath)
+		
+		// Read template file
+		data, err := os.ReadFile(templatePath)
+		if err != nil {
+			return fmt.Errorf("error reading template file %s: %v", templatePath, err)
 		}
+		templateContent = string(data)
+		fmt.Printf("   📖 Read template from: %s (%d bytes)\n", templatePath, len(data))
+	} else {
+		return fmt.Errorf("no template or templateUrl found")
+	}
 
-		// Create a compilation job
-		// TODO: Integrate with full pipeline
-		_ = outputDir
+	// Parse template using ml_parser
+	fmt.Printf("   🔍 Parsing template (%d bytes)...\n", len(templateContent))
+	htmlParser := ml_parser.NewHtmlParser()
+	parseResult := htmlParser.Parse(templateContent, templatePath, nil)
 
-		fmt.Printf("   📝 Template parsed: %d nodes\n", len(parseResult.RootNodes))
+	if len(parseResult.Errors) > 0 {
+		errMsg := fmt.Sprintf("error parsing template: %d errors found", len(parseResult.Errors))
+		for i, err := range parseResult.Errors {
+			if i < 5 { // Show first 5 errors
+				errMsg += fmt.Sprintf("\n      - %v", err)
+			}
+		}
+		if len(parseResult.Errors) > 5 {
+			errMsg += fmt.Sprintf("\n      ... and %d more errors", len(parseResult.Errors)-5)
+		}
+		return fmt.Errorf(errMsg)
+	}
 
-		// For now, just create a placeholder output file
-		outputFile := filepath.Join(outputDir, strings.ToLower(comp.ClassName)+".ngfactory.js")
-		outputContent := fmt.Sprintf(`// Compiled by ngc-go
+	fmt.Printf("   📝 Template parsed: %d nodes\n", len(parseResult.RootNodes))
+
+	// Generate code from AST
+	fmt.Printf("   🔧 Generating factory code...\n")
+	codeGen := NewCodeGenerator()
+	generatedCode := codeGen.Generate(parseResult.RootNodes, comp.ClassName)
+	
+	// Create output file
+	outputFile := filepath.Join(outputDir, strings.ToLower(comp.ClassName)+".ngfactory.js")
+	fmt.Printf("   🔍 Writing output file to: %s\n", outputFile)
+	
+	// Build final output with imports and metadata
+	outputContent := fmt.Sprintf(`// Compiled by ngc-go
 // Component: %s
 // Selector: %s
+// Template: %s
 // Template nodes: %d
 
-export function %sFactory() {
-  // TODO: Generate actual factory code
-  return null;
-}
-`, comp.ClassName, comp.Selector, len(parseResult.RootNodes), comp.ClassName)
+import { ɵɵelement, ɵɵelementStart, ɵɵelementEnd, ɵɵtext, ɵɵtextInterpolate, ɵɵattribute } from '@angular/core';
 
-		if err := os.WriteFile(outputFile, []byte(outputContent), 0644); err != nil {
-			return fmt.Errorf("error writing output file: %v", err)
-		}
+%s
+`, comp.ClassName, comp.Selector, templatePath, len(parseResult.RootNodes), generatedCode)
 
-		fmt.Printf("   📄 Output: %s\n", outputFile)
+	if err := os.WriteFile(outputFile, []byte(outputContent), 0644); err != nil {
+		return fmt.Errorf("error writing output file %s: %v", outputFile, err)
 	}
+
+	fmt.Printf("   📄 Output file created: %s (%d bytes)\n", outputFile, len(outputContent))
 
 	return nil
 }

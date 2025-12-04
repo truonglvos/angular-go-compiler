@@ -1395,101 +1395,101 @@ func (t *Tokenizer) _consumeTagOpen(start CharacterCursor) *TagInfo {
 	var openTokenStarted bool
 
 	// Use defer/recover to handle incomplete tags (terminated by EOF)
-		defer func() {
-			fmt.Printf("[DEBUG] _consumeTagOpen: END (defer), peek=%d\n", t.cursor.Peek())
-			if r := recover(); r != nil {
-				// Check if it's a ParseError (from _createError) or CursorError
-				var isParseError bool
-				if _, ok := r.(*util.ParseError); ok {
-					isParseError = true
-				} else if _, ok := r.(*CursorError); ok {
-					isParseError = true
-				}
-				
-				if isParseError {
-					// We errored before we could close the opening tag, so it is incomplete.
-					// Check if we have an open token that needs to be marked as incomplete
-					if openTokenStarted {
-						// Find the last TAG_OPEN_START token and change it to INCOMPLETE_TAG_OPEN
-						for i := len(t.tokens) - 1; i >= 0; i-- {
-							token := t.tokens[i]
-							if token != nil && token.Type() == TokenTypeTAG_OPEN_START {
-								if tagToken, ok := token.(*TagOpenStartToken); ok {
-									tagToken.TokenBase.tokenType = TokenTypeINCOMPLETE_TAG_OPEN
-									fmt.Printf("[DEBUG] _consumeTagOpen: changed token[%d] to INCOMPLETE_TAG_OPEN\n", i)
-									break
-								}
+	defer func() {
+		fmt.Printf("[DEBUG] _consumeTagOpen: END (defer), peek=%d\n", t.cursor.Peek())
+		if r := recover(); r != nil {
+			// Check if it's a ParseError (from _createError) or CursorError
+			var isParseError bool
+			if _, ok := r.(*util.ParseError); ok {
+				isParseError = true
+			} else if _, ok := r.(*CursorError); ok {
+				isParseError = true
+			}
+
+			if isParseError {
+				// We errored before we could close the opening tag, so it is incomplete.
+				// Check if we have an open token that needs to be marked as incomplete
+				if openTokenStarted {
+					// Find the last TAG_OPEN_START token and change it to INCOMPLETE_TAG_OPEN
+					for i := len(t.tokens) - 1; i >= 0; i-- {
+						token := t.tokens[i]
+						if token != nil && token.Type() == TokenTypeTAG_OPEN_START {
+							if tagToken, ok := token.(*TagOpenStartToken); ok {
+								tagToken.TokenBase.tokenType = TokenTypeINCOMPLETE_TAG_OPEN
+								fmt.Printf("[DEBUG] _consumeTagOpen: changed token[%d] to INCOMPLETE_TAG_OPEN\n", i)
+								break
 							}
 						}
-						// Check if error occurred during attribute consumption (not just tag name)
-						// Errors during attribute consumption should be reported (e.g., missing closing quote)
-						// Errors during tag name consumption (EOF) are expected for incomplete tags
-						hasAttributes := false
-						for i := len(t.tokens) - 1; i >= 0; i-- {
-							token := t.tokens[i]
-							if token != nil {
-								tokenType := token.Type()
-								if tokenType == TokenTypeATTR_NAME || tokenType == TokenTypeATTR_QUOTE || tokenType == TokenTypeATTR_VALUE_TEXT || tokenType == TokenTypeATTR_VALUE_INTERPOLATION {
-									hasAttributes = true
-									break
-								}
-								// Stop checking if we hit the TAG_OPEN_START token
-								if tokenType == TokenTypeTAG_OPEN_START || tokenType == TokenTypeINCOMPLETE_TAG_OPEN {
-									break
-								}
+					}
+					// Check if error occurred during attribute consumption (not just tag name)
+					// Errors during attribute consumption should be reported (e.g., missing closing quote)
+					// Errors during tag name consumption (EOF) are expected for incomplete tags
+					hasAttributes := false
+					for i := len(t.tokens) - 1; i >= 0; i-- {
+						token := t.tokens[i]
+						if token != nil {
+							tokenType := token.Type()
+							if tokenType == TokenTypeATTR_NAME || tokenType == TokenTypeATTR_QUOTE || tokenType == TokenTypeATTR_VALUE_TEXT || tokenType == TokenTypeATTR_VALUE_INTERPOLATION {
+								hasAttributes = true
+								break
+							}
+							// Stop checking if we hit the TAG_OPEN_START token
+							if tokenType == TokenTypeTAG_OPEN_START || tokenType == TokenTypeINCOMPLETE_TAG_OPEN {
+								break
 							}
 						}
-						// If we have attributes, the error occurred during attribute consumption
-						// and should be reported (even if it's EOF - e.g., missing closing quote)
-						if hasAttributes {
+					}
+					// If we have attributes, the error occurred during attribute consumption
+					// and should be reported (even if it's EOF - e.g., missing closing quote)
+					if hasAttributes {
+						panic(r)
+					}
+					// If no attributes, check if it's an EOF error
+					// EOF errors for incomplete tags without attributes are expected (tag terminated with EOF)
+					if parseErr, ok := r.(*util.ParseError); ok {
+						if parseErr.Msg != _unexpectedCharacterErrorMsg(core.CharEOF) {
+							// Re-throw non-EOF errors so they can be reported
 							panic(r)
 						}
-						// If no attributes, check if it's an EOF error
-						// EOF errors for incomplete tags without attributes are expected (tag terminated with EOF)
-						if parseErr, ok := r.(*util.ParseError); ok {
-							if parseErr.Msg != _unexpectedCharacterErrorMsg(core.CharEOF) {
-								// Re-throw non-EOF errors so they can be reported
-								panic(r)
-							}
-							// EOF errors for incomplete tags without attributes are expected, just return
-							return
-						} else if cursorErr, ok := r.(*CursorError); ok {
-							if cursorErr.Msg != _unexpectedCharacterErrorMsg(core.CharEOF) {
-								// Re-throw non-EOF errors so they can be reported
-								panic(r)
-							}
-							// EOF errors for incomplete tags without attributes are expected, just return
-							return
+						// EOF errors for incomplete tags without attributes are expected, just return
+						return
+					} else if cursorErr, ok := r.(*CursorError); ok {
+						if cursorErr.Msg != _unexpectedCharacterErrorMsg(core.CharEOF) {
+							// Re-throw non-EOF errors so they can be reported
+							panic(r)
 						}
-						// Unknown error type, re-throw
-						panic(r)
-					} else {
-						// When the start tag is invalid (no tag name consumed), assume we want a "<" as text.
-						// Back to back text tokens are merged at the end.
-						// The cursor was already advanced past "<" by _attemptCharCode(core.CharLT),
-						// so we need to consume the rest as text until we hit a valid tag start or EOF
-						// For "< a>", we want to consume everything until ">" as text
-						textStart := start.Clone()
-						// Consume everything until we hit ">" or EOF
-						for t.cursor.Peek() != core.CharGT && t.cursor.Peek() != core.CharEOF {
-							t.cursor.Advance()
-						}
-						// If we found ">", include it in the text token
-						if t.cursor.Peek() == core.CharGT {
-							t.cursor.Advance()
-						}
-						textValue := t.cursor.GetChars(textStart)
-						fmt.Printf("[DEBUG] _consumeTagOpen: creating TEXT token with value=%q, textStart offset=%d, cursor offset=%d\n",
-							textValue, textStart.Diff(t.cursor), t.cursor.Diff(textStart))
-						t._beginToken(TokenTypeTEXT, textStart)
-						t._endToken([]string{textValue}, nil)
-						// Don't re-throw the error - allow tokenization to continue
+						// EOF errors for incomplete tags without attributes are expected, just return
 						return
 					}
+					// Unknown error type, re-throw
+					panic(r)
+				} else {
+					// When the start tag is invalid (no tag name consumed), assume we want a "<" as text.
+					// Back to back text tokens are merged at the end.
+					// The cursor was already advanced past "<" by _attemptCharCode(core.CharLT),
+					// so we need to consume the rest as text until we hit a valid tag start or EOF
+					// For "< a>", we want to consume everything until ">" as text
+					textStart := start.Clone()
+					// Consume everything until we hit ">" or EOF
+					for t.cursor.Peek() != core.CharGT && t.cursor.Peek() != core.CharEOF {
+						t.cursor.Advance()
+					}
+					// If we found ">", include it in the text token
+					if t.cursor.Peek() == core.CharGT {
+						t.cursor.Advance()
+					}
+					textValue := t.cursor.GetChars(textStart)
+					fmt.Printf("[DEBUG] _consumeTagOpen: creating TEXT token with value=%q, textStart offset=%d, cursor offset=%d\n",
+						textValue, textStart.Diff(t.cursor), t.cursor.Diff(textStart))
+					t._beginToken(TokenTypeTEXT, textStart)
+					t._endToken([]string{textValue}, nil)
+					// Don't re-throw the error - allow tokenization to continue
+					return
 				}
-				panic(r)
 			}
-		}()
+			panic(r)
+		}
+	}()
 
 	var openToken Token
 	var closingTagName string
@@ -2418,11 +2418,19 @@ func (t *Tokenizer) _isTextEnd() bool {
 		}
 	}
 
-	if t.tokenizeBlocks && t._isBlockStart() {
-		return true
-	}
-	if t.tokenizeBlocks && t.cursor.Peek() == core.CharRBRACE {
-		return true
+	// Check for blocks and @let declarations
+	if t.tokenizeBlocks && !t.inInterpolation && !t._isInExpansionCase() && !t._isInExpansionForm() {
+		if t._isBlockStart() {
+			return true
+		}
+		// Check for @let declaration start
+		if t.tokenizeLet && t._isLetStart() {
+			return true
+		}
+		// Don't treat '}' as text end when in interpolation context
+		if t.cursor.Peek() == core.CharRBRACE {
+			return true
+		}
 	}
 
 	return false
@@ -2621,6 +2629,11 @@ func (t *Tokenizer) _consumeBlockParameters() {
 		}
 
 		t._endToken([]string{t.cursor.GetChars(start)}, nil)
+
+		// Advance past the semicolon if present
+		if t.cursor.Peek() == core.CharSEMICOLON {
+			t.cursor.Advance()
+		}
 
 		// Skip to the next parameter.
 		t._attemptCharCodeUntilFn(isBlockParameterChar)

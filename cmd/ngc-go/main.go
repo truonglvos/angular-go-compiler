@@ -10,9 +10,11 @@ func usage() {
 Usage: ngc-go <command> [args]
 
 Commands:
-  compile <path>   Compile project (placeholder)
-  watch <path>     Watch and compile (placeholder)
-  help             Show help`)
+  compile <path> [output]   Compile project
+                            path: project root path
+                            output: output directory (optional, default: dist/ngc-go)
+  watch <path>              Watch and compile (placeholder)
+  help                      Show help`)
 }
 
 func main() {
@@ -26,10 +28,14 @@ func main() {
 		usage()
 	case "compile":
 		path := "."
+		outputPath := ""
 		if len(os.Args) >= 3 {
 			path = os.Args[2]
 		}
-		if err := compile(path); err != nil {
+		if len(os.Args) >= 4 {
+			outputPath = os.Args[3]
+		}
+		if err := compile(path, outputPath); err != nil {
 			fmt.Fprintf(os.Stderr, "compile error: %v\n", err)
 			os.Exit(1)
 		}
@@ -41,8 +47,8 @@ func main() {
 	}
 }
 
-func compile(root string) error {
+func compile(root string, outputPath string) error {
 	// Import from compiler-cli package instead
 	// For now, keep using local function
-	return CompileProject(root)
+	return CompileProject(root, outputPath)
 }

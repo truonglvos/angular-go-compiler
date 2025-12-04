@@ -839,10 +839,18 @@ func ParseDeferredTime(value string) *int {
 		return nil
 	}
 
-	timeStr := match[0]
+	// match[0] is the full match (e.g., "1s" or "500")
+	// match[1] is the units capture group (e.g., "s" or "ms" or "")
+	fullMatch := match[0]
 	var units string
 	if len(match) > 1 {
 		units = match[1]
+	}
+
+	// Extract the numeric part by removing units
+	timeStr := fullMatch
+	if units != "" {
+		timeStr = fullMatch[:len(fullMatch)-len(units)]
 	}
 
 	timeValue, err := strconv.ParseFloat(timeStr, 64)

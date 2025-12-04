@@ -3,6 +3,7 @@ package expression_parser
 import (
 	"fmt"
 	"ngc-go/packages/compiler/src/core"
+	ml_parser "ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/util"
 	"strings"
 )
@@ -191,6 +192,25 @@ func (p *Parser) ParseInterpolation(
 
 	expressionNodes := []AST{}
 
+	// Collect all INTERPOLATION tokens from interpolatedTokens for mapping
+	// Support both InterpolatedTextToken and InterpolatedAttributeToken
+	interpolationTokens := []ml_parser.Token{}
+	if interpolatedTokens != nil {
+		if textTokens, ok := interpolatedTokens.([]ml_parser.InterpolatedTextToken); ok {
+			for _, token := range textTokens {
+				if token.Type() == ml_parser.TokenTypeINTERPOLATION {
+					interpolationTokens = append(interpolationTokens, token)
+				}
+			}
+		} else if attrTokens, ok := interpolatedTokens.([]ml_parser.InterpolatedAttributeToken); ok {
+			for _, token := range attrTokens {
+				if token.Type() == ml_parser.TokenTypeINTERPOLATION || token.Type() == ml_parser.TokenTypeATTR_VALUE_INTERPOLATION {
+					interpolationTokens = append(interpolationTokens, token)
+				}
+			}
+		}
+	}
+
 	for i := 0; i < len(split.Expressions); i++ {
 		// TODO: Handle interpolatedTokens for more accurate error messages
 		expressionText := split.Expressions[i].Text
@@ -207,14 +227,32 @@ func (p *Parser) ParseInterpolation(
 			continue
 		}
 
+		// Calculate the correct absoluteOffset for this expression
+		// When HTML entities are decoded, the input string has different length than the original template,
+		// so we need to adjust absoluteOffset to account for the offset difference
+		adjustedAbsoluteOffset := absoluteOffset
+		if i < len(interpolationTokens) {
+			// Use the corresponding INTERPOLATION token's SourceSpan to calculate correct absolute offset
+			interpolationToken := interpolationTokens[i]
+			interpolationStartOffset := interpolationToken.SourceSpan().Start.Offset
+			// Find where this interpolation starts in the input string
+			// split.Expressions[i].Start is the offset of "{{" in the decoded input string
+			interpStartInInput := split.Expressions[i].Start
+			// Adjust absoluteOffset so that interpolationStartOffset maps to interpStartInInput
+			adjustedAbsoluteOffset = interpolationStartOffset - interpStartInInput
+		}
+
+		// expressionOffset is the offset in the input string (already decoded)
+		expressionOffset := split.Offsets[i]
+
 		ast := newParseAST(
 			expressionText,
 			parseSourceSpan,
-			absoluteOffset,
+			adjustedAbsoluteOffset,
 			tokens,
 			ParseFlagsNone,
 			&errors,
-			split.Offsets[i],
+			expressionOffset,
 			p.supportsDirectPipeReferences,
 		).parseChain()
 		expressionNodes = append(expressionNodes, ast)

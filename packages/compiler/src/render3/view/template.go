@@ -1,6 +1,7 @@
 package view
 
 import (
+	"fmt"
 	"ngc-go/packages/compiler/src/expression_parser"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/render3"
@@ -154,7 +155,7 @@ func ParseTemplate(
 	}
 	tokenizeOptions.TokenizeBlocks = &enableBlockSyntax
 
-	enableLetSyntax := false
+	enableLetSyntax := true
 	if options.EnableLetSyntax != nil {
 		enableLetSyntax = *options.EnableLetSyntax
 	}
@@ -185,6 +186,7 @@ func ParseTemplate(
 	}
 
 	rootNodes := parseResult.RootNodes
+	fmt.Printf("ParseTemplate: htmlParser returned %d nodes\n", len(rootNodes))
 
 	// We need to use the same `retainEmptyTokens` value for both parses to avoid
 	// causing a mismatch when reusing source spans, even if the
@@ -237,6 +239,7 @@ func ParseTemplate(
 	}
 
 	rootNodes = i18nMetaResult.RootNodes
+	fmt.Printf("ParseTemplate: after i18nMetaVisitor, nodes count: %d\n", len(rootNodes))
 
 	if preserveWhitespaces == nil || !*preserveWhitespaces {
 		// Always preserve significant whitespace here because this is used to generate the `goog.getMsg`
@@ -257,6 +260,7 @@ func ParseTemplate(
 		)
 		visitedNodes := ml_parser.VisitAll(whitespaceVisitor, rootNodes, nil)
 		rootNodes = convertToMlNodes(visitedNodes)
+		fmt.Printf("ParseTemplate: after whitespaceVisitor, nodes count: %d\n", len(rootNodes))
 
 		// run i18n meta visitor again in case whitespaces are removed (because that might affect
 		// generated i18n message content) and first pass indicated that i18n content is present in a
@@ -274,6 +278,7 @@ func ParseTemplate(
 			)
 			visitedNodes2 := ml_parser.VisitAll(i18nMetaVisitor2, rootNodes, nil)
 			rootNodes = convertToMlNodes(visitedNodes2)
+			fmt.Printf("ParseTemplate: after i18nMetaVisitor2, nodes count: %d\n", len(rootNodes))
 		}
 	}
 
@@ -282,10 +287,13 @@ func ParseTemplate(
 	if options.CollectCommentNodes != nil {
 		collectCommentNodes = *options.CollectCommentNodes
 	}
-	parseResult2 := htmlAstToRender3Ast(
+	parseResult2 := HtmlAstToRender3Ast(
 		rootNodes,
 		bindingParser,
-		collectCommentNodes,
+		Render3ParseOptions{
+			CollectCommentNodes: collectCommentNodes,
+			SelectorlessEnabled: selectorlessEnabled,
+		},
 	)
 
 	// Combine all errors
@@ -340,29 +348,6 @@ type Render3ParseResult struct {
 	StyleUrls          []string
 	NgContentSelectors []string
 	CommentNodes       []*render3.Comment
-}
-
-// htmlAstToRender3Ast converts HTML AST nodes to R3 AST nodes
-// This is a placeholder implementation - the full implementation should be in r3_template_transform.go
-func htmlAstToRender3Ast(
-	htmlNodes []ml_parser.Node,
-	bindingParser *template_parser.BindingParser,
-	collectCommentNodes bool,
-) *Render3ParseResult {
-	// TODO: Implement full htmlAstToRender3Ast conversion
-	// This function should convert HTML AST nodes to R3 AST nodes
-	// For now, return empty result to match the structure
-	_ = htmlNodes
-	_ = bindingParser
-	_ = collectCommentNodes
-	return &Render3ParseResult{
-		Nodes:              []render3.Node{},
-		Errors:             []*util.ParseError{},
-		Styles:             []string{},
-		StyleUrls:          []string{},
-		NgContentSelectors: []string{},
-		CommentNodes:       []*render3.Comment{},
-	}
 }
 
 // convertToMlNodes converts a slice of interface{} to []ml_parser.Node

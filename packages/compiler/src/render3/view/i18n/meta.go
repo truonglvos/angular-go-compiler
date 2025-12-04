@@ -495,11 +495,17 @@ func ParseI18nMeta(meta string) I18nMeta {
 		if descIndex > -1 {
 			meaningStr := meaningAndDesc[:descIndex]
 			descStr := meaningAndDesc[descIndex+1:]
-			meaning = &meaningStr
-			description = &descStr
+			if meaningStr != "" {
+				meaning = &meaningStr
+			}
+			if descStr != "" {
+				description = &descStr
+			}
 		} else {
 			descStr := meaningAndDesc
-			description = &descStr
+			if descStr != "" {
+				description = &descStr
+			}
 		}
 	}
 

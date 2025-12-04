@@ -10,6 +10,7 @@ import (
 	"ngc-go/packages/compiler/src/expression_parser"
 	"ngc-go/packages/compiler/src/ml_parser"
 	"ngc-go/packages/compiler/src/output"
+	"ngc-go/packages/compiler/src/render3"
 	"ngc-go/packages/compiler/src/util"
 )
 
@@ -239,7 +240,15 @@ func CreateCssSelectorFromNode(node Node) *css.CssSelector {
 		elementName = n.GetName()
 	case interface{ GetTagName() *string }:
 		if tagName := n.GetTagName(); tagName != nil {
-			elementName = *tagName
+			// For inline templates (e.g., *ngFor on a div), the tagName is the wrapped element's name.
+			// But for directive matching, we should use "ng-template" or empty to match template selectors.
+			// Check if this is an inline template by seeing if it's not actually an ng-template element
+			if *tagName != "ng-template" {
+				// This is an inline template like <div *ngFor>, use empty element name for matching
+				elementName = ""
+			} else {
+				elementName = "ng-template"
+			}
 		} else {
 			elementName = "ng-template"
 		}
@@ -253,8 +262,26 @@ func CreateCssSelectorFromNode(node Node) *css.CssSelector {
 
 	cssSelector.SetElement(elementNameNoNs)
 
-	for name, value := range attributes {
+	fmt.Printf("[DEBUG] CreateCssSelectorFromNode: elementNameNoNs=%q, attributes=%v\n", elementNameNoNs, attributes)
+
+	// Sort attribute names for consistent order (Go map iteration is random)
+	attrNames := make([]string, 0, len(attributes))
+	for name := range attributes {
+		attrNames = append(attrNames, name)
+	}
+	// Sort alphabetically to ensure consistent order
+	for i := 0; i < len(attrNames); i++ {
+		for j := i + 1; j < len(attrNames); j++ {
+			if attrNames[i] > attrNames[j] {
+				attrNames[i], attrNames[j] = attrNames[j], attrNames[i]
+			}
+		}
+	}
+
+	for _, name := range attrNames {
+		value := attributes[name]
 		_, nameNoNs := ml_parser.SplitNsName(name, false)
+		fmt.Printf("[DEBUG] CreateCssSelectorFromNode: adding attribute name=%q, value=%q\n", nameNoNs, value)
 		cssSelector.AddAttribute(nameNoNs, value)
 		if strings.ToLower(name) == "class" {
 			classes := strings.Fields(value)
@@ -264,6 +291,7 @@ func CreateCssSelectorFromNode(node Node) *css.CssSelector {
 		}
 	}
 
+	fmt.Printf("[DEBUG] CreateCssSelectorFromNode: final cssSelector=%v\n", cssSelector)
 	return cssSelector
 }
 
@@ -272,75 +300,79 @@ func CreateCssSelectorFromNode(node Node) *css.CssSelector {
 func GetAttrsForDirectiveMatching(elOrTpl Node) map[string]string {
 	attributesMap := make(map[string]string)
 
-	// Handle Template nodes
+	// Handle Template nodes (inline templates like *ngFor)
 	if template, ok := elOrTpl.(interface {
 		GetTagName() *string
-		GetTemplateAttrs() []interface{}
+		GetAttributes() []*render3.TextAttribute
+		GetInputs() []*render3.BoundAttribute
 	}); ok {
 		if tagName := template.GetTagName(); tagName != nil && *tagName != "ng-template" {
-			for _, attr := range template.GetTemplateAttrs() {
-				// TemplateAttrs can be BoundAttribute or TextAttribute
-				if textAttr, ok := attr.(interface{ GetName() string }); ok {
-					attributesMap[textAttr.GetName()] = ""
-				} else if boundAttr, ok := attr.(interface{ GetName() string }); ok {
-					attributesMap[boundAttr.GetName()] = ""
+			// For inline templates (*ngFor, *ngIf, etc.), use the typed fields
+			fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: found inline template with tagName=%q\n", *tagName)
+			// Get text attributes
+			attrs := template.GetAttributes()
+			fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: template.GetAttributes() count=%d\n", len(attrs))
+			for i, attr := range attrs {
+				name := attr.Name
+				fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: attr[%d].Name=%q, Value=%q\n", i, name, attr.Value)
+				if !IsI18nAttribute(name) {
+					attributesMap[name] = attr.Value
 				}
 			}
+			// Get inputs (bound attributes)
+			inputs := template.GetInputs()
+			fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: template.GetInputs() count=%d\n", len(inputs))
+			for i, input := range inputs {
+				fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: input[%d].Name=%q, Type=%d\n", i, input.Name, input.Type)
+				if input.Type == expression_parser.BindingTypeProperty || input.Type == expression_parser.BindingTypeTwoWay {
+					attributesMap[input.Name] = ""
+				}
+			}
+			fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: final attributesMap=%v\n", attributesMap)
 			return attributesMap
 		}
 	}
 
 	// Handle Element nodes
 	if element, ok := elOrTpl.(interface {
-		GetAttributes() []interface {
-			TextAttribute() interface {
-				GetName() string
-				GetValue() string
-			}
-		}
-		GetInputs() []interface {
-			GetName() string
-			GetType() expression_parser.BindingType
-		}
-		GetOutputs() []interface{ GetName() string }
+		GetName() string
+		GetAttributes() []*render3.TextAttribute
+		GetInputs() []*render3.BoundAttribute
+		GetOutputs() []*render3.BoundEvent
 	}); ok {
-		// Get attributes
-		if attrsGetter, ok := element.(interface{ GetAttributes() []interface{} }); ok {
-			for _, attr := range attrsGetter.GetAttributes() {
-				if textAttr, ok := attr.(interface {
-					GetName() string
-					GetValue() string
-				}); ok {
-					name := textAttr.GetName()
-					if !IsI18nAttribute(name) {
-						attributesMap[name] = textAttr.GetValue()
-					}
-				}
+		fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: found Element with name=%q\n", element.GetName())
+
+		// Get text attributes
+		attrs := element.GetAttributes()
+		fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: element.GetAttributes() count=%d\n", len(attrs))
+		for i, attr := range attrs {
+			name := attr.Name
+			fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: attr[%d].Name=%q, Value=%q\n", i, name, attr.Value)
+			if !IsI18nAttribute(name) {
+				attributesMap[name] = attr.Value
 			}
 		}
 
-		// Get inputs
-		if inputsGetter, ok := element.(interface {
-			GetInputs() []interface {
-				GetName() string
-				GetType() expression_parser.BindingType
-			}
-		}); ok {
-			for _, input := range inputsGetter.GetInputs() {
-				if input.GetType() == expression_parser.BindingTypeProperty || input.GetType() == expression_parser.BindingTypeTwoWay {
-					attributesMap[input.GetName()] = ""
-				}
+		// Get inputs (bound attributes)
+		inputs := element.GetInputs()
+		fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: element.GetInputs() count=%d\n", len(inputs))
+		for i, input := range inputs {
+			fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: input[%d].Name=%q, Type=%d\n", i, input.Name, input.Type)
+			if input.Type == expression_parser.BindingTypeProperty || input.Type == expression_parser.BindingTypeTwoWay {
+				attributesMap[input.Name] = ""
 			}
 		}
 
-		// Get outputs
-		if outputsGetter, ok := element.(interface {
-			GetOutputs() []interface{ GetName() string }
-		}); ok {
-			for _, output := range outputsGetter.GetOutputs() {
-				attributesMap[output.GetName()] = ""
-			}
+		// Get outputs (bound events)
+		outputs := element.GetOutputs()
+		fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: element.GetOutputs() count=%d\n", len(outputs))
+		for i, output := range outputs {
+			fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: output[%d].Name=%q\n", i, output.Name)
+			attributesMap[output.Name] = ""
 		}
+
+		fmt.Printf("[DEBUG] GetAttrsForDirectiveMatching: final attributesMap=%v\n", attributesMap)
+		return attributesMap
 	}
 
 	return attributesMap

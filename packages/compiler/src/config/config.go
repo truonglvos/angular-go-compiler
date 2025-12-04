@@ -1,8 +1,6 @@
 package config
 
-import (
-	"ngc-go/packages/compiler/src/core"
-)
+import "ngc-go/packages/compiler/src/core"
 
 // CompilerConfig represents the compiler configuration
 type CompilerConfig struct {

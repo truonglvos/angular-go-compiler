@@ -23,8 +23,8 @@ var elseIfPattern = regexp.MustCompile(`^else[^\S\r\n]+if`)
 // Pattern used to identify a `let` parameter
 var forLoopLetPattern = regexp.MustCompile(`^let\s+([\S\s]*)`)
 
-// Pattern used to validate a JavaScript identifier
-var identifierPattern = regexp.MustCompile(`^[$A-Z_][0-9A-Z_$]*$`)
+// Pattern used to validate a JavaScript identifier (case-insensitive)
+var identifierPattern = regexp.MustCompile(`(?i)^[$A-Za-z_][0-9A-Za-z_$]*$`)
 
 // Pattern to group a string into leading whitespace, non whitespace, and trailing whitespace
 var charactersInSurroundingWhitespacePattern = regexp.MustCompile(`(\s*)(\S+)(\s*)`)

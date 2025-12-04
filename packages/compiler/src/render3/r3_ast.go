@@ -314,6 +314,26 @@ func (e *Element) SourceSpan() *util.ParseSourceSpan {
 	return e.sourceSpan
 }
 
+// GetName returns the element name
+func (e *Element) GetName() string {
+	return e.Name
+}
+
+// GetAttributes returns the text attributes
+func (e *Element) GetAttributes() []*TextAttribute {
+	return e.Attributes
+}
+
+// GetInputs returns the bound attributes (inputs)
+func (e *Element) GetInputs() []*BoundAttribute {
+	return e.Inputs
+}
+
+// GetOutputs returns the bound events (outputs)
+func (e *Element) GetOutputs() []*BoundEvent {
+	return e.Outputs
+}
+
 // Visit visits the node with a visitor
 func (e *Element) Visit(visitor Visitor) interface{} {
 	return visitor.VisitElement(e)
@@ -1251,6 +1271,26 @@ func (t *Template) SourceSpan() *util.ParseSourceSpan {
 // Visit visits the node with a visitor
 func (t *Template) Visit(visitor Visitor) interface{} {
 	return visitor.VisitTemplate(t)
+}
+
+// GetTagName returns the tag name
+func (t *Template) GetTagName() *string {
+	return t.TagName
+}
+
+// GetAttributes returns the text attributes
+func (t *Template) GetAttributes() []*TextAttribute {
+	return t.Attributes
+}
+
+// GetInputs returns the bound attributes (inputs)
+func (t *Template) GetInputs() []*BoundAttribute {
+	return t.Inputs
+}
+
+// GetTemplateAttrs returns the template attributes (for backward compatibility)
+func (t *Template) GetTemplateAttrs() []interface{} {
+	return t.TemplateAttrs
 }
 
 // Content represents a content node

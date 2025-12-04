@@ -184,7 +184,7 @@ func (b *R3TargetBinder) Bind(target *Target) BoundTarget {
 	references := make(ReferenceMap)
 	scopedNodeEntities := make(ScopedNodeEntities)
 	expressions := make(map[expression_parser.AST]TemplateEntity)
-	symbols := make(map[TemplateEntity]*render3.Template)
+	symbols := make(map[TemplateEntity]ScopedNode)
 	nestingLevel := make(map[ScopedNode]int)
 	usedPipes := make(map[string]bool)
 	eagerPipes := make(map[string]bool)
@@ -410,6 +410,7 @@ func (s *Scope) VisitTemplate(template *render3.Template) interface{} {
 	}
 
 	// Next, create an inner scope and process the template within it.
+	// Variables will be visited by ingest() in the inner scope
 	s.ingestScopedNode(template)
 	return nil
 }
@@ -846,9 +847,16 @@ func (db *DirectiveBinder) visitElementOrTemplate(node interface{}) {
 	if selectorMatcher, ok := db.directiveMatcher.(*css.SelectorMatcher[DirectiveMeta]); ok {
 		directives := []DirectiveMeta{}
 		cssSelector := CreateCssSelectorFromNode(node.(render3.Node))
+		fmt.Printf("[DEBUG] DirectiveBinder: cssSelector=%v\n", cssSelector)
+		fmt.Printf("[DEBUG] DirectiveBinder: calling Match...\n")
+		matchCount := 0
 		selectorMatcher.Match(cssSelector, func(c *css.CssSelector, a *DirectiveMeta) {
+			matchCount++
+			fmt.Printf("[DEBUG] DirectiveBinder: Match callback called! matchCount=%d, directive=%q, selector=%v\n", matchCount, (*a).Name(), c)
 			directives = append(directives, *a)
 		})
+		fmt.Printf("[DEBUG] DirectiveBinder: Match returned, callback was called %d times\n", matchCount)
+		fmt.Printf("[DEBUG] DirectiveBinder: total matched directives=%d\n", len(directives))
 		db.trackSelectorBasedBindingsAndDirectives(node, directives)
 	} else {
 		// Handle references for non-selector matcher
@@ -1156,7 +1164,7 @@ func (db *DirectiveBinder) VisitLetDeclaration(decl *render3.LetDeclaration) int
 type TemplateBinder struct {
 	expression_parser.RecursiveAstVisitor
 	bindings      map[expression_parser.AST]TemplateEntity
-	symbols       map[TemplateEntity]*render3.Template
+	symbols       map[TemplateEntity]ScopedNode
 	usedPipes     map[string]bool
 	eagerPipes    map[string]bool
 	deferBlocks   *[]DeferBlockScope
@@ -1181,7 +1189,7 @@ func TemplateBinderApplyWithScope(
 	nodeOrNodes interface{},
 	scope *Scope,
 	expressions map[expression_parser.AST]TemplateEntity,
-	symbols map[TemplateEntity]*render3.Template,
+	symbols map[TemplateEntity]ScopedNode,
 	nestingLevel map[ScopedNode]int,
 	usedPipes map[string]bool,
 	eagerPipes map[string]bool,
@@ -1331,24 +1339,25 @@ func (tb *TemplateBinder) VisitTemplate(template *render3.Template) interface{} 
 	}
 
 	// Next, recurse into the template.
+	// Variables will be visited by ingest() in the template's inner scope
 	tb.ingestScopedNode(template)
 	return nil
 }
 
 // VisitVariable visits a Variable node
 func (tb *TemplateBinder) VisitVariable(variable *render3.Variable) interface{} {
-	// Register the `Variable` as a symbol in the current `Template`.
+	// Register the `Variable` as a symbol in the current scope root node.
 	if tb.rootNode != nil {
-		tb.symbols[variable] = tb.rootNode.(*render3.Template)
+		tb.symbols[variable] = tb.rootNode
 	}
 	return nil
 }
 
 // VisitReference visits a Reference node
 func (tb *TemplateBinder) VisitReference(reference *render3.Reference) interface{} {
-	// Register the `Reference` as a symbol in the current `Template`.
+	// Register the `Reference` as a symbol in the current scope root node.
 	if tb.rootNode != nil {
-		tb.symbols[reference] = tb.rootNode.(*render3.Template)
+		tb.symbols[reference] = tb.rootNode
 	}
 	return nil
 }
@@ -1447,7 +1456,7 @@ func (tb *TemplateBinder) VisitLetDeclaration(decl *render3.LetDeclaration) inte
 	tb.RecursiveAstVisitor.Visit(decl.Value, nil)
 
 	if tb.rootNode != nil {
-		tb.symbols[decl] = tb.rootNode.(*render3.Template)
+		tb.symbols[decl] = tb.rootNode
 	}
 	return nil
 }
@@ -1464,13 +1473,176 @@ func (tb *TemplateBinder) VisitPipe(ast *expression_parser.BindingPipe, context 
 // VisitPropertyRead visits a PropertyRead node
 func (tb *TemplateBinder) VisitPropertyRead(ast *expression_parser.PropertyRead, context interface{}) interface{} {
 	tb.maybeMap(ast, ast.Name)
-	return tb.RecursiveAstVisitor.VisitPropertyRead(ast, context)
+	// CRITICAL: We must visit the receiver using the adapter to maintain the visitor chain.
+	// Create an adapter and visit the receiver
+	adapter := &templateBinderAstVisitorAdapter{binder: tb}
+	adapter.Visit(ast.Receiver, context)
+	return nil
 }
 
 // VisitSafePropertyRead visits a SafePropertyRead node
 func (tb *TemplateBinder) VisitSafePropertyRead(ast *expression_parser.SafePropertyRead, context interface{}) interface{} {
 	tb.maybeMap(ast, ast.Name)
-	return tb.RecursiveAstVisitor.VisitSafePropertyRead(ast, context)
+	// CRITICAL: We must visit the receiver using the adapter to maintain the visitor chain.
+	adapter := &templateBinderAstVisitorAdapter{binder: tb}
+	adapter.Visit(ast.Receiver, context)
+	return nil
+}
+
+// templateBinderAstVisitorAdapter is an adapter that allows TemplateBinder to act as an AstVisitor
+//
+//	while maintaining its existing Visit(node render3.Node) method for the render3.Visitor interface
+type templateBinderAstVisitorAdapter struct {
+	binder *TemplateBinder
+}
+
+// Visit implements the AstVisitor interface's Visit method
+func (a *templateBinderAstVisitorAdapter) Visit(ast expression_parser.AST, context interface{}) interface{} {
+	return ast.Visit(a, context)
+}
+
+// Delegate all AstVisitor methods to the TemplateBinder
+func (a *templateBinderAstVisitorAdapter) VisitPropertyRead(ast *expression_parser.PropertyRead, ctx interface{}) interface{} {
+	return a.binder.VisitPropertyRead(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitSafePropertyRead(ast *expression_parser.SafePropertyRead, ctx interface{}) interface{} {
+	return a.binder.VisitSafePropertyRead(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitPipe(ast *expression_parser.BindingPipe, ctx interface{}) interface{} {
+	return a.binder.VisitPipe(ast, ctx)
+}
+
+// visitAll is a helper method to visit all ASTs in a slice using the adapter
+func (a *templateBinderAstVisitorAdapter) visitAll(asts []expression_parser.AST, ctx interface{}) {
+	for _, ast := range asts {
+		a.Visit(ast, ctx)
+	}
+}
+
+// Methods that recursively visit child ASTs - must call a.Visit() to maintain visitor chain
+func (a *templateBinderAstVisitorAdapter) VisitBinary(ast *expression_parser.Binary, ctx interface{}) interface{} {
+	a.Visit(ast.Left, ctx)
+	a.Visit(ast.Right, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitChain(ast *expression_parser.Chain, ctx interface{}) interface{} {
+	a.visitAll(ast.Expressions, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitConditional(ast *expression_parser.Conditional, ctx interface{}) interface{} {
+	a.Visit(ast.Condition, ctx)
+	a.Visit(ast.TrueExp, ctx)
+	a.Visit(ast.FalseExp, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitUnary(ast *expression_parser.Unary, ctx interface{}) interface{} {
+	a.Visit(ast.Expr, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitImplicitReceiver(ast *expression_parser.ImplicitReceiver, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitImplicitReceiver(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitThisReceiver(ast *expression_parser.ThisReceiver, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitThisReceiver(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitInterpolation(ast *expression_parser.Interpolation, ctx interface{}) interface{} {
+	a.visitAll(ast.Expressions, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitKeyedRead(ast *expression_parser.KeyedRead, ctx interface{}) interface{} {
+	a.Visit(ast.Receiver, ctx)
+	a.Visit(ast.Key, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitSafeKeyedRead(ast *expression_parser.SafeKeyedRead, ctx interface{}) interface{} {
+	a.Visit(ast.Receiver, ctx)
+	a.Visit(ast.Key, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitLiteralArray(ast *expression_parser.LiteralArray, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitLiteralArray(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitLiteralMap(ast *expression_parser.LiteralMap, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitLiteralMap(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitLiteralPrimitive(ast *expression_parser.LiteralPrimitive, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitLiteralPrimitive(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitPrefixNot(ast *expression_parser.PrefixNot, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitPrefixNot(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitTypeofExpression(ast *expression_parser.TypeofExpression, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitTypeofExpression(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitVoidExpression(ast *expression_parser.VoidExpression, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitVoidExpression(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitNonNullAssert(ast *expression_parser.NonNullAssert, ctx interface{}) interface{} {
+	a.Visit(ast.Expression, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitCall(ast *expression_parser.Call, ctx interface{}) interface{} {
+	a.Visit(ast.Receiver, ctx)
+	a.visitAll(ast.Args, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitSafeCall(ast *expression_parser.SafeCall, ctx interface{}) interface{} {
+	a.Visit(ast.Receiver, ctx)
+	a.visitAll(ast.Args, ctx)
+	return nil
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitASTWithSource(ast *expression_parser.ASTWithSource, ctx interface{}) interface{} {
+	// CRITICAL: We must visit the wrapped AST using the adapter (a), not the RecursiveAstVisitor.
+	// Otherwise, the visitor chain will be broken and TemplateBinder's overridden methods won't be called.
+	return a.Visit(ast.AST, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitTemplateLiteral(ast *expression_parser.TemplateLiteral, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitTemplateLiteral(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitTemplateLiteralElement(ast *expression_parser.TemplateLiteralElement, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitTemplateLiteralElement(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitTaggedTemplateLiteral(ast *expression_parser.TaggedTemplateLiteral, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitTaggedTemplateLiteral(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitParenthesizedExpression(ast *expression_parser.ParenthesizedExpression, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitParenthesizedExpression(ast, ctx)
+}
+
+func (a *templateBinderAstVisitorAdapter) VisitRegularExpressionLiteral(ast *expression_parser.RegularExpressionLiteral, ctx interface{}) interface{} {
+	return a.binder.RecursiveAstVisitor.VisitRegularExpressionLiteral(ast, ctx)
+}
+
+// visitAST is a helper that visits an AST expression while ensuring that
+// TemplateBinder's overridden visitor methods (like VisitPropertyRead) are called
+func (tb *TemplateBinder) visitAST(ast expression_parser.AST) {
+	// Create an adapter that implements AstVisitor and delegates to TemplateBinder
+	adapter := &templateBinderAstVisitorAdapter{binder: tb}
+	ast.Visit(adapter, nil)
 }
 
 // ingestScopedNode processes a scoped node recursively
@@ -1487,8 +1659,10 @@ func (tb *TemplateBinder) ingestScopedNode(node ScopedNode) {
 		scope:               childScope,
 		rootNode:            node,
 		level:               tb.level + 1,
-		visitNodeFunc:       tb.visitNodeFunc,
 	}
+	// CRITICAL: Create a NEW visitNodeFunc that captures the NEW binder, not the old one!
+	// Otherwise, the closure will use the parent binder with the wrong scope.
+	binder.visitNodeFunc = func(n render3.Node) interface{} { return n.Visit(binder) }
 	binder.ingest(node)
 }
 
@@ -1558,14 +1732,16 @@ func (tb *TemplateBinder) VisitBoundAttribute(attr *render3.BoundAttribute) inte
 
 func (tb *TemplateBinder) VisitBoundEvent(event *render3.BoundEvent) interface{} {
 	if event.Handler != nil {
-		event.Handler.Visit(&tb.RecursiveAstVisitor, nil)
+		// Visit the expression AST, calling back to TemplateBinder's visitor methods
+		tb.visitAST(event.Handler)
 	}
 	return nil
 }
 
 func (tb *TemplateBinder) VisitBoundText(text *render3.BoundText) interface{} {
 	if text.Value != nil {
-		text.Value.Visit(&tb.RecursiveAstVisitor, nil)
+		// Visit the expression AST, calling back to TemplateBinder's visitor methods
+		tb.visitAST(text.Value)
 	}
 	return nil
 }
@@ -1658,7 +1834,7 @@ type R3BoundTarget struct {
 	bindings           BindingsMap
 	references         ReferenceMap
 	exprTargets        map[expression_parser.AST]TemplateEntity
-	symbols            map[TemplateEntity]*render3.Template
+	symbols            map[TemplateEntity]ScopedNode
 	nestingLevel       map[ScopedNode]int
 	scopedNodeEntities ScopedNodeEntities
 	usedPipes          map[string]bool
@@ -1676,7 +1852,7 @@ func NewR3BoundTarget(
 	bindings BindingsMap,
 	references ReferenceMap,
 	exprTargets map[expression_parser.AST]TemplateEntity,
-	symbols map[TemplateEntity]*render3.Template,
+	symbols map[TemplateEntity]ScopedNode,
 	nestingLevel map[ScopedNode]int,
 	scopedNodeEntities ScopedNodeEntities,
 	usedPipes map[string]bool,

@@ -1,0 +1,9 @@
+{
+  "builders": {
+    "build": {
+      "implementation": "./index.js",
+      "schema": "./schema.json",
+      "description": "Builds an Angular application using the Go-based compiler."
+    }
+  }
+}

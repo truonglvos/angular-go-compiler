@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "type": "object",
+  "properties": {
+    "tsConfig": {
+      "type": "string",
+      "description": "The path to the TypeScript configuration file.",
+      "default": "tsconfig.json"
+    },
+    "outputPath": {
+      "type": "string",
+      "description": "The output path of the generated files.",
+      "default": "dist"
+    }
+  },
+  "additionalProperties": false
+}
